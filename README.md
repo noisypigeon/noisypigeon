@@ -2,7 +2,7 @@
 
 But you may know me as Kara Finch.
 
-- 👯 I’m a 26-year-old trans, queer ~~pigeon~~ woman.
-- 🔭 I’m a multidisciplinary software engineer with a focus on infrastructure and distributed systems.
-- 💬 Ask me about Kubernetes and observability.
+- 👯 Who I am: I’m a 26-year-old trans, queer ~~pigeon~~ woman living in Vancouver.
+- 🔭 What I do: I’m a multi-disciplinary software engineer with a focus on infrastructure and distributed systems.
+- 💬 Ask me about: Kubernetes, observability and developer relations. I also love chatting about public transit and urban planning.
 - ⚡ Fun fact: I've found myself back in Vancouver after years of living in various places but primarily Montréal and Berlin.

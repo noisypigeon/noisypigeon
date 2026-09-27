@@ -8,7 +8,7 @@ Bucket-scoped, read-only key — no organization/project grant, access comes onl
 
 ```hcl
 module "iam" {
-  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.1.0"
+  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.1.1"
   name   = "${module.bucket.name}-iam"
 
   bucket_names     = { email = module.bucket.name }
@@ -20,6 +20,8 @@ module "iam" {
 Do not also grant an `ObjectStorage*`-family `organization_permission_sets`/`project_permission_sets` alongside `bucket_names` — that blanket grant already covers every bucket in scope and makes the bucket restriction meaningless (rejected by validation).
 
 Always set `admin_project_id` to the project your Terraform/deployer identity itself has IAM permissions in. Scaleway bucket policies are allow-only: the moment any bucket policy exists, every other principal — including whoever is running `terraform`/`terragrunt apply` — loses access to that bucket unless it's also named in the policy. Without `admin_project_id`, applying a bucket-scoped grant can lock the applying identity itself out of the bucket, recoverable only via owner-credentialed `aws s3api delete-bucket-policy` (see ADR-0069).
+
+Setting `admin_project_id` downgrades the whole generated bucket policy to `Version = "2012-10-17"` — a `project_id:` principal is only accepted under that version (Scaleway's `2023-04-17` version only accepts `application_id:`/`user_id:`/wildcard principals). `2012-10-17` is documented by Scaleway as deprecated, but is still functional for this exact use (see ADR-0070).
 
 <!-- BEGIN_TF_DOCS -->
 ## Inputs

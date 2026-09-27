@@ -62,6 +62,12 @@ variable "bucket_names" {
   }
 }
 
+variable "admin_project_id" {
+  type        = string
+  description = "Project id that should always retain full access to bucket_names, even if excluded from the narrow bucket_names/bucket_actions grant (prevents the applying/deployer identity from locking itself out of a bucket policy it just created)"
+  default     = null
+}
+
 variable "bucket_actions" {
   type        = list(string)
   description = "S3 actions granted on each bucket in bucket_names (no actions are granted by default)"

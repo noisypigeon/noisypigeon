@@ -8,15 +8,18 @@ Bucket-scoped, read-only key — no organization/project grant, access comes onl
 
 ```hcl
 module "iam" {
-  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.0.0"
+  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.1.0"
   name   = "${module.bucket.name}-iam"
 
-  bucket_names   = { email = module.bucket.name }
-  bucket_actions = ["s3:ListBucket", "s3:GetObject"]
+  bucket_names     = { email = module.bucket.name }
+  bucket_actions   = ["s3:ListBucket", "s3:GetObject"]
+  admin_project_id = local.scaleway_project_id_noisypigeon
 }
 ```
 
 Do not also grant an `ObjectStorage*`-family `organization_permission_sets`/`project_permission_sets` alongside `bucket_names` — that blanket grant already covers every bucket in scope and makes the bucket restriction meaningless (rejected by validation).
+
+Always set `admin_project_id` to the project your Terraform/deployer identity itself has IAM permissions in. Scaleway bucket policies are allow-only: the moment any bucket policy exists, every other principal — including whoever is running `terraform`/`terragrunt apply` — loses access to that bucket unless it's also named in the policy. Without `admin_project_id`, applying a bucket-scoped grant can lock the applying identity itself out of the bucket, recoverable only via owner-credentialed `aws s3api delete-bucket-policy` (see ADR-0069).
 
 <!-- BEGIN_TF_DOCS -->
 ## Inputs

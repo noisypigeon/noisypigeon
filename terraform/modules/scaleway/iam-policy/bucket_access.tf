@@ -4,7 +4,7 @@ resource "scaleway_object_bucket_policy" "bucket_access" {
   bucket = each.value
   policy = jsonencode({
     Version = "2023-04-17"
-    Statement = [
+    Statement = concat([
       {
         Sid       = "IamPolicyBucketAccess"
         Effect    = "Allow"
@@ -12,6 +12,14 @@ resource "scaleway_object_bucket_policy" "bucket_access" {
         Action    = var.bucket_actions
         Resource  = [each.value, "${each.value}/*"]
       }
-    ]
+      ], var.admin_project_id != null ? [
+      {
+        Sid       = "IamPolicyBucketAccessAdmin"
+        Effect    = "Allow"
+        Principal = { SCW = "project_id:${var.admin_project_id}" }
+        Action    = ["s3:*"]
+        Resource  = [each.value, "${each.value}/*"]
+      }
+    ] : [])
   })
 }

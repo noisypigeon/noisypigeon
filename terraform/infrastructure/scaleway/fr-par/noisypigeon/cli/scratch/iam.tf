@@ -1,5 +1,5 @@
 module "iam" {
-  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.0.0"
+  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.1.0"
   name   = "${module.bucket.name}-iam"
 
   expires_at = "2027-09-25T22:32:12Z"
@@ -11,6 +11,7 @@ module "iam" {
     "s3:ListBucket",
     "s3:GetObject"
   ]
+  admin_project_id = local.scaleway_project_id_noisypigeon
 }
 
 output "access_key" {

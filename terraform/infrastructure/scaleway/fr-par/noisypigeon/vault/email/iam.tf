@@ -4,14 +4,12 @@ module "iam" {
 
   expires_at = "2027-09-25T22:32:12Z"
 
-  bucket_names = {
-    email = module.bucket.name
-  }
-  bucket_actions = [
-    "s3:ListBucket",
-    "s3:GetObject"
+  project_ids = [
+    local.scaleway_project_id_noisypigeon,
   ]
-  admin_project_id = local.scaleway_project_id_noisypigeon
+  project_permission_sets = [
+    "ObjectStorageFullAccess",
+  ]
 }
 
 output "access_key" {

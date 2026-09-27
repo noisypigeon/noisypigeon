@@ -15,6 +15,7 @@ This is a complete record for historical purposes:
 
 ## Aliases
 
+- Bix (since September 2026).
 - Willow Pigeon (current, since mid-2025).
 - Willow Finch (current, since December 2024).
 - Bailey Graysen (2023).

@@ -200,10 +200,18 @@ pub(crate) fn batches_from_pending(pending: &[PendingMailbox], concurrency: usiz
 /// `remote`, from the target bucket-config's default key, an explicit
 /// `--encryption-key` override, or an interactive choice (ADR-0027) --
 /// `None` when uploading unencrypted or not uploading at all.
+/// Default for `max_connections_per_identity` when `--max-connections-per-identity` is
+/// omitted (ADR-0071) -- comfortably under Gmail's documented 15-simultaneous-connection
+/// cap, leaving headroom for other IMAP clients already connected to the same account.
+pub(crate) const DEFAULT_MAX_CONNECTIONS_PER_IDENTITY: usize = 6;
+
 pub(crate) struct EmailSyncJob {
     pub contexts: Vec<IdentityContext>,
     pub remote: Option<(BucketConfig, String)>,
     pub encryptor: Option<Aes256GcmSivEncryptor>,
+    /// Maximum simultaneous IMAP connections to any one identity, regardless of the
+    /// job-wide `concurrency` passed to `run` (ADR-0071).
+    pub max_connections_per_identity: usize,
 }
 
 pub(crate) struct EmailSyncPlan {
@@ -235,6 +243,7 @@ impl Job for EmailSyncJob {
             contexts,
             remote,
             encryptor,
+            max_connections_per_identity,
         } = self;
         let remote_ref = remote
             .as_ref()
@@ -243,6 +252,7 @@ impl Job for EmailSyncJob {
             contexts,
             plan.pending_by_identity,
             concurrency,
+            max_connections_per_identity,
             remote_ref,
             encryptor.as_ref(),
         )

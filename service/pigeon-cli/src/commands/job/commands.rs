@@ -10,6 +10,7 @@ pub fn dispatch(command: JobCommands) -> i32 {
                 remote_output,
                 encryption_key,
                 concurrency,
+                max_connections_per_identity,
                 yes,
             } => email_sync::wizard::dispatch(
                 identities,
@@ -17,6 +18,7 @@ pub fn dispatch(command: JobCommands) -> i32 {
                 remote_output,
                 encryption_key,
                 concurrency,
+                max_connections_per_identity,
                 yes,
             ),
             JobType::DecryptFiles {

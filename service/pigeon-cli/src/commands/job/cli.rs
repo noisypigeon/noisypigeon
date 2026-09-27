@@ -60,6 +60,17 @@ pub enum JobType {
         #[arg(long)]
         concurrency: Option<usize>,
 
+        /// Maximum number of simultaneous IMAP connections opened to any
+        /// one identity, regardless of `--concurrency` (ADR-0071) -- caps
+        /// worker concurrency per-account rather than only globally, so a
+        /// mailbox with enough pending batches can't cause more than this
+        /// many workers to log in to the same account at once and trip a
+        /// provider's simultaneous-connection limit. Defaults to 6 (well
+        /// under Gmail's documented 15-connection cap) when omitted; not
+        /// interactively prompted.
+        #[arg(long)]
+        max_connections_per_identity: Option<usize>,
+
         /// Skip the final "proceed?" confirmation. Every other omitted
         /// input (identities, concurrency) still follows its own
         /// independent flag-or-prompt rule -- this only answers the last

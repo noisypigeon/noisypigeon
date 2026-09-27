@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use futures::{StreamExt, stream};
 use indicatif::{MultiProgress, ProgressBar};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 use crate::commands::keyring::bucket::client;
 use crate::commands::keyring::bucket::store::BucketConfig;
@@ -23,6 +24,16 @@ use super::{IdentityContext, PendingMailbox};
 
 const CONNECT_RETRIES: usize = 3;
 const RETRY_BACKOFF: Duration = Duration::from_secs(5);
+
+/// How many extra times a batch that failed to connect/`EXAMINE`/fetch is
+/// requeued before its UIDs are counted as failed for this run (ADR-0071) --
+/// 2 extra attempts (3 total), matching `CONNECT_RETRIES`'s order of
+/// magnitude. Unlike `retry_with_backoff` (which retries one already-chosen
+/// operation in place), this retries at the *queue* level, since a batch
+/// failure can mean the IMAP session itself died and needs a fresh
+/// connection, not just a repeated command.
+const BATCH_RETRIES: u8 = 2;
+const BATCH_RETRY_BACKOFF: Duration = Duration::from_secs(2);
 
 /// Retries `f` up to `attempts` times, sleeping `backoff * attempt_number`
 /// between tries (linear: `backoff`, `2*backoff`, ...) before giving up --
@@ -69,12 +80,14 @@ pub(crate) async fn connect_with_retry(ctx: &IdentityContext) -> Result<ImapSess
     .await
 }
 
-/// A `failed` count broken down by cause (ADR-0033 #37/#38): IMAP connect
-/// failure, `EXAMINE` failure, any other batch-level hard error, a per-UID
-/// `verify_transformed` structural failure, and a per-UID lenient
-/// `EmailTransform::transform` parse-skip. Always sums to the flat `failed`
-/// counter it sits alongside -- nothing downstream reading that flat total
-/// breaks.
+/// A `failed` count broken down by cause (ADR-0033 #37/#38, extended by
+/// ADR-0071): IMAP connect failure, `EXAMINE` failure, any other batch-level
+/// hard error, a per-UID `verify_transformed` structural failure, a per-UID
+/// lenient `EmailTransform::transform` parse-skip, and a UID whose `.eml`
+/// was never written by the fetch phase (`missing_file` -- distinct from
+/// `parse_skipped`, which is a genuine unparseable/malformed message).
+/// Always sums to the flat `failed` counter it sits alongside -- nothing
+/// downstream reading that flat total breaks.
 #[derive(Debug, Default)]
 pub(crate) struct FailureBreakdown {
     pub connect: usize,
@@ -82,6 +95,7 @@ pub(crate) struct FailureBreakdown {
     pub batch_error: usize,
     pub verification: usize,
     pub parse_skipped: usize,
+    pub missing_file: usize,
 }
 
 impl FailureBreakdown {
@@ -91,6 +105,7 @@ impl FailureBreakdown {
         self.batch_error += other.batch_error;
         self.verification += other.verification;
         self.parse_skipped += other.parse_skipped;
+        self.missing_file += other.missing_file;
     }
 }
 
@@ -107,26 +122,64 @@ struct BatchOutcome {
 /// and mailbox it's scoped to, so `run_worker` can tell whether its next
 /// batch needs a full reconnect (different identity -> different
 /// credentials) or just a re-`EXAMINE` (same identity, different mailbox --
-/// cheap, no new TCP/TLS/LOGIN) before it can be processed.
+/// cheap, no new TCP/TLS/LOGIN) before it can be processed. `_permit` holds
+/// this identity's connection-count slot (ADR-0071) for as long as this
+/// session is open, releasing it automatically (via `Drop`) whenever the
+/// connection is replaced or the worker exits -- never read, only held.
 struct WorkerConnection {
     identity_index: usize,
     mailbox: String,
     session: ImapSession,
+    _permit: OwnedSemaphorePermit,
 }
 
-/// Pulls `(identity_index, Batch)` pairs from `queue` until it's drained,
-/// holding one IMAP session per identity for as long as consecutive batches
-/// it pulls belong to that identity (ADR-0021 §6 addendum) -- the direct fix
-/// for the connection-churn bug: a job with `concurrency` workers now opens
-/// on the order of `concurrency` connections total over its whole run, not
-/// one per batch. A connect/re-`EXAMINE` failure (even after
-/// `connect_with_retry`'s retries) drops the current session and counts
-/// that batch's UIDs as failed, then moves on to the next queued batch --
-/// which may belong to a different, unaffected identity -- rather than
-/// aborting the worker outright.
+/// After a batch fails (connect, `EXAMINE`, or fetch/transform), either
+/// sleeps briefly and returns a requeue-able item with one fewer attempt
+/// remaining, or `None` once retries are exhausted (ADR-0071) -- the caller
+/// tallies the failure into its `BatchOutcome` only in the `None` case.
+/// Batch-level (not in-place) retry: a fetch failure can mean the IMAP
+/// session itself died, so simply retrying the last command in place
+/// (`retry_with_backoff`'s approach for connect/upload) isn't enough here --
+/// the batch needs to flow back through `run_worker`'s normal
+/// connect/`EXAMINE`/fetch path, possibly on a different worker.
+async fn requeue_or_none(
+    identity_index: usize,
+    batch: Batch,
+    attempts_remaining: u8,
+    backoff: Duration,
+) -> Option<(usize, Batch, u8)> {
+    if attempts_remaining == 0 {
+        return None;
+    }
+    tokio::time::sleep(backoff).await;
+    Some((identity_index, batch, attempts_remaining - 1))
+}
+
+/// Pulls `(identity_index, Batch, attempts_remaining)` items from `queue`
+/// until it's drained, holding one IMAP session per identity for as long as
+/// consecutive batches it pulls belong to that identity (ADR-0021 §6
+/// addendum) -- the direct fix for the connection-churn bug: a job with
+/// `concurrency` workers now opens on the order of `concurrency` connections
+/// total over its whole run, not one per batch.
+///
+/// Before opening a new connection, a worker acquires a permit from
+/// `identity_semaphores[identity_index]` (ADR-0071) -- capping how many
+/// workers can be connected to any one identity at once, independent of the
+/// job's overall `concurrency`, which is what actually prevents a burst of
+/// workers from tripping a provider's simultaneous-connection limit. A
+/// worker whose target identity is already at its cap simply waits for a
+/// permit instead of opening a connection that would likely be rejected.
+///
+/// A connect/re-`EXAMINE`/fetch failure (even after `connect_with_retry`'s
+/// in-place retries) drops the current session and either requeues the
+/// batch for another attempt or, once retries are exhausted, counts its
+/// UIDs as failed -- then moves on to the next queued batch, which may
+/// belong to a different, unaffected identity -- rather than aborting the
+/// worker outright.
 async fn run_worker(
-    queue: Arc<Mutex<VecDeque<(usize, Batch)>>>,
+    queue: Arc<Mutex<VecDeque<(usize, Batch, u8)>>>,
     identities: Arc<Vec<IdentityContext>>,
+    identity_semaphores: Arc<Vec<Arc<Semaphore>>>,
     multi_progress: MultiProgress,
 ) -> BatchOutcome {
     let mut connection: Option<WorkerConnection> = None;
@@ -134,7 +187,7 @@ async fn run_worker(
 
     loop {
         let next = { queue.lock().unwrap().pop_front() };
-        let Some((identity_index, batch)) = next else {
+        let Some((identity_index, batch, attempts_remaining)) = next else {
             break;
         };
         let ctx = &identities[identity_index];
@@ -146,18 +199,37 @@ async fn run_worker(
             if let Some(mut conn) = connection.take() {
                 let _ = conn.session.logout().await;
             }
+            let permit = identity_semaphores[identity_index]
+                .clone()
+                .acquire_owned()
+                .await
+                .expect("identity semaphores are never closed");
             match connect_with_retry(ctx).await {
                 Ok(session) => {
                     connection = Some(WorkerConnection {
                         identity_index,
                         mailbox: String::new(),
                         session,
+                        _permit: permit,
                     });
                 }
                 Err(err) => {
                     let _ = multi_progress.println(format!("Error: {err}"));
-                    outcome.failed += batch.uids.len();
-                    outcome.failure_breakdown.connect += batch.uids.len();
+                    let uid_count = batch.uids.len();
+                    match requeue_or_none(
+                        identity_index,
+                        batch,
+                        attempts_remaining,
+                        BATCH_RETRY_BACKOFF,
+                    )
+                    .await
+                    {
+                        Some(item) => queue.lock().unwrap().push_back(item),
+                        None => {
+                            outcome.failed += uid_count;
+                            outcome.failure_breakdown.connect += uid_count;
+                        }
+                    }
                     continue;
                 }
             }
@@ -172,9 +244,22 @@ async fn run_worker(
                         "Error: failed to open '{}' read-only: {err}",
                         batch.mailbox
                     ));
-                    outcome.failed += batch.uids.len();
-                    outcome.failure_breakdown.examine += batch.uids.len();
                     connection = None;
+                    let uid_count = batch.uids.len();
+                    match requeue_or_none(
+                        identity_index,
+                        batch,
+                        attempts_remaining,
+                        BATCH_RETRY_BACKOFF,
+                    )
+                    .await
+                    {
+                        Some(item) => queue.lock().unwrap().push_back(item),
+                        None => {
+                            outcome.failed += uid_count;
+                            outcome.failure_breakdown.examine += uid_count;
+                        }
+                    }
                     continue;
                 }
             }
@@ -192,9 +277,22 @@ async fn run_worker(
             }
             Err(err) => {
                 let _ = multi_progress.println(format!("Error: {err}"));
-                outcome.failed += batch.uids.len();
-                outcome.failure_breakdown.batch_error += batch.uids.len();
                 connection = None;
+                let uid_count = batch.uids.len();
+                match requeue_or_none(
+                    identity_index,
+                    batch,
+                    attempts_remaining,
+                    BATCH_RETRY_BACKOFF,
+                )
+                .await
+                {
+                    Some(item) => queue.lock().unwrap().push_back(item),
+                    None => {
+                        outcome.failed += uid_count;
+                        outcome.failure_breakdown.batch_error += uid_count;
+                    }
+                }
             }
         }
     }
@@ -241,6 +339,18 @@ async fn process_batch_on_session(
     let mut outcome = BatchOutcome::default();
     for uid in &batch.uids {
         let eml_path = mailbox_dir.join(format!("{uid}.eml"));
+        // A UID whose `.eml` was never written -- the fetch phase above
+        // errored partway through, or silently dropped a FETCH response
+        // missing a body (`sink::fetch_uids`) -- is tallied and skipped
+        // here, before ever calling `transform()`, rather than letting it
+        // fail the read and print its own per-UID warning (ADR-0071). A
+        // single collapsed warning covers the whole batch below instead of
+        // one line per missing file.
+        if !eml_path.exists() {
+            outcome.failed += 1;
+            outcome.failure_breakdown.missing_file += 1;
+            continue;
+        }
         let transformed = multi_progress.suspend(|| transformer.transform(eml_path.clone()))?;
         match transformed {
             Some(transformed) => match transform::verify_transformed(&transformed) {
@@ -280,6 +390,16 @@ async fn process_batch_on_session(
                 outcome.failure_breakdown.parse_skipped += 1;
             }
         }
+    }
+
+    if outcome.failure_breakdown.missing_file > 0 {
+        let _ = multi_progress.println(format!(
+            "Warning: {} of {} message(s) in '{}' were missing from staging (fetch likely \
+             failed); they'll be retried next run",
+            outcome.failure_breakdown.missing_file,
+            batch.uids.len(),
+            batch.mailbox
+        ));
     }
 
     Ok(outcome)
@@ -549,18 +669,42 @@ pub(crate) struct JobSummary {
 /// fixes Context problem 1, the concurrency-capped-by-mailbox-count bug),
 /// then runs each identity's dedup pass and (if `remote` is given) upload
 /// phase sequentially, one identity after another.
+///
+/// `max_connections_per_identity` bounds how many workers can be connected
+/// to any one identity at once (ADR-0071), independent of `concurrency`
+/// itself -- see `run_worker`'s doc comment for why that's needed.
 pub(crate) async fn run_email_sync_job(
     identities: Vec<IdentityContext>,
     pending_by_identity: Vec<Vec<PendingMailbox>>,
     concurrency: usize,
+    max_connections_per_identity: usize,
     remote: Option<(&BucketConfig, &str)>,
     encryptor: Option<&Aes256GcmSivEncryptor>,
 ) -> Result<JobSummary, String> {
     let encrypt = encryptor.is_some();
-    let mut all_batches: VecDeque<(usize, Batch)> = VecDeque::new();
-    for (index, pending) in pending_by_identity.iter().enumerate() {
-        let batches = super::batches_from_pending(pending, concurrency);
-        all_batches.extend(batches.into_iter().map(|batch| (index, batch)));
+
+    // Interleaved round-robin across identities (ADR-0071), rather than one
+    // identity's batches all pushed contiguously: with the per-identity
+    // connection cap below, a queue front-loaded with one identity's batches
+    // would otherwise stall every worker on that identity's semaphore while
+    // other identities' independent, immediately-runnable work sat idle
+    // further back in the same queue.
+    let mut per_identity_batches: Vec<VecDeque<Batch>> = pending_by_identity
+        .iter()
+        .map(|pending| super::batches_from_pending(pending, concurrency).into())
+        .collect();
+    let mut all_batches: VecDeque<(usize, Batch, u8)> = VecDeque::new();
+    loop {
+        let mut any_left = false;
+        for (index, batches) in per_identity_batches.iter_mut().enumerate() {
+            if let Some(batch) = batches.pop_front() {
+                all_batches.push_back((index, batch, BATCH_RETRIES));
+                any_left = true;
+            }
+        }
+        if !any_left {
+            break;
+        }
     }
 
     // A fixed-size pool of `concurrency` persistent workers pulling from one
@@ -569,14 +713,30 @@ pub(crate) async fn run_email_sync_job(
     let worker_count = concurrency.max(1).min(all_batches.len().max(1));
     let queue = Arc::new(Mutex::new(all_batches));
     let identities = Arc::new(identities);
+    let identity_semaphores: Arc<Vec<Arc<Semaphore>>> = Arc::new(
+        identities
+            .iter()
+            .map(|_| {
+                Arc::new(Semaphore::new(
+                    concurrency.min(max_connections_per_identity).max(1),
+                ))
+            })
+            .collect(),
+    );
     let multi_progress = MultiProgress::new();
 
     let mut handles = Vec::with_capacity(worker_count);
     for _ in 0..worker_count {
         let queue = Arc::clone(&queue);
         let identities = Arc::clone(&identities);
+        let identity_semaphores = Arc::clone(&identity_semaphores);
         let multi_progress = multi_progress.clone();
-        handles.push(tokio::spawn(run_worker(queue, identities, multi_progress)));
+        handles.push(tokio::spawn(run_worker(
+            queue,
+            identities,
+            identity_semaphores,
+            multi_progress,
+        )));
     }
 
     let mut summary = JobSummary::default();
@@ -710,6 +870,33 @@ mod tests {
 
         assert_eq!(result, Ok("connected"));
         assert_eq!(attempts.load(Ordering::SeqCst), 1);
+    }
+
+    fn test_batch() -> Batch {
+        Batch {
+            mailbox: "INBOX".to_string(),
+            mailbox_relpath: PathBuf::from("inbox"),
+            uids: vec![1, 2, 3],
+        }
+    }
+
+    #[tokio::test]
+    async fn requeue_or_none_returns_none_once_attempts_are_exhausted() {
+        let result = requeue_or_none(0, test_batch(), 0, Duration::from_millis(1)).await;
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn requeue_or_none_requeues_with_one_fewer_attempt_remaining() {
+        let (identity_index, batch, attempts_remaining) =
+            requeue_or_none(2, test_batch(), BATCH_RETRIES, Duration::from_millis(1))
+                .await
+                .unwrap();
+
+        assert_eq!(identity_index, 2);
+        assert_eq!(batch.uids, vec![1, 2, 3]);
+        assert_eq!(attempts_remaining, BATCH_RETRIES - 1);
     }
 
     fn test_ctx(staging_dir: &Path, output_dir: &Path) -> IdentityContext {

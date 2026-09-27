@@ -48,10 +48,10 @@ run = ".github/scripts/adr-issue.sh \"$@\""
 # terragrunt defaults to invoking `tofu`; this repo standardizes on Terraform.
 TG_TF_PATH = "terraform"
 
-[tasks.fmt]
+[tasks.fmt-terraform]
 run = ["terragrunt hcl format", "terraform fmt -recursive"]
 
-[tasks.fmt-check]
+[tasks.fmt-check-terraform]
 run = ["terragrunt hcl format --check", "terraform fmt -recursive -check"]
 
 [tasks.plan]

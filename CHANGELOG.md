@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `terraform/<provider>/<module>`, or `repo`
 for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-09-27
+
+- [pigeon-cli] ADR-0065: fix a `job run email-sync` crash caused by a single unparseable `BODYSTRUCTURE` message aborting an entire mailbox's manifest gathering -- `pull_manifest` now bisects the UID batch to isolate just the poisoned message(s) ([#65](https://github.com/noisypigeon/pigeon/pull/65)).
+
 ## 2026-09-26
 
 - [terraform/digitalocean/droplet] Fix droplet module's access-key dependency source ([#63](https://github.com/noisypigeon/pigeon/pull/63))

@@ -88,9 +88,10 @@ pub fn verify_login(
     runtime.block_on(async {
         let mut session =
             connect_and_login(host, port, email, secret, accept_invalid_certs).await?;
-        session
-            .logout()
-            .await
-            .map_err(|err| format!("logout failed: {err}"))
+        // Best-effort (ADR-0068): LOGIN already succeeded by this point, so
+        // a logout-time disconnect must not make a valid credential look
+        // rejected.
+        let _ = session.logout().await;
+        Ok(())
     })
 }

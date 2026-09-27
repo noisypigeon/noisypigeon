@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-27
 
+- [terraform/scaleway/iam-policy] feat(adr-0069): guard scaleway/iam-policy against bucket-policy self-lockout ([#71](https://github.com/noisypigeon/pigeon/pull/71))
+
 - [blog] ADR-0067: rewrite the noisypigeon.github.io blog from Jekyll to Zola as `service/blog` ([#66](https://github.com/noisypigeon/pigeon/pull/66))
 - [pigeon-cli] ADR-0068: treat IMAP `LOGOUT` failures as best-effort, not fatal -- fixes a crash (and silent manifest-data loss) when the connection drops right after a successful `job run email-sync` mailbox scan ([#67](https://github.com/noisypigeon/pigeon/pull/67)).
 

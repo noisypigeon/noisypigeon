@@ -5,11 +5,13 @@ Not versioned — for versioned, package-scoped changelogs see
 [`service/pigeon-cli/CHANGELOG.md`](service/pigeon-cli/CHANGELOG.md) (the
 `pigeon-cli` crate) and `terraform/modules/*/*/CHANGELOG.md` (each
 Terraform module). Entry format: `- [<scope>] <summary> ([#N](PR URL))`,
-where `<scope>` is `pigeon-cli`, `terraform/<provider>/<module>`, or `repo`
-for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
+where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
+`repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
 ## 2026-09-27
+
+- [blog] ADR-0067: rewrite the noisypigeon.github.io blog from Jekyll to Zola as `service/blog` ([#66](https://github.com/noisypigeon/pigeon/pull/66))
 
 - [terraform/scaleway/iam-policy] feat(adr-0066): guard scaleway/iam-policy against bucket-scope widening ([#64](https://github.com/noisypigeon/pigeon/pull/64))
 

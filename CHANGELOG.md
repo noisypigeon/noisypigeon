@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-27
 
+- [pigeon-cli] feat(adr-0073): add cross-cutting observability -- structured tracing, a durable JSONL log, and CPU/mem/disk telemetry via one Observable trait reused by every command ([#80](https://github.com/noisypigeon/noisypigeon/pull/80))
+
 - [terraform/scaleway/object-bucket] fix(adr-0072): raise GLACIER transition to Scaleway's 90-day minimum ([#77](https://github.com/noisypigeon/noisypigeon/pull/77))
 
 - [terraform/scaleway/iam-policy] fix(adr-0070): downgrade admin bucket-policy statement to a supported version ([#73](https://github.com/noisypigeon/noisypigeon/pull/73))

@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `terraform/<provider>/<module>`, or `repo`
 for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-09-27
+
+- [terraform/scaleway/iam-policy] feat(adr-0066): guard scaleway/iam-policy against bucket-scope widening ([#64](https://github.com/noisypigeon/pigeon/pull/64))
+
 ## 2026-09-26
 
 - [terraform/digitalocean/droplet] Fix droplet module's access-key dependency source ([#63](https://github.com/noisypigeon/pigeon/pull/63))

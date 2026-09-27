@@ -164,10 +164,9 @@ pub(crate) async fn gather_pending(
     }
     bar.finish();
 
-    session
-        .logout()
-        .await
-        .map_err(|err| format!("logout failed: {err}"))?;
+    // Best-effort (ADR-0068): every mailbox's manifest is already gathered
+    // by this point, so a logout-time disconnect must not discard it.
+    let _ = session.logout().await;
 
     manifest::save_manifest(&ctx.staging_dir, &fresh_manifest)?;
 

@@ -114,10 +114,9 @@ async fn run_async(
         summary.mailboxes += 1;
     }
 
-    session
-        .logout()
-        .await
-        .map_err(|err| format!("logout failed: {err}"))?;
+    // Best-effort (ADR-0068): every mailbox already fetched successfully by
+    // this point, so a logout-time disconnect must not discard `summary`.
+    let _ = session.logout().await;
 
     Ok(summary)
 }

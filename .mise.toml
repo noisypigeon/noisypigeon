@@ -2,6 +2,7 @@
 rust = "1.92.0"
 terraform = "1.16.3"
 terragrunt = "1.1.6"
+zola = "0.23.6"
 
 [tasks.build]
 run = """
@@ -59,3 +60,11 @@ run = "terragrunt run --all -- plan"
 
 [tasks.apply]
 run = "terragrunt run --all -- apply"
+
+[tasks.blog-build]
+dir = "service/blog"
+run = "zola build"
+
+[tasks.blog-serve]
+dir = "service/blog"
+run = "zola serve"

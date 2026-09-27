@@ -100,10 +100,17 @@ visible, unrequested change, not parity.
 ### Feed
 
 Current: `jekyll-feed` emits an Atom feed at `/posts_feed`. Zola equivalent:
-`generate_feeds = true` and `feed_filenames = ["posts_feed"]` set on
-`content/posts/_index.md`, reproducing the same feed URL scoped to posts. The
-generated XML won't be byte-identical (different Atom template internals) —
-accepted, since feed markup isn't part of the frozen UI/CSS.
+`generate_feeds = true` on `content/posts/_index.md`, plus a top-level
+`feed_filenames = ["posts_feed.xml"]` and a custom `templates/posts_feed.xml`
+Atom template. Confirmed during implementation, two constraints push the
+final URL to `/posts/posts_feed.xml` rather than the original `/posts_feed`:
+Zola's template loader only discovers feed templates with a recognized
+extension (an extensionless custom feed filename silently fails to
+resolve), and a section-scoped feed always renders under that section's own
+path, not the site root. Close, not exact, parity; accepted, since feed
+markup isn't part of the frozen UI/CSS, and the generated XML itself
+wouldn't have been byte-identical either way (different Atom template
+internals).
 
 ### Toolchain / mise
 

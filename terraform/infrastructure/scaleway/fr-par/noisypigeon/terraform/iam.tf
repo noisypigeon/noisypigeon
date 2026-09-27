@@ -3,8 +3,7 @@ module "iam" {
   name   = "${module.bucket.name}-iam"
 
   project_ids = [
-    local.scaleway_project_id_noisypigeon_com,
-    local.scaleway_project_id_pigeon_dev
+    local.scaleway_project_id_noisypigeon,
   ]
   project_permission_sets = [
     "InstancesFullAccess",

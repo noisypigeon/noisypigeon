@@ -46,8 +46,7 @@ generate "scaleway_ids" {
   contents  = <<EOF
 locals {
   scaleway_organization_id            = "${get_env("SCALEWAY_ORGANIZATION_ID", lookup(local.secrets, "SCALEWAY_ORGANIZATION_ID", ""))}"
-  scaleway_project_id_noisypigeon_com = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON_COM", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON_COM", ""))}"
-  scaleway_project_id_pigeon_dev      = "${get_env("SCALEWAY_PROJECT_ID_PIGEON_DEV", lookup(local.secrets, "SCALEWAY_PROJECT_ID_PIGEON_DEV", ""))}"
+  scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
 }
 EOF
 }

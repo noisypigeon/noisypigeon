@@ -185,6 +185,11 @@ async fn dispatch_async(
     concurrency: Option<usize>,
     yes: bool,
 ) -> i32 {
+    // Held for this whole async fn's lifetime -- every early `return fail(...)`
+    // below drops it, aborting the sampling task automatically (ADR-0073).
+    let _sampler =
+        crate::observability::resources::ResourceSampler::spawn(std::time::Duration::from_secs(5));
+
     let input_dir = match (InputDirInput { flag: input_dir }).resolve() {
         Ok(path) => path,
         Err(err) => return fail(err),

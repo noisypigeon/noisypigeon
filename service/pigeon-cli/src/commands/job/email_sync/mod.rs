@@ -70,6 +70,7 @@ pub(crate) struct PendingMailbox {
 /// display. Reports progress on `multi_progress` -- a connect status line
 /// plus a mailbox-scoped bar -- since this phase used to run completely
 /// silently (ADR-0032).
+#[tracing::instrument(skip(ctx, multi_progress), fields(identity = %ctx.identity.alias, email = %ctx.identity.email))]
 pub(crate) async fn gather_pending(
     ctx: &IdentityContext,
     multi_progress: &MultiProgress,

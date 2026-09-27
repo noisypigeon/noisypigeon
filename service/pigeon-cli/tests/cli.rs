@@ -108,6 +108,37 @@ fn keyring_list_on_empty_store_says_so() {
 }
 
 #[test]
+fn log_file_flag_writes_valid_jsonl_with_the_command_name() {
+    let config_dir = TempDir::new().unwrap();
+    let log_dir = TempDir::new().unwrap();
+    let log_file = log_dir.path().join("out.jsonl");
+
+    pigeon_in(&config_dir)
+        .args(["--log-file"])
+        .arg(&log_file)
+        .args(["keyring", "list"])
+        .assert()
+        .success();
+
+    let contents = fs::read_to_string(&log_file).unwrap();
+    assert!(!contents.trim().is_empty());
+
+    let mut saw_command_name = false;
+    for line in contents.lines() {
+        let value: serde_json::Value = serde_json::from_str(line)
+            .unwrap_or_else(|err| panic!("invalid JSON line {line:?}: {err}"));
+        let text = value.to_string();
+        if text.contains("keyring.list") {
+            saw_command_name = true;
+        }
+    }
+    assert!(
+        saw_command_name,
+        "expected at least one log line naming the keyring.list command, got: {contents}"
+    );
+}
+
+#[test]
 fn keyring_list_shows_both_kinds() {
     let config_dir = TempDir::new().unwrap();
     write_identity(&config_dir, "first-last", "first.last@example.com");

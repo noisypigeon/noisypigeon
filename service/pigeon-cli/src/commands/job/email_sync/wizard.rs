@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use dialoguer::{Confirm, Input, MultiSelect, theme::ColorfulTheme};
+use dialoguer::{Input, MultiSelect, theme::ColorfulTheme};
 
 use crate::commands::FAILURE_EXIT_CODE;
+use crate::commands::job::shared_wizard::{ConfirmInput, EncryptionKeyInput, UploadTargetInput};
 use crate::commands::keyring::email::identity::Identity;
 use crate::commands::keyring::store::Store;
 use crate::core::crypto::Aes256GcmSivEncryptor;
@@ -120,121 +121,6 @@ impl WizardInput for LocalOutputInput {
     }
 }
 
-/// Resolves whether (and where) to upload (ADR-0021 §5 amendment):
-/// `Some(alias)` if `--remote-output` is given (validated by the caller,
-/// unchanged); on a TTY if omitted, asks whether to upload at all and, if
-/// so, reuses `Store::prompt_select_bucket` (ADR-0022 -- scoped to
-/// bucket-configs only, ignoring any configured email identities) to pick
-/// among `store`'s configured bucket-configs (auto-selecting the only one
-/// if there's exactly one, or printing `prompt_select_bucket`'s own "run
-/// keyring add bucket" message and skipping upload if there are none); if
-/// omitted and non-interactive, silently returns `None` (skip upload) --
-/// same "no error, safe prior default" reasoning as `LocalOutputInput`.
-struct RemoteOutputInput<'a> {
-    flag: Option<String>,
-    store: &'a Store,
-}
-
-impl WizardInput for RemoteOutputInput<'_> {
-    type Value = Option<String>;
-
-    fn flag_value(&self) -> Option<Result<Option<String>, String>> {
-        self.flag.clone().map(|alias| Ok(Some(alias)))
-    }
-
-    fn prompt(&self) -> Result<Option<String>, String> {
-        let upload = Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Upload to a bucket-config?")
-            .default(false)
-            .interact()
-            .map_err(|err| format!("failed to read confirmation: {err}"))?;
-        if !upload {
-            return Ok(None);
-        }
-        match self.store.prompt_select_bucket() {
-            Ok(bucket_config) => Ok(Some(bucket_config.alias.clone())),
-            Err(message) => {
-                println!("{message}");
-                Ok(None)
-            }
-        }
-    }
-
-    fn non_interactive_fallback(&self) -> Result<Option<String>, String> {
-        Ok(None)
-    }
-}
-
-/// Resolves which encryption key to use (ADR-0027, amended): `--encryption-key`
-/// always wins outright. Otherwise, only when `uploading` (there's an upload
-/// target at all -- nothing to encrypt otherwise): if the target bucket has
-/// a `bucket_default` key, asks to use it (default yes) or pick a different
-/// one instead (declining both skips encryption for this run); if it has no
-/// default, asks "Encrypt this upload?" from scratch, mirroring
-/// `RemoteOutputInput`'s own confirm-then-select shape. Non-interactively,
-/// falls back to the bucket's default (if any) rather than always skipping
-/// encryption -- the fix this amendment exists for: a scripted/cron run
-/// against a bucket configured with a default key now gets encrypted
-/// uploads without repeating `--encryption-key` every time.
-struct EncryptionKeyInput<'a> {
-    flag: Option<String>,
-    store: &'a Store,
-    uploading: bool,
-    bucket_default: Option<String>,
-}
-
-impl WizardInput for EncryptionKeyInput<'_> {
-    type Value = Option<String>;
-
-    fn flag_value(&self) -> Option<Result<Option<String>, String>> {
-        self.flag.clone().map(|alias| Ok(Some(alias)))
-    }
-
-    fn prompt(&self) -> Result<Option<String>, String> {
-        if !self.uploading {
-            return Ok(None);
-        }
-        if let Some(default_alias) = &self.bucket_default {
-            let use_default = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt(format!("Encrypt this upload using '{default_alias}'?"))
-                .default(true)
-                .interact()
-                .map_err(|err| format!("failed to read confirmation: {err}"))?;
-            if use_default {
-                return Ok(Some(default_alias.clone()));
-            }
-            let use_different = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Use a different encryption key instead?")
-                .default(false)
-                .interact()
-                .map_err(|err| format!("failed to read confirmation: {err}"))?;
-            if !use_different {
-                return Ok(None);
-            }
-        } else {
-            let encrypt = Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Encrypt this upload?")
-                .default(false)
-                .interact()
-                .map_err(|err| format!("failed to read confirmation: {err}"))?;
-            if !encrypt {
-                return Ok(None);
-            }
-        }
-        match self.store.prompt_select_encryption_key() {
-            Ok(key) => Ok(Some(key.alias.clone())),
-            Err(message) => {
-                println!("{message}");
-                Ok(None)
-            }
-        }
-    }
-
-    fn non_interactive_fallback(&self) -> Result<Option<String>, String> {
-        Ok(self.bucket_default.clone())
-    }
-}
-
 /// Prints a per-identity manifest summary table (ADR-0021 §5). `ATTACHMENTS`
 /// is a `BODYSTRUCTURE`-derived estimate, not authoritative (ADR-0032).
 pub(crate) fn print_manifest_summary(summaries: &[IdentityManifestSummary]) {
@@ -342,39 +228,6 @@ impl WizardInput for ConcurrencyInput {
 
     fn non_interactive_fallback(&self) -> Result<usize, String> {
         Err("--concurrency is required when not running interactively".to_string())
-    }
-}
-
-/// The final "proceed?" gate. `--yes` skips it outright; otherwise prompts
-/// on a TTY, and errors outside one (there is no sane way to read a
-/// yes/no answer from a pipe without an established convention for it here
-/// -- unlike `Password`/`Confirm` elsewhere in this codebase, which do have
-/// one; requiring `--yes` for a non-interactive run is simpler and safer
-/// than inventing a new one solely for this prompt).
-struct ConfirmInput {
-    yes: bool,
-}
-
-impl WizardInput for ConfirmInput {
-    type Value = bool;
-
-    fn flag_value(&self) -> Option<Result<bool, String>> {
-        self.yes.then_some(Ok(true))
-    }
-
-    fn prompt(&self) -> Result<bool, String> {
-        Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Proceed?")
-            .default(true)
-            .interact()
-            .map_err(|err| format!("failed to read confirmation: {err}"))
-    }
-
-    fn non_interactive_fallback(&self) -> Result<bool, String> {
-        Err(
-            "confirmation is required when not running interactively (pass --yes to skip)"
-                .to_string(),
-        )
     }
 }
 
@@ -492,7 +345,7 @@ async fn dispatch_async(
         return 0;
     }
 
-    let resolved_remote_alias = match (RemoteOutputInput {
+    let resolved_remote_alias = match (UploadTargetInput {
         flag: remote_output,
         store: &keyring_store,
     })
@@ -636,7 +489,7 @@ mod tests {
     fn resolve_remote_output_returns_given_alias_unchanged() {
         let store = Store::default();
         assert_eq!(
-            (RemoteOutputInput {
+            (UploadTargetInput {
                 flag: Some("backup".to_string()),
                 store: &store,
             })

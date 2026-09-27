@@ -1,20 +1,19 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::fs;
-use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use futures::{StreamExt, stream};
-use indicatif::{MultiProgress, ProgressBar};
+use indicatif::MultiProgress;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
-use crate::commands::keyring::bucket::client;
+use crate::commands::job::upload::{self, UploadedIndex};
 use crate::commands::keyring::bucket::store::BucketConfig;
 use crate::commands::keyring::email::identity;
 use crate::commands::keyring::email::imap_client::{self, ImapSession};
-use crate::core::crypto::{Aes256GcmSivEncryptor, Encryptor};
-use crate::core::data::{ContentIndex, Transform, collect_files};
+use crate::core::crypto::Aes256GcmSivEncryptor;
+use crate::core::data::{ContentIndex, Transform};
+use crate::core::retry::retry_with_backoff;
 
 use super::dedup::{self, EmailDedup};
 use super::manifest::{self, Batch, CheckpointEntry};
@@ -34,45 +33,6 @@ const RETRY_BACKOFF: Duration = Duration::from_secs(5);
 /// connection, not just a repeated command.
 const BATCH_RETRIES: u8 = 2;
 const BATCH_RETRY_BACKOFF: Duration = Duration::from_secs(2);
-
-/// Retries `f` up to `attempts` times, sleeping `backoff * attempt_number`
-/// between tries (linear: `backoff`, `2*backoff`, ...) before giving up --
-/// absorbs a transient provider-side throttle (e.g. a burst of
-/// `concurrency` workers all connecting within the same instant at job
-/// start) instead of failing on the first timeout. Generic over `f` so it's
-/// testable without any real I/O (see the unit tests below).
-pub(crate) async fn retry_with_backoff<T, F, Fut>(
-    attempts: usize,
-    backoff: Duration,
-    mut f: F,
-) -> Result<T, String>
-where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = Result<T, String>>,
-{
-    let mut last_err = None;
-    for attempt in 0..attempts.max(1) {
-        if attempt > 0 {
-            tokio::time::sleep(backoff * attempt as u32).await;
-        }
-        match f().await {
-            Ok(value) => return Ok(value),
-            Err(err) => {
-                tracing::warn!(
-                    attempt = attempt + 1,
-                    attempts,
-                    error = %err,
-                    "retrying after error"
-                );
-                last_err = Some(err);
-            }
-        }
-    }
-    if let Some(err) = &last_err {
-        tracing::error!(attempts, error = %err, "retries exhausted");
-    }
-    Err(last_err.unwrap_or_else(|| "retry_with_backoff called with zero attempts".to_string()))
-}
 
 /// Connects and logs in to `ctx`'s identity, retrying on failure per
 /// `retry_with_backoff` (ADR-0021 §6 addendum) -- used by `gather_pending`'s
@@ -487,257 +447,6 @@ async fn process_batch_on_session(
     Ok(outcome)
 }
 
-/// One file queued for upload, carrying everything the concurrent upload
-/// phase needs without re-deriving it: which identity's `.uploaded` index
-/// to commit into, the absolute path to read, and its already-computed S3
-/// key.
-struct UploadTask {
-    identity: String,
-    staging_dir: PathBuf,
-    path: PathBuf,
-    key: String,
-}
-
-const UPLOAD_RETRIES: usize = 3;
-const UPLOAD_RETRY_BACKOFF: Duration = Duration::from_secs(2);
-
-const UPLOADED_FILE_NAME: &str = ".uploaded";
-
-/// Tracks which output files (by their S3 key, per `upload_key`) have
-/// already been confirmed uploaded, so a resumed/re-run upload phase can
-/// skip them without a redundant network round-trip. Purely a
-/// resumability-speed optimization, not a correctness requirement --
-/// `client::upload_if_changed`'s ETag comparison is already idempotent on
-/// its own.
-struct UploadedIndex {
-    uploaded: HashSet<String>,
-}
-
-impl UploadedIndex {
-    fn load(staging_dir: &Path) -> Result<UploadedIndex, String> {
-        let path = staging_dir.join(UPLOADED_FILE_NAME);
-        let contents = match fs::read_to_string(&path) {
-            Ok(contents) => contents,
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => String::new(),
-            Err(err) => return Err(format!("failed to read {}: {err}", path.display())),
-        };
-        Ok(UploadedIndex {
-            uploaded: contents.lines().map(str::to_string).collect(),
-        })
-    }
-
-    fn contains(&self, key: &str) -> bool {
-        self.uploaded.contains(key)
-    }
-
-    fn commit(&mut self, staging_dir: &Path, key: &str) -> Result<(), String> {
-        use std::io::Write;
-        let path = staging_dir.join(UPLOADED_FILE_NAME);
-        let mut file = fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)
-            .map_err(|err| format!("failed to open {}: {err}", path.display()))?;
-        writeln!(file, "{key}")
-            .map_err(|err| format!("failed to write {}: {err}", path.display()))?;
-        self.uploaded.insert(key.to_string());
-        Ok(())
-    }
-}
-
-/// The S3 key for `path` (an absolute path rooted at `output_dir`):
-/// `output_dir`'s relative tree mirrored directly at the bucket root, per
-/// ADR-0011. Joined component-wise rather than via `to_string_lossy()` on
-/// the whole relative path so the key always uses `/`, regardless of the
-/// host platform's path separator. When `encrypt` is true, appends `.enc`
-/// so the final key is what actually gets uploaded (ciphertext) and is what
-/// `UploadedIndex`/`client::upload_if_changed` key off of -- computed once,
-/// here, rather than branched again at upload time (ADR-0025).
-fn upload_key(output_dir: &Path, path: &Path, encrypt: bool) -> Result<String, String> {
-    let relative = path
-        .strip_prefix(output_dir)
-        .map_err(|_| format!("{} is not under {}", path.display(), output_dir.display()))?;
-    let key = relative
-        .components()
-        .map(|component| component.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/");
-    Ok(if encrypt { format!("{key}.enc") } else { key })
-}
-
-/// Outcome of one identity's upload phase.
-#[derive(Debug, Default)]
-struct UploadSummary {
-    uploaded: usize,
-    unchanged: usize,
-    upload_failed: usize,
-}
-
-/// Builds this identity's not-yet-uploaded file list (per ADR-0019's
-/// `.uploaded` tracking) and loads its index, without uploading anything --
-/// kept separate from the upload itself (ADR-0024 §1) so it's unit-testable
-/// without any network call, and so every identity's tasks can be gathered
-/// into one shared queue before the concurrent upload phase runs.
-fn pending_upload_tasks(
-    ctx: &IdentityContext,
-    identity_dir: &Path,
-    encrypt: bool,
-) -> Result<(Vec<UploadTask>, UploadedIndex), String> {
-    let uploaded_index = UploadedIndex::load(&ctx.staging_dir)?;
-    let mut tasks = Vec::new();
-    for path in collect_files(identity_dir)? {
-        let key = upload_key(&ctx.output_dir, &path, encrypt)?;
-        if !uploaded_index.contains(&key) {
-            tasks.push(UploadTask {
-                identity: ctx.identity.alias.clone(),
-                staging_dir: ctx.staging_dir.clone(),
-                path,
-                key,
-            });
-        }
-    }
-    Ok((tasks, uploaded_index))
-}
-
-/// Commits a successful upload into the uploading identity's index, locked
-/// only for the duration of this call -- identities never contend on each
-/// other's lock, only concurrent uploads for the *same* identity do
-/// (ADR-0024 §3).
-fn commit_uploaded(
-    uploaded_indexes: &HashMap<PathBuf, Arc<Mutex<UploadedIndex>>>,
-    task: &UploadTask,
-) -> Result<(), String> {
-    let index = uploaded_indexes
-        .get(&task.staging_dir)
-        .expect("every task's staging_dir has a registered index");
-    index.lock().unwrap().commit(&task.staging_dir, &task.key)
-}
-
-/// Outcome of one file's upload attempt, for `run_upload_phase`'s summary
-/// fold.
-enum UploadOutcomeKind {
-    Uploaded,
-    Unchanged,
-    Failed,
-}
-
-/// Reads and uploads one file, retrying transient failures with backoff the
-/// same way `connect_with_retry` does for IMAP (ADR-0024 §6), then commits
-/// success into its identity's index and advances the shared progress bar.
-/// A file that still fails after exhausting retries is warned about via
-/// `multi_progress.println` (load-bearing now that upload bars are live,
-/// ADR-0024 §4/ADR-0015) and counted as failed -- never committed, so it's
-/// retried again on the job's next invocation.
-#[tracing::instrument(
-    skip(task, uploaded_indexes, bucket_config, secret, encryptor, bar, multi_progress),
-    fields(identity = %task.identity, file = %task.path.display())
-)]
-async fn upload_one(
-    task: UploadTask,
-    uploaded_indexes: &HashMap<PathBuf, Arc<Mutex<UploadedIndex>>>,
-    bucket_config: &BucketConfig,
-    secret: &str,
-    encryptor: Option<&Aes256GcmSivEncryptor>,
-    bar: &ProgressBar,
-    multi_progress: &MultiProgress,
-) -> UploadOutcomeKind {
-    let outcome = async {
-        let data = fs::read(&task.path)
-            .map_err(|err| format!("failed to read {}: {err}", task.path.display()))?;
-        // Deterministic encryption (ADR-0025): identical plaintext always
-        // yields identical ciphertext under the same key, so
-        // `upload_if_changed`'s MD5-vs-ETag dedup below needs no changes.
-        let data = match encryptor {
-            Some(encryptor) => encryptor.encrypt(&data)?,
-            None => data,
-        };
-        retry_with_backoff(UPLOAD_RETRIES, UPLOAD_RETRY_BACKOFF, || {
-            client::upload_if_changed(bucket_config, secret, &task.key, data.clone())
-        })
-        .await
-    }
-    .await;
-
-    bar.inc(1);
-    match outcome {
-        Ok(client::UploadOutcome::Uploaded) => {
-            let _ = commit_uploaded(uploaded_indexes, &task);
-            UploadOutcomeKind::Uploaded
-        }
-        Ok(client::UploadOutcome::Unchanged) => {
-            let _ = commit_uploaded(uploaded_indexes, &task);
-            UploadOutcomeKind::Unchanged
-        }
-        Err(err) => {
-            tracing::warn!(
-                identity = %task.identity,
-                file = %task.path.display(),
-                step = "upload",
-                error = %err,
-                "upload failed after retries"
-            );
-            let _ = multi_progress.println(format!(
-                "Warning: upload failed for {}: {err}",
-                task.path.display()
-            ));
-            UploadOutcomeKind::Failed
-        }
-    }
-}
-
-/// Uploads every task in `tasks` -- spanning every selected identity's
-/// not-yet-uploaded files, gathered once every identity's dedup pass has
-/// completed (ADR-0024 §1) -- concurrently at `concurrency`, via
-/// `stream::buffer_unordered` rather than a manual worker pool: uploads
-/// have no per-worker session to reuse (`client::upload_if_changed` already
-/// builds a fresh S3 client per call), so there's no connection-affinity
-/// reason to prefer the fetch/transform worker-pool shape here. Each task
-/// is yielded by `stream::iter` exactly once, so no two concurrently
-/// in-flight uploads can ever be for the same file (ADR-0024 §2).
-async fn run_upload_phase(
-    tasks: Vec<UploadTask>,
-    uploaded_indexes: &HashMap<PathBuf, Arc<Mutex<UploadedIndex>>>,
-    bucket_config: &BucketConfig,
-    secret: &str,
-    encryptor: Option<&Aes256GcmSivEncryptor>,
-    concurrency: usize,
-    multi_progress: &MultiProgress,
-) -> UploadSummary {
-    if tasks.is_empty() {
-        return UploadSummary::default();
-    }
-    let bar = sink::new_progress_bar("upload".to_string(), tasks.len() as u64, multi_progress);
-
-    let summary = stream::iter(tasks)
-        .map(|task| {
-            upload_one(
-                task,
-                uploaded_indexes,
-                bucket_config,
-                secret,
-                encryptor,
-                &bar,
-                multi_progress,
-            )
-        })
-        .buffer_unordered(concurrency.max(1))
-        .fold(
-            UploadSummary::default(),
-            |mut summary, outcome| async move {
-                match outcome {
-                    UploadOutcomeKind::Uploaded => summary.uploaded += 1,
-                    UploadOutcomeKind::Unchanged => summary.unchanged += 1,
-                    UploadOutcomeKind::Failed => summary.upload_failed += 1,
-                }
-                summary
-            },
-        )
-        .await;
-
-    bar.finish();
-    summary
-}
-
 /// Outcome of a full `job run email-sync` execution, across every selected
 /// identity.
 #[derive(Debug, Default)]
@@ -885,7 +594,13 @@ pub(crate) async fn run_email_sync_job(
         summary.deduped_attachments += dedup_summary.deduped_attachments;
 
         if remote.is_some() {
-            let (tasks, uploaded_index) = pending_upload_tasks(ctx, &identity_dir, encrypt)?;
+            let (tasks, uploaded_index) = upload::pending_upload_tasks(
+                &ctx.identity.alias,
+                &ctx.staging_dir,
+                &identity_dir,
+                &ctx.output_dir,
+                encrypt,
+            )?;
             all_upload_tasks.extend(tasks);
             uploaded_indexes.insert(
                 ctx.staging_dir.clone(),
@@ -895,7 +610,7 @@ pub(crate) async fn run_email_sync_job(
     }
 
     if let Some((bucket_config, secret)) = remote {
-        let upload_summary = run_upload_phase(
+        let upload_summary = upload::run_upload_phase(
             all_upload_tasks,
             &uploaded_indexes,
             bucket_config,
@@ -915,57 +630,7 @@ pub(crate) async fn run_email_sync_job(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::atomic::{AtomicUsize, Ordering};
-
     use super::*;
-
-    #[tokio::test]
-    async fn retry_with_backoff_succeeds_after_transient_failures() {
-        let attempts = AtomicUsize::new(0);
-        let result: Result<&str, String> =
-            retry_with_backoff(CONNECT_RETRIES, Duration::from_millis(1), || {
-                let count = attempts.fetch_add(1, Ordering::SeqCst) + 1;
-                async move {
-                    if count < 3 {
-                        Err(format!("attempt {count} failed"))
-                    } else {
-                        Ok("connected")
-                    }
-                }
-            })
-            .await;
-
-        assert_eq!(result, Ok("connected"));
-        assert_eq!(attempts.load(Ordering::SeqCst), 3);
-    }
-
-    #[tokio::test]
-    async fn retry_with_backoff_returns_the_last_error_after_exhausting_attempts() {
-        let attempts = AtomicUsize::new(0);
-        let result: Result<(), String> =
-            retry_with_backoff(CONNECT_RETRIES, Duration::from_millis(1), || {
-                let count = attempts.fetch_add(1, Ordering::SeqCst) + 1;
-                async move { Err(format!("attempt {count} failed")) }
-            })
-            .await;
-
-        assert_eq!(result, Err("attempt 3 failed".to_string()));
-        assert_eq!(attempts.load(Ordering::SeqCst), CONNECT_RETRIES);
-    }
-
-    #[tokio::test]
-    async fn retry_with_backoff_does_not_retry_a_first_success() {
-        let attempts = AtomicUsize::new(0);
-        let result: Result<&str, String> =
-            retry_with_backoff(CONNECT_RETRIES, Duration::from_millis(1), || {
-                attempts.fetch_add(1, Ordering::SeqCst);
-                async move { Ok("connected") }
-            })
-            .await;
-
-        assert_eq!(result, Ok("connected"));
-        assert_eq!(attempts.load(Ordering::SeqCst), 1);
-    }
 
     fn test_batch() -> Batch {
         Batch {
@@ -992,98 +657,5 @@ mod tests {
         assert_eq!(identity_index, 2);
         assert_eq!(batch.uids, vec![1, 2, 3]);
         assert_eq!(attempts_remaining, BATCH_RETRIES - 1);
-    }
-
-    fn test_ctx(staging_dir: &Path, output_dir: &Path) -> IdentityContext {
-        IdentityContext {
-            identity: crate::commands::keyring::email::identity::Identity {
-                alias: "alias".to_string(),
-                email: "person@example.com".to_string(),
-                provider: crate::commands::keyring::email::provider::Provider::Gmail,
-                host: "imap.gmail.com".to_string(),
-                port: 993,
-            },
-            secret: "secret".to_string(),
-            staging_dir: staging_dir.to_path_buf(),
-            output_dir: output_dir.to_path_buf(),
-        }
-    }
-
-    #[test]
-    fn pending_upload_tasks_includes_every_file_when_index_is_empty() {
-        let staging = tempfile::tempdir().unwrap();
-        let output = tempfile::tempdir().unwrap();
-        let identity_dir = output.path().join("alias-out");
-        fs::create_dir_all(&identity_dir).unwrap();
-        fs::write(identity_dir.join("a.md"), b"a").unwrap();
-        fs::write(identity_dir.join("b.md"), b"b").unwrap();
-
-        let ctx = test_ctx(staging.path(), output.path());
-        let (tasks, index) = pending_upload_tasks(&ctx, &identity_dir, false).unwrap();
-
-        let mut keys: Vec<String> = tasks.iter().map(|task| task.key.clone()).collect();
-        keys.sort();
-        assert_eq!(
-            keys,
-            vec!["alias-out/a.md".to_string(), "alias-out/b.md".to_string()]
-        );
-        assert!(!index.contains("alias-out/a.md"));
-    }
-
-    #[test]
-    fn pending_upload_tasks_skips_files_already_in_uploaded_index() {
-        let staging = tempfile::tempdir().unwrap();
-        let output = tempfile::tempdir().unwrap();
-        let identity_dir = output.path().join("alias-out");
-        fs::create_dir_all(&identity_dir).unwrap();
-        fs::write(identity_dir.join("a.md"), b"a").unwrap();
-        fs::write(identity_dir.join("b.md"), b"b").unwrap();
-
-        let ctx = test_ctx(staging.path(), output.path());
-        let key_a = upload_key(&ctx.output_dir, &identity_dir.join("a.md"), false).unwrap();
-        fs::write(
-            staging.path().join(UPLOADED_FILE_NAME),
-            format!("{key_a}\n"),
-        )
-        .unwrap();
-
-        let (tasks, index) = pending_upload_tasks(&ctx, &identity_dir, false).unwrap();
-
-        assert_eq!(tasks.len(), 1);
-        assert_eq!(
-            tasks[0].key,
-            upload_key(&ctx.output_dir, &identity_dir.join("b.md"), false).unwrap()
-        );
-        assert!(index.contains(&key_a));
-    }
-
-    #[test]
-    fn upload_key_appends_enc_suffix_when_encryption_enabled() {
-        let output = tempfile::tempdir().unwrap();
-        let path = output.path().join("alias-out").join("a.md");
-
-        assert_eq!(
-            upload_key(output.path(), &path, false).unwrap(),
-            "alias-out/a.md"
-        );
-        assert_eq!(
-            upload_key(output.path(), &path, true).unwrap(),
-            "alias-out/a.md.enc"
-        );
-    }
-
-    #[test]
-    fn pending_upload_tasks_uses_enc_suffixed_keys_when_encryption_enabled() {
-        let staging = tempfile::tempdir().unwrap();
-        let output = tempfile::tempdir().unwrap();
-        let identity_dir = output.path().join("alias-out");
-        fs::create_dir_all(&identity_dir).unwrap();
-        fs::write(identity_dir.join("a.md"), b"a").unwrap();
-
-        let ctx = test_ctx(staging.path(), output.path());
-        let (tasks, _index) = pending_upload_tasks(&ctx, &identity_dir, true).unwrap();
-
-        assert_eq!(tasks.len(), 1);
-        assert_eq!(tasks[0].key, "alias-out/a.md.enc");
     }
 }

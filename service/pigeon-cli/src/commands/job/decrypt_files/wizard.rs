@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
-use dialoguer::{Confirm, Input, theme::ColorfulTheme};
+use dialoguer::Input;
 
 use crate::commands::FAILURE_EXIT_CODE;
+use crate::commands::job::shared_wizard::{ConcurrencyInput, ConfirmInput};
 use crate::commands::keyring::store::Store;
 use crate::core::crypto::Aes256GcmSivEncryptor;
 use crate::core::job::Job;
@@ -89,63 +90,6 @@ impl WizardInput for EncryptionKeyInput<'_> {
 
     fn non_interactive_fallback(&self) -> Result<String, String> {
         Err("--encryption-key is required when not running interactively".to_string())
-    }
-}
-
-/// Resolves the decrypt concurrency: `--concurrency` if given, a plain
-/// interactive prompt otherwise -- no time-estimate table (unlike
-/// `email_sync::wizard::ConcurrencyInput`), since no throughput data exists
-/// for this workload either (ADR-0021 §9's own reasoning applies here too).
-struct ConcurrencyInput {
-    flag: Option<usize>,
-}
-
-impl WizardInput for ConcurrencyInput {
-    type Value = usize;
-
-    fn flag_value(&self) -> Option<Result<usize, String>> {
-        self.flag.map(|value| Ok(value.max(1)))
-    }
-
-    fn prompt(&self) -> Result<usize, String> {
-        let value = Input::<usize>::new()
-            .with_prompt("Concurrency")
-            .default(4)
-            .interact_text()
-            .map_err(|err| format!("failed to read concurrency: {err}"))?;
-        Ok(value.max(1))
-    }
-
-    fn non_interactive_fallback(&self) -> Result<usize, String> {
-        Err("--concurrency is required when not running interactively".to_string())
-    }
-}
-
-/// The final "proceed?" gate, identical to `email_sync::wizard::ConfirmInput`.
-struct ConfirmInput {
-    yes: bool,
-}
-
-impl WizardInput for ConfirmInput {
-    type Value = bool;
-
-    fn flag_value(&self) -> Option<Result<bool, String>> {
-        self.yes.then_some(Ok(true))
-    }
-
-    fn prompt(&self) -> Result<bool, String> {
-        Confirm::with_theme(&ColorfulTheme::default())
-            .with_prompt("Proceed?")
-            .default(true)
-            .interact()
-            .map_err(|err| format!("failed to read confirmation: {err}"))
-    }
-
-    fn non_interactive_fallback(&self) -> Result<bool, String> {
-        Err(
-            "confirmation is required when not running interactively (pass --yes to skip)"
-                .to_string(),
-        )
     }
 }
 

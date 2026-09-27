@@ -450,3 +450,101 @@ fn job_run_decrypt_files_rejects_same_input_and_output_dir() {
             "--input-dir and --output-dir must not be the same directory",
         ));
 }
+
+#[test]
+fn job_run_help_lists_pull_transform() {
+    pigeon()
+        .args(["job", "run", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("pull-transform"));
+}
+
+#[test]
+fn job_run_pull_transform_help_shows_source_bucket_and_concurrency_flags() {
+    pigeon()
+        .args(["job", "run", "pull-transform", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--source-bucket"))
+        .stdout(predicate::str::contains("--local-output"))
+        .stdout(predicate::str::contains("--remote-output"))
+        .stdout(predicate::str::contains("--encryption-key"))
+        .stdout(predicate::str::contains("--concurrency"));
+}
+
+#[test]
+fn job_run_pull_transform_without_source_bucket_fails_fast_non_interactively() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "pull-transform",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "--source-bucket is required when not running interactively",
+        ));
+}
+
+#[test]
+fn job_run_pull_transform_with_unknown_bucket_fails_fast() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "pull-transform",
+            "--source-bucket",
+            "no-such-bucket",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "no bucket-config named 'no-such-bucket'",
+        ));
+}
+
+#[test]
+fn job_run_pull_transform_without_ffmpeg_on_path_fails_fast_with_a_clear_error() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+    let empty_path_dir = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .env("PATH", empty_path_dir.path())
+        .args([
+            "job",
+            "run",
+            "pull-transform",
+            "--source-bucket",
+            "backup",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("was not found on PATH"));
+}

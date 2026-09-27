@@ -112,6 +112,45 @@ pub enum JobType {
         #[arg(long)]
         yes: bool,
     },
+
+    /// Recursively pulls every object from a bucket-config, expands zips,
+    /// recodes media into a size-optimized canonical format per category
+    /// (photo/screenshot -> jpg, video -> mp4, audio -> m4a), dates and
+    /// dedups everything by content, and organizes the result by extension
+    /// -- then optionally encrypts and uploads it to a (possibly
+    /// different) bucket-config (ADR-0074). Requires `ffmpeg`/`ffprobe` on
+    /// `PATH`.
+    PullTransform {
+        /// Alias of a configured bucket-config (see `pigeon keyring add
+        /// bucket`) to pull from. Interactively selected from the
+        /// configured bucket-configs when omitted and stdin is a terminal;
+        /// required otherwise.
+        #[arg(long)]
+        source_bucket: Option<String>,
+
+        /// Local directory to stage and store output under. Defaults to a
+        /// directory under the OS temp directory when omitted.
+        #[arg(long)]
+        local_output: Option<PathBuf>,
+
+        /// Alias of a configured bucket-config to upload the organized
+        /// result to, once local processing is complete.
+        #[arg(long)]
+        remote_output: Option<String>,
+
+        /// Alias of a configured encryption key, overriding the target
+        /// bucket-config's own default (if any).
+        #[arg(long)]
+        encryption_key: Option<String>,
+
+        /// Maximum number of files to download/recode concurrently.
+        #[arg(long)]
+        concurrency: Option<usize>,
+
+        /// Skip the final "proceed?" confirmation.
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 impl Observable for JobType {
@@ -119,6 +158,7 @@ impl Observable for JobType {
         match self {
             JobType::EmailSync { .. } => "job.email-sync",
             JobType::DecryptFiles { .. } => "job.decrypt-files",
+            JobType::PullTransform { .. } => "job.pull-transform",
         }
     }
 }

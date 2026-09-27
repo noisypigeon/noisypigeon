@@ -310,4 +310,72 @@ mod tests {
     fn exif_date_returns_none_for_non_image_bytes() {
         assert_eq!(exif_date(b"not an image"), None);
     }
+
+    /// Generates a tiny synthetic clip via `ffmpeg`'s `lavfi` test-source
+    /// input -- real regression coverage for the `probe`/`recode`/`verify`
+    /// trio against an actual `ffmpeg` invocation, not just the pure
+    /// parsing/heuristic functions above. Skipped (not failed) if `ffmpeg`
+    /// genuinely isn't on `PATH`, since this whole job already refuses to
+    /// run without it (`check_ffmpeg_available`) -- this test would just be
+    /// redundant with that failure on a machine that can't run it anyway.
+    async fn generate_test_clip(dir: &Path, name: &str) -> Option<std::path::PathBuf> {
+        if check_ffmpeg_available().await.is_err() {
+            eprintln!("skipping: ffmpeg/ffprobe not found on PATH");
+            return None;
+        }
+        let path = dir.join(name);
+        let output = tokio::process::Command::new("ffmpeg")
+            .args([
+                "-y",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=size=320x240:duration=1:rate=10",
+                "-pix_fmt",
+                "yuv420p",
+            ])
+            .arg(&path)
+            .output()
+            .await
+            .expect("failed to spawn ffmpeg");
+        assert!(
+            output.status.success(),
+            "ffmpeg fixture generation failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        Some(path)
+    }
+
+    #[tokio::test]
+    async fn probe_reports_dimensions_and_duration_for_a_real_clip() {
+        let dir = tempfile::tempdir().unwrap();
+        let Some(clip) = generate_test_clip(dir.path(), "clip.mov").await else {
+            return;
+        };
+
+        let info = probe(&clip).await.unwrap();
+
+        assert_eq!(info.width, Some(320));
+        assert_eq!(info.height, Some(240));
+        assert!(info.duration_secs.unwrap() > 0.0);
+    }
+
+    #[tokio::test]
+    async fn recode_then_verify_round_trips_a_real_video() {
+        let dir = tempfile::tempdir().unwrap();
+        let Some(clip) = generate_test_clip(dir.path(), "clip.mov").await else {
+            return;
+        };
+        let before = probe(&clip).await.unwrap();
+        let output_path = dir.path().join("out.mp4");
+
+        recode(&clip, &output_path, MediaKind::Video, false)
+            .await
+            .expect("recode should succeed");
+        verify(before, &output_path)
+            .await
+            .expect("recoded output should verify against the original");
+    }
 }

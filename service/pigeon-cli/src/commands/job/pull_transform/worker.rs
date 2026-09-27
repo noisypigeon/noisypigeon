@@ -698,4 +698,59 @@ mod tests {
         assert_eq!(fs::read(a).unwrap(), b"a");
         assert_eq!(fs::read(b).unwrap(), b"b");
     }
+
+    /// End-to-end regression coverage for `process_media` against a real
+    /// `ffmpeg`-generated clip -- classify -> probe -> recode -> verify,
+    /// exactly as `process_item` drives it. Skipped (not failed) if
+    /// `ffmpeg` isn't on `PATH`, same reasoning as `media`'s own tests.
+    #[tokio::test]
+    async fn process_media_recodes_a_real_video_to_mp4() {
+        if media::check_ffmpeg_available().await.is_err() {
+            eprintln!("skipping: ffmpeg/ffprobe not found on PATH");
+            return;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        let source = dir.path().join("clip.mov");
+        let output = tokio::process::Command::new("ffmpeg")
+            .args([
+                "-y",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=size=320x240:duration=1:rate=10",
+                "-pix_fmt",
+                "yuv420p",
+            ])
+            .arg(&source)
+            .output()
+            .await
+            .unwrap();
+        assert!(output.status.success());
+        let bytes = fs::read(&source).unwrap();
+
+        let tmp_dir = dir.path().join("tmp");
+        let scratch_dir = dir.path().join("scratch");
+        let counter = AtomicU64::new(0);
+
+        let (file, recoded, fell_back) = process_media(
+            "clips/clip.mov",
+            "mov",
+            FileKind::Video,
+            bytes,
+            &tmp_dir,
+            &scratch_dir,
+            &counter,
+        )
+        .await
+        .unwrap();
+
+        assert!(recoded);
+        assert!(!fell_back);
+        assert_eq!(file.extension, "mp4");
+        assert!(file.is_media);
+        assert!(file.scratch_path.exists());
+        assert!(!file.content_hash.is_empty());
+    }
 }

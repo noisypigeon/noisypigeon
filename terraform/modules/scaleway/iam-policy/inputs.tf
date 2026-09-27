@@ -52,6 +52,14 @@ variable "bucket_names" {
   type        = map(string)
   description = "Map of static logical key => exact Object Storage bucket name to grant access to (no bucket access is granted by default)"
   default     = {}
+
+  validation {
+    condition = length(var.bucket_names) == 0 || !anytrue([
+      for permission_set in concat(coalesce(var.organization_permission_sets, []), coalesce(var.project_permission_sets, [])) :
+      startswith(permission_set, "ObjectStorage")
+    ])
+    error_message = "bucket_names cannot be combined with an ObjectStorage*-family organization_permission_sets/project_permission_sets grant in the same module call: a blanket Object Storage permission set already grants access to every bucket in scope, making bucket_names/bucket_actions scoping ineffective. Grant blanket Object Storage access via a separate module call instead."
+  }
 }
 
 variable "bucket_actions" {

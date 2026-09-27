@@ -3,7 +3,7 @@ resource "scaleway_object_bucket_policy" "bucket_access" {
 
   bucket = each.value
   policy = jsonencode({
-    Version = "2023-04-17"
+    Version = "2012-10-17"
     Statement = concat([
       {
         Sid       = "IamPolicyBucketAccess"

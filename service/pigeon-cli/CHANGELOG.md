@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 - ADR-0052: decides how to merge the separate `pigeon-do` repo's full history into this repo as `terraform/infrastructure/*`, renumbering its 12 ADRs to 0053-0064 and rewriting its module sources to point at `terraform/modules/` (documents the decision; the user performs the actual merge manually) ([#62](https://github.com/noisypigeon/pigeon/pull/62)).
+- ADR-0065: fixes a `job run email-sync` crash root-caused to `imap-proto` only recognizing `MESSAGE`/`RFC822` in `BODYSTRUCTURE` -- `pull_manifest` now bisects a failing UID batch to isolate the specific unparseable message(s) with a placeholder, instead of losing the whole mailbox's manifest data ([#65](https://github.com/noisypigeon/pigeon/pull/65)).
 
 ## [0.2.1] - 2026-09-25
 

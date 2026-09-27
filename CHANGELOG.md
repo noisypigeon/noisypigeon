@@ -12,6 +12,7 @@ backfill of prior history.
 ## 2026-09-27
 
 - [terraform/scaleway/iam-policy] feat(adr-0066): guard scaleway/iam-policy against bucket-scope widening ([#64](https://github.com/noisypigeon/pigeon/pull/64))
+- [pigeon-cli] ADR-0065: fix a `job run email-sync` crash caused by a single unparseable `BODYSTRUCTURE` message aborting an entire mailbox's manifest gathering -- `pull_manifest` now bisects the UID batch to isolate just the poisoned message(s) ([#65](https://github.com/noisypigeon/pigeon/pull/65)).
 
 ## 2026-09-26
 

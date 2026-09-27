@@ -59,22 +59,18 @@ fn count_attachments(structure: &BodyStructure) -> u32 {
     }
 }
 
-/// Pulls size and attachment-count metadata for every UID in `pending` from
-/// `mailbox_name` (already `EXAMINE`d on `session`), via
-/// `UID FETCH ... (UID RFC822.SIZE BODYSTRUCTURE)` -- the same `uid_fetch`
-/// mechanism `email::sink::fetch_uids` uses, with a different data-item
-/// list that never transfers message content (per ADR-0021 §3;
-/// `BODYSTRUCTURE` is MIME structure metadata, not `BODY.PEEK[]`).
-pub(crate) async fn pull_manifest(
+/// Issues one `UID FETCH ... (UID RFC822.SIZE BODYSTRUCTURE)` for exactly
+/// `uids` -- the same `uid_fetch` mechanism `email::sink::fetch_uids` uses,
+/// with a different data-item list that never transfers message content
+/// (per ADR-0021 §3; `BODYSTRUCTURE` is MIME structure metadata, not
+/// `BODY.PEEK[]`). Factored out of `pull_manifest` so it can be retried
+/// against ever-smaller UID slices (`bisect_step`, ADR-0065) on failure.
+async fn fetch_manifest_batch(
     session: &mut ImapSession,
     mailbox_name: &str,
-    pending: &[u32],
+    uids: &[u32],
 ) -> Result<Vec<ManifestEntry>, String> {
-    if pending.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let uid_set = pending
+    let uid_set = uids
         .iter()
         .map(|uid| uid.to_string())
         .collect::<Vec<_>>()
@@ -101,6 +97,88 @@ pub(crate) async fn pull_manifest(
             size: u64::from(size),
             attachments,
         });
+    }
+
+    Ok(entries)
+}
+
+/// What to do next after one `fetch_manifest_batch` attempt for `batch`
+/// (ADR-0065) -- pure and IMAP-agnostic, so the bisection algorithm itself
+/// (this decision, not the IMAP call) is unit-testable without a live or
+/// mocked IMAP session.
+enum BisectOutcome {
+    /// `batch` fetched successfully; these are its real manifest entries.
+    Fetched(Vec<ManifestEntry>),
+    /// `batch` was a single UID that still failed alone -- confirmed
+    /// poisoned; use this placeholder instead of retrying further.
+    Poisoned(ManifestEntry),
+    /// `batch` (more than one UID) failed; retry these two halves
+    /// independently to isolate which UID(s) are actually poisoned.
+    Retry(Vec<u32>, Vec<u32>),
+}
+
+/// Decides the next `BisectOutcome` for `batch` given the outcome of
+/// fetching it. Some `BODYSTRUCTURE`s -- e.g. a bounce/read-receipt's
+/// `MESSAGE`/`DELIVERY-STATUS` part, or an internationalized `MESSAGE`/`GLOBAL`
+/// part -- fail to parse in `imap-proto` 0.16.7 (it only recognizes
+/// `MESSAGE`/`RFC822`), and a single unparseable message fails the *entire*
+/// batched `UID FETCH` response with zero entries. Bisecting on failure
+/// narrows down to exactly which UID(s) are poisoned instead of losing every
+/// other UID's real manifest data too.
+fn bisect_step(
+    mailbox_name: &str,
+    batch: &[u32],
+    result: Result<Vec<ManifestEntry>, String>,
+) -> BisectOutcome {
+    match result {
+        Ok(entries) => BisectOutcome::Fetched(entries),
+        Err(_) if batch.len() == 1 => BisectOutcome::Poisoned(ManifestEntry {
+            mailbox: mailbox_name.to_string(),
+            uid: batch[0],
+            size: 0,
+            attachments: 0,
+        }),
+        Err(_) => {
+            let mid = batch.len() / 2;
+            BisectOutcome::Retry(batch[..mid].to_vec(), batch[mid..].to_vec())
+        }
+    }
+}
+
+/// Pulls size and attachment-count metadata for every UID in `pending` from
+/// `mailbox_name` (already `EXAMINE`d on `session`). Bisects on failure
+/// (ADR-0065, `bisect_step`) so one unparseable `BODYSTRUCTURE` only costs
+/// that one UID's estimate, not the whole mailbox's.
+pub(crate) async fn pull_manifest(
+    session: &mut ImapSession,
+    mailbox_name: &str,
+    pending: &[u32],
+) -> Result<Vec<ManifestEntry>, String> {
+    if pending.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut work = vec![pending.to_vec()];
+    let mut entries = Vec::new();
+
+    while let Some(batch) = work.pop() {
+        let result = fetch_manifest_batch(session, mailbox_name, &batch).await;
+        match bisect_step(mailbox_name, &batch, result) {
+            BisectOutcome::Fetched(fetched) => entries.extend(fetched),
+            BisectOutcome::Poisoned(entry) => {
+                eprintln!(
+                    "warning: skipping UID {} in '{mailbox_name}': BODYSTRUCTURE could not be \
+                     parsed (likely a MESSAGE/GLOBAL, MESSAGE/DELIVERY-STATUS, or other \
+                     non-RFC822 embedded-message part -- a known imap-proto limitation)",
+                    entry.uid
+                );
+                entries.push(entry);
+            }
+            BisectOutcome::Retry(left, right) => {
+                work.push(right);
+                work.push(left);
+            }
+        }
     }
 
     Ok(entries)
@@ -304,6 +382,87 @@ mod tests {
     };
 
     use super::*;
+
+    fn entry(uid: u32) -> ManifestEntry {
+        ManifestEntry {
+            mailbox: "INBOX".to_string(),
+            uid,
+            size: 100,
+            attachments: 0,
+        }
+    }
+
+    #[test]
+    fn bisect_step_success_returns_fetched() {
+        let outcome = bisect_step("INBOX", &[1, 2, 3], Ok(vec![entry(1), entry(2), entry(3)]));
+        assert!(matches!(outcome, BisectOutcome::Fetched(entries) if entries.len() == 3));
+    }
+
+    #[test]
+    fn bisect_step_single_uid_failure_is_poisoned_with_zeroed_placeholder() {
+        let outcome = bisect_step("INBOX", &[42], Err("parse error".to_string()));
+        let BisectOutcome::Poisoned(placeholder) = outcome else {
+            panic!("expected Poisoned");
+        };
+        assert_eq!(placeholder.mailbox, "INBOX");
+        assert_eq!(placeholder.uid, 42);
+        assert_eq!(placeholder.size, 0);
+        assert_eq!(placeholder.attachments, 0);
+    }
+
+    #[test]
+    fn bisect_step_multi_uid_failure_splits_in_half() {
+        let outcome = bisect_step("INBOX", &[1, 2, 3, 4], Err("parse error".to_string()));
+        let BisectOutcome::Retry(left, right) = outcome else {
+            panic!("expected Retry");
+        };
+        assert_eq!(left, vec![1, 2]);
+        assert_eq!(right, vec![3, 4]);
+    }
+
+    #[test]
+    fn bisect_step_odd_length_failure_splits_with_extra_uid_on_the_right() {
+        let outcome = bisect_step("INBOX", &[1, 2, 3], Err("parse error".to_string()));
+        let BisectOutcome::Retry(left, right) = outcome else {
+            panic!("expected Retry");
+        };
+        assert_eq!(left, vec![1]);
+        assert_eq!(right, vec![2, 3]);
+    }
+
+    #[test]
+    fn bisect_step_chained_isolates_a_single_poisoned_uid_among_healthy_ones() {
+        // Simulates the work-stack loop in `pull_manifest` by hand, with a
+        // fake fetcher where only UID 3 ever fails -- confirms bisection
+        // actually converges to isolating just that one UID, not more.
+        let fake_fetch = |batch: &[u32]| -> Result<Vec<ManifestEntry>, String> {
+            if batch.contains(&3) {
+                Err("parse error".to_string())
+            } else {
+                Ok(batch.iter().map(|&uid| entry(uid)).collect())
+            }
+        };
+
+        let mut work = vec![vec![1u32, 2, 3, 4]];
+        let mut fetched = Vec::new();
+        let mut poisoned = Vec::new();
+        while let Some(batch) = work.pop() {
+            match bisect_step("INBOX", &batch, fake_fetch(&batch)) {
+                BisectOutcome::Fetched(entries) => fetched.extend(entries),
+                BisectOutcome::Poisoned(entry) => poisoned.push(entry),
+                BisectOutcome::Retry(left, right) => {
+                    work.push(right);
+                    work.push(left);
+                }
+            }
+        }
+
+        assert_eq!(poisoned.len(), 1);
+        assert_eq!(poisoned[0].uid, 3);
+        let mut fetched_uids: Vec<u32> = fetched.iter().map(|e| e.uid).collect();
+        fetched_uids.sort_unstable();
+        assert_eq!(fetched_uids, vec![1, 2, 4]);
+    }
 
     #[test]
     fn save_manifest_writes_tab_separated_four_column_format() {

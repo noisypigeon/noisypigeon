@@ -180,6 +180,11 @@ pub(crate) async fn fetch_uids(
         .map_err(|err| format!("failed to fetch messages in '{mailbox_name}': {err}"))?
     {
         let (Some(uid), Some(body)) = (fetch.uid, fetch.body()) else {
+            tracing::warn!(
+                mailbox = mailbox_name,
+                uid = fetch.uid,
+                "dropped FETCH response missing uid or body"
+            );
             continue;
         };
         let path = mailbox_dir.join(format!("{uid}.eml"));

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use crate::commands::job::cli::JobArgs;
@@ -9,6 +11,18 @@ use crate::commands::keyring::cli::KeyringArgs;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
+
+    /// Tracing filter directive for the durable JSONL log (e.g. "info" or
+    /// "pigeon=debug"). Defaults to $RUST_LOG, or "warn,pigeon=info" if that
+    /// isn't set either (ADR-0073).
+    #[arg(long, global = true)]
+    pub log_level: Option<String>,
+
+    /// Overrides where the durable JSONL log is written. Defaults to
+    /// $PIGEON_LOG_DIR/pigeon.jsonl, or the OS-conventional local-data
+    /// directory for `pigeon` if that isn't set either (ADR-0073).
+    #[arg(long, global = true)]
+    pub log_file: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]

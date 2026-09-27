@@ -57,8 +57,19 @@ where
         }
         match f().await {
             Ok(value) => return Ok(value),
-            Err(err) => last_err = Some(err),
+            Err(err) => {
+                tracing::warn!(
+                    attempt = attempt + 1,
+                    attempts,
+                    error = %err,
+                    "retrying after error"
+                );
+                last_err = Some(err);
+            }
         }
+    }
+    if let Some(err) = &last_err {
+        tracing::error!(attempts, error = %err, "retries exhausted");
     }
     Err(last_err.unwrap_or_else(|| "retry_with_backoff called with zero attempts".to_string()))
 }
@@ -67,6 +78,7 @@ where
 /// `retry_with_backoff` (ADR-0021 §6 addendum) -- used by `gather_pending`'s
 /// one-shot per-identity connection and by each persistent worker's initial
 /// connect/reconnect (`run_worker`, below).
+#[tracing::instrument(skip(ctx), fields(identity = %ctx.identity.alias))]
 pub(crate) async fn connect_with_retry(ctx: &IdentityContext) -> Result<ImapSession, String> {
     retry_with_backoff(CONNECT_RETRIES, RETRY_BACKOFF, || {
         imap_client::connect_and_login(
@@ -216,6 +228,7 @@ async fn run_worker(
                 Err(err) => {
                     let _ = multi_progress.println(format!("Error: {err}"));
                     let uid_count = batch.uids.len();
+                    let mailbox = batch.mailbox.clone();
                     match requeue_or_none(
                         identity_index,
                         batch,
@@ -224,8 +237,24 @@ async fn run_worker(
                     )
                     .await
                     {
-                        Some(item) => queue.lock().unwrap().push_back(item),
+                        Some(item) => {
+                            tracing::warn!(
+                                identity = %ctx.identity.alias,
+                                mailbox,
+                                step = "connect",
+                                attempts_remaining = item.2,
+                                "requeueing batch after connect failure"
+                            );
+                            queue.lock().unwrap().push_back(item)
+                        }
                         None => {
+                            tracing::error!(
+                                identity = %ctx.identity.alias,
+                                mailbox,
+                                step = "connect",
+                                uid_count,
+                                "batch retries exhausted, dropping"
+                            );
                             outcome.failed += uid_count;
                             outcome.failure_breakdown.connect += uid_count;
                         }
@@ -246,6 +275,7 @@ async fn run_worker(
                     ));
                     connection = None;
                     let uid_count = batch.uids.len();
+                    let mailbox = batch.mailbox.clone();
                     match requeue_or_none(
                         identity_index,
                         batch,
@@ -254,8 +284,24 @@ async fn run_worker(
                     )
                     .await
                     {
-                        Some(item) => queue.lock().unwrap().push_back(item),
+                        Some(item) => {
+                            tracing::warn!(
+                                identity = %ctx.identity.alias,
+                                mailbox,
+                                step = "examine",
+                                attempts_remaining = item.2,
+                                "requeueing batch after EXAMINE failure"
+                            );
+                            queue.lock().unwrap().push_back(item)
+                        }
                         None => {
+                            tracing::error!(
+                                identity = %ctx.identity.alias,
+                                mailbox,
+                                step = "examine",
+                                uid_count,
+                                "batch retries exhausted, dropping"
+                            );
                             outcome.failed += uid_count;
                             outcome.failure_breakdown.examine += uid_count;
                         }
@@ -279,6 +325,7 @@ async fn run_worker(
                 let _ = multi_progress.println(format!("Error: {err}"));
                 connection = None;
                 let uid_count = batch.uids.len();
+                let mailbox = batch.mailbox.clone();
                 match requeue_or_none(
                     identity_index,
                     batch,
@@ -287,8 +334,24 @@ async fn run_worker(
                 )
                 .await
                 {
-                    Some(item) => queue.lock().unwrap().push_back(item),
+                    Some(item) => {
+                        tracing::warn!(
+                            identity = %ctx.identity.alias,
+                            mailbox,
+                            step = "batch",
+                            attempts_remaining = item.2,
+                            "requeueing batch after processing failure"
+                        );
+                        queue.lock().unwrap().push_back(item)
+                    }
                     None => {
+                        tracing::error!(
+                            identity = %ctx.identity.alias,
+                            mailbox,
+                            step = "batch",
+                            uid_count,
+                            "batch retries exhausted, dropping"
+                        );
                         outcome.failed += uid_count;
                         outcome.failure_breakdown.batch_error += uid_count;
                     }
@@ -311,6 +374,11 @@ async fn run_worker(
 /// verifies and deleting its `.eml` -- no lock of any kind, since a batch's
 /// UIDs are staged under a UID-keyed tree exclusive to this worker
 /// (ADR-0021 §7/§10, addendum).
+#[tracing::instrument(
+    skip(ctx, batch, session, multi_progress),
+    fields(identity = %ctx.identity.alias, mailbox = %batch.mailbox, uid_count = batch.uids.len()),
+    err
+)]
 async fn process_batch_on_session(
     ctx: &IdentityContext,
     batch: &Batch,
@@ -347,11 +415,16 @@ async fn process_batch_on_session(
         // single collapsed warning covers the whole batch below instead of
         // one line per missing file.
         if !eml_path.exists() {
+            tracing::warn!(uid, mailbox = %batch.mailbox, step = "fetch", "eml missing before transform, counted as failed");
             outcome.failed += 1;
             outcome.failure_breakdown.missing_file += 1;
             continue;
         }
-        let transformed = multi_progress.suspend(|| transformer.transform(eml_path.clone()))?;
+        let transformed = multi_progress
+            .suspend(|| transformer.transform(eml_path.clone()))
+            .inspect_err(
+                |err| tracing::error!(uid, mailbox = %batch.mailbox, step = "transform", error = %err, "transform failed"),
+            )?;
         match transformed {
             Some(transformed) => match transform::verify_transformed(&transformed) {
                 Ok(()) => {
@@ -376,6 +449,14 @@ async fn process_batch_on_session(
                     outcome.synced += 1;
                 }
                 Err(reason) => {
+                    tracing::warn!(
+                        uid,
+                        mailbox = %batch.mailbox,
+                        step = "verify",
+                        file = %eml_path.display(),
+                        error = %reason,
+                        "verification failed"
+                    );
                     let _ = multi_progress.println(format!(
                         "Warning: verification failed for UID {uid} in '{}', keeping {}: {reason}",
                         batch.mailbox,
@@ -386,6 +467,7 @@ async fn process_batch_on_session(
                 }
             },
             None => {
+                tracing::warn!(uid, mailbox = %batch.mailbox, step = "transform", "message parse skipped");
                 outcome.failed += 1;
                 outcome.failure_breakdown.parse_skipped += 1;
             }
@@ -410,6 +492,7 @@ async fn process_batch_on_session(
 /// to commit into, the absolute path to read, and its already-computed S3
 /// key.
 struct UploadTask {
+    identity: String,
     staging_dir: PathBuf,
     path: PathBuf,
     key: String,
@@ -506,6 +589,7 @@ fn pending_upload_tasks(
         let key = upload_key(&ctx.output_dir, &path, encrypt)?;
         if !uploaded_index.contains(&key) {
             tasks.push(UploadTask {
+                identity: ctx.identity.alias.clone(),
                 staging_dir: ctx.staging_dir.clone(),
                 path,
                 key,
@@ -544,6 +628,10 @@ enum UploadOutcomeKind {
 /// `multi_progress.println` (load-bearing now that upload bars are live,
 /// ADR-0024 §4/ADR-0015) and counted as failed -- never committed, so it's
 /// retried again on the job's next invocation.
+#[tracing::instrument(
+    skip(task, uploaded_indexes, bucket_config, secret, encryptor, bar, multi_progress),
+    fields(identity = %task.identity, file = %task.path.display())
+)]
 async fn upload_one(
     task: UploadTask,
     uploaded_indexes: &HashMap<PathBuf, Arc<Mutex<UploadedIndex>>>,
@@ -581,6 +669,13 @@ async fn upload_one(
             UploadOutcomeKind::Unchanged
         }
         Err(err) => {
+            tracing::warn!(
+                identity = %task.identity,
+                file = %task.path.display(),
+                step = "upload",
+                error = %err,
+                "upload failed after retries"
+            );
             let _ = multi_progress.println(format!(
                 "Warning: upload failed for {}: {err}",
                 task.path.display()

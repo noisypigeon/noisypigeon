@@ -99,6 +99,12 @@ pub(crate) fn run_dedup_pass(
                     entry.uid,
                 ) {
                     Ok(_) => {
+                        tracing::debug!(
+                            mailbox = %entry.mailbox,
+                            uid = entry.uid,
+                            action = "merged",
+                            "message merged into existing canonical file"
+                        );
                         summary.merged_messages += 1;
                         remove_staged_files(staging_dir, entry);
                     }
@@ -140,6 +146,13 @@ pub(crate) fn run_dedup_pass(
             }
             match attachment_index.check(hash) {
                 Some(canonical_relpath) => {
+                    tracing::debug!(
+                        mailbox = %entry.mailbox,
+                        uid = entry.uid,
+                        file = staged_relpath,
+                        action = "attachment_reused",
+                        "attachment content already present, reusing canonical copy"
+                    );
                     summary.deduped_attachments += 1;
                     let _ = fs::remove_file(&staged_path);
                     data::rewrite_attachment_reference(

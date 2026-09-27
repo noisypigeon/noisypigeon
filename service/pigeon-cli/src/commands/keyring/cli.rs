@@ -1,6 +1,7 @@
 use clap::{Args, Subcommand};
 
 use crate::commands::keyring::email::provider::Provider;
+use crate::core::observability::Observable;
 
 #[derive(Args, Debug)]
 pub struct KeyringArgs {
@@ -25,6 +26,17 @@ pub enum KeyringCommands {
     },
     /// List every configured entry
     List,
+}
+
+impl Observable for KeyringCommands {
+    fn command_name(&self) -> &'static str {
+        match self {
+            KeyringCommands::Add(_) => "keyring.add",
+            KeyringCommands::Modify { .. } => "keyring.modify",
+            KeyringCommands::Delete { .. } => "keyring.delete",
+            KeyringCommands::List => "keyring.list",
+        }
+    }
 }
 
 #[derive(Args, Debug)]

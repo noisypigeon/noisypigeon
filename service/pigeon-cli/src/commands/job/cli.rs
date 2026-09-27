@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use clap::{Args, Subcommand};
 
+use crate::core::observability::Observable;
+
 #[derive(Args, Debug)]
 pub struct JobArgs {
     #[command(subcommand)]
@@ -110,4 +112,13 @@ pub enum JobType {
         #[arg(long)]
         yes: bool,
     },
+}
+
+impl Observable for JobType {
+    fn command_name(&self) -> &'static str {
+        match self {
+            JobType::EmailSync { .. } => "job.email-sync",
+            JobType::DecryptFiles { .. } => "job.decrypt-files",
+        }
+    }
 }

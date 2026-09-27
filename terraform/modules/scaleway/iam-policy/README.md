@@ -2,6 +2,22 @@
 
 A Scaleway `scaleway_iam_application` and `scaleway_iam_policy` wrapper to produce a restricted `scaleway_iam_api_key` using permission sets.
 
+## Usage
+
+Bucket-scoped, read-only key — no organization/project grant, access comes only from the bucket policy:
+
+```hcl
+module "iam" {
+  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.0.0"
+  name   = "${module.bucket.name}-iam"
+
+  bucket_names   = { email = module.bucket.name }
+  bucket_actions = ["s3:ListBucket", "s3:GetObject"]
+}
+```
+
+Do not also grant an `ObjectStorage*`-family `organization_permission_sets`/`project_permission_sets` alongside `bucket_names` — that blanket grant already covers every bucket in scope and makes the bucket restriction meaningless (rejected by validation).
+
 <!-- BEGIN_TF_DOCS -->
 ## Inputs
 

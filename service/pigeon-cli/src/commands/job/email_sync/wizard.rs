@@ -10,7 +10,9 @@ use crate::core::job::Job;
 use crate::core::keyring::credentials;
 use crate::core::wizard::WizardInput;
 
-use super::{EmailSyncJob, IdentityContext, IdentityManifestSummary};
+use super::{
+    DEFAULT_MAX_CONNECTIONS_PER_IDENTITY, EmailSyncJob, IdentityContext, IdentityManifestSummary,
+};
 
 /// Resolves which identities to run against: `--identities` if given (every
 /// alias must already exist), an interactive `MultiSelect` if omitted and
@@ -386,6 +388,7 @@ pub fn dispatch(
     remote_output: Option<String>,
     encryption_key: Option<String>,
     concurrency: Option<usize>,
+    max_connections_per_identity: Option<usize>,
     yes: bool,
 ) -> i32 {
     let runtime = match tokio::runtime::Builder::new_multi_thread()
@@ -401,6 +404,7 @@ pub fn dispatch(
         remote_output,
         encryption_key,
         concurrency,
+        max_connections_per_identity,
         yes,
     ))
 }
@@ -411,6 +415,7 @@ async fn dispatch_async(
     remote_output: Option<String>,
     encryption_key: Option<String>,
     concurrency: Option<usize>,
+    max_connections_per_identity: Option<usize>,
     yes: bool,
 ) -> i32 {
     let keyring_store_path = match Store::default_path() {
@@ -455,6 +460,8 @@ async fn dispatch_async(
         contexts,
         remote: None,
         encryptor: None,
+        max_connections_per_identity: max_connections_per_identity
+            .unwrap_or(DEFAULT_MAX_CONNECTIONS_PER_IDENTITY),
     };
     let plan = match job.gather().await {
         Ok(plan) => plan,
@@ -557,7 +564,7 @@ async fn dispatch_async(
     match job.run(plan, concurrency).await {
         Ok(summary) => {
             println!(
-                "Synced {} message(s), {} failed ({} connect, {} examine, {} batch-error, {} verification, {} parse-skipped), {} message(s) merged, {} attachment(s) deduped, {} uploaded, {} unchanged, {} upload failed.",
+                "Synced {} message(s), {} failed ({} connect, {} examine, {} batch-error, {} verification, {} parse-skipped, {} missing-file), {} message(s) merged, {} attachment(s) deduped, {} uploaded, {} unchanged, {} upload failed.",
                 summary.synced,
                 summary.failed,
                 summary.failure_breakdown.connect,
@@ -565,6 +572,7 @@ async fn dispatch_async(
                 summary.failure_breakdown.batch_error,
                 summary.failure_breakdown.verification,
                 summary.failure_breakdown.parse_skipped,
+                summary.failure_breakdown.missing_file,
                 summary.merged_messages,
                 summary.deduped_attachments,
                 summary.uploaded,

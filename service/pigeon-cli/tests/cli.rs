@@ -289,6 +289,7 @@ fn job_run_email_sync_help_shows_identities_and_concurrency_flags() {
         .stdout(predicate::str::contains("--local-output"))
         .stdout(predicate::str::contains("--remote-output"))
         .stdout(predicate::str::contains("--concurrency"))
+        .stdout(predicate::str::contains("--max-connections-per-identity"))
         .stdout(predicate::str::contains("--yes"));
 }
 

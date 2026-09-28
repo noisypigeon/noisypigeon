@@ -9,8 +9,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use indicatif::MultiProgress;
 use sha2::{Digest, Sha256};
 
+use crate::commands::job::email_sync::sink;
 use crate::commands::job::upload;
 use crate::commands::keyring::bucket::client;
 use crate::commands::keyring::bucket::store::BucketConfig;
@@ -27,6 +29,27 @@ use super::media::{self, MediaKind};
 const DOWNLOAD_RETRIES: usize = 3;
 const DOWNLOAD_RETRY_BACKOFF: Duration = Duration::from_secs(2);
 const RECODE_ATTEMPTS: usize = 2;
+
+/// Below this size, a download is fast enough not to need its own named
+/// call-out -- the overall progress bar already shows it completing
+/// (ADR-0075). At or above it, a `Downloading <key> (<size>)...` line
+/// explains why one item might be visibly slower than the rest.
+const ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES: u64 = 50 * 1024 * 1024;
+
+/// A plain `123.4 MB` label for a byte count -- these announcements are
+/// only ever for large files, so unlike `wizard.rs`'s `format_bytes` (which
+/// scales down to bytes/KB for the pre-run summary table) this always
+/// renders in MB.
+fn format_mb(bytes: u64) -> String {
+    format!("{:.1} MB", bytes as f64 / (1024.0 * 1024.0))
+}
+
+/// Whether a download of `size` bytes is worth a named call-out (ADR-0075)
+/// -- a pure predicate, kept separate from `download()` itself so the
+/// threshold logic is unit-testable without capturing progress-bar output.
+fn should_announce_download(size: u64) -> bool {
+    size >= ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES
+}
 
 /// A `failed` count broken down by which stage the failure happened in
 /// (same shape as `email_sync::worker::FailureBreakdown`, ADR-0033).
@@ -102,6 +125,11 @@ struct QueueItem {
     display_key: String,
     bytes: Option<Vec<u8>>,
     depth: u32,
+    /// The object's size in bytes if not yet downloaded (from the bucket
+    /// listing), or the already-known size of an in-memory zip member --
+    /// used only to decide whether a download is worth announcing
+    /// (ADR-0075), never for correctness.
+    size: u64,
 }
 
 enum FailureCategory {
@@ -133,7 +161,12 @@ async fn download(
     bucket_config: &BucketConfig,
     secret: &str,
     key: &str,
+    size: u64,
+    multi_progress: &MultiProgress,
 ) -> Result<Vec<u8>, String> {
+    if should_announce_download(size) {
+        let _ = multi_progress.println(format!("Downloading {key} ({})...", format_mb(size)));
+    }
     retry_with_backoff(DOWNLOAD_RETRIES, DOWNLOAD_RETRY_BACKOFF, || {
         client::get_object(bucket_config, secret, key)
     })
@@ -168,7 +201,11 @@ fn write_scratch_file(
     Ok(path)
 }
 
-#[tracing::instrument(skip(bytes, tmp_dir, scratch_dir, counter), fields(key = %display_key))]
+#[allow(clippy::too_many_arguments)]
+#[tracing::instrument(
+    skip(bytes, tmp_dir, scratch_dir, counter, multi_progress),
+    fields(key = %display_key)
+)]
 async fn process_media(
     display_key: &str,
     extension: &str,
@@ -177,6 +214,7 @@ async fn process_media(
     tmp_dir: &Path,
     scratch_dir: &Path,
     counter: &AtomicU64,
+    multi_progress: &MultiProgress,
 ) -> Result<(ProcessedFile, bool, bool), String> {
     let input_path = write_scratch_file(tmp_dir, counter, extension, &bytes)?;
     let probe_result = media::probe(&input_path).await;
@@ -225,6 +263,24 @@ async fn process_media(
     let canonical_extension = media_kind.canonical_extension();
     let output_path = next_scratch_path(tmp_dir, counter, canonical_extension)?;
     let already_aac_m4a = extension.eq_ignore_ascii_case("m4a");
+
+    // Re-encoding is CPU-bound and slow independent of file size, unlike
+    // the cheap mjpeg photo/screenshot path below -- always worth naming
+    // (ADR-0075), unlike the size-gated download announcement.
+    if matches!(media_kind, MediaKind::Video | MediaKind::Audio) {
+        let duration = before
+            .duration_secs
+            .map(|secs| format!("{secs:.1}s"))
+            .unwrap_or_else(|| "unknown duration".to_string());
+        let dimensions = before
+            .width
+            .zip(before.height)
+            .map(|(w, h)| format!(", {w}x{h}"))
+            .unwrap_or_default();
+        let _ = multi_progress.println(format!(
+            "Recoding {display_key} ({duration}{dimensions})..."
+        ));
+    }
 
     let recode_result = recode_and_verify(
         &input_path,
@@ -346,13 +402,14 @@ async fn process_item(
     scratch_dir: &Path,
     counter: &AtomicU64,
     extracted_bytes: &AtomicU64,
+    multi_progress: &MultiProgress,
 ) -> ItemOutcome {
     let depth = item.depth;
     let bytes = match item.bytes {
         Some(bytes) => bytes,
         None => {
             let key = item.source_key.as_deref().unwrap_or(&item.display_key);
-            match download(bucket_config, secret, key).await {
+            match download(bucket_config, secret, key, item.size, multi_progress).await {
                 Ok(bytes) => bytes,
                 Err(err) => {
                     tracing::warn!(key = %item.display_key, step = "download", error = %err, "download failed");
@@ -377,8 +434,8 @@ async fn process_item(
             Ok(raw_members) => {
                 let mut members = Vec::with_capacity(raw_members.len());
                 for member in raw_members {
-                    let total =
-                        extracted_bytes.fetch_add(member.bytes.len() as u64, Ordering::SeqCst);
+                    let member_size = member.bytes.len() as u64;
+                    let total = extracted_bytes.fetch_add(member_size, Ordering::SeqCst);
                     if total > archive::MAX_TOTAL_EXTRACTED_BYTES {
                         tracing::warn!(
                             key = %item.display_key,
@@ -392,6 +449,7 @@ async fn process_item(
                         display_key: format!("{}!{}", item.display_key, member.name),
                         bytes: Some(member.bytes),
                         depth: depth + 1,
+                        size: member_size,
                     });
                 }
                 ItemOutcome::ZipExpanded {
@@ -419,6 +477,7 @@ async fn process_item(
                 tmp_dir,
                 scratch_dir,
                 counter,
+                multi_progress,
             )
             .await
         }
@@ -468,6 +527,14 @@ pub(crate) async fn run_pull_transform_job(
     let counter = Arc::new(AtomicU64::new(0));
     let extracted_bytes = Arc::new(AtomicU64::new(0));
 
+    // One `MultiProgress` spans the whole run -- main phase, placement, and
+    // (if uploading) upload -- matching `email_sync::worker`'s own shape
+    // (ADR-0075).
+    let multi_progress = MultiProgress::new();
+    let total = tasks.len() as u64;
+    let _ = multi_progress.println(format!("Downloading and processing {total} object(s)..."));
+    let bar = sink::new_progress_bar("pull-transform".to_string(), total, &multi_progress);
+
     let queue: Arc<Mutex<std::collections::VecDeque<QueueItem>>> = Arc::new(Mutex::new(
         tasks
             .into_iter()
@@ -476,6 +543,7 @@ pub(crate) async fn run_pull_transform_job(
                 display_key: task.key,
                 bytes: None,
                 depth: 0,
+                size: task.size,
             })
             .collect(),
     ));
@@ -503,6 +571,8 @@ pub(crate) async fn run_pull_transform_job(
         let secret = secret.to_string();
         let tmp_dir = tmp_dir.clone();
         let scratch_dir = scratch_dir.clone();
+        let multi_progress = multi_progress.clone();
+        let bar = bar.clone();
 
         handles.push(tokio::spawn(async move {
             loop {
@@ -524,6 +594,7 @@ pub(crate) async fn run_pull_transform_job(
                     &scratch_dir,
                     &counter,
                     &extracted_bytes,
+                    &multi_progress,
                 )
                 .await;
 
@@ -533,6 +604,7 @@ pub(crate) async fn run_pull_transform_job(
                         depth,
                         members,
                     } => {
+                        bar.inc_length(members.len() as u64);
                         queue.lock().unwrap().extend(members);
                         if depth == 0 {
                             finished_root_keys.lock().unwrap().push(display_key);
@@ -568,6 +640,7 @@ pub(crate) async fn run_pull_transform_job(
                     }
                 }
 
+                bar.inc(1);
                 in_flight.fetch_sub(1, Ordering::SeqCst);
             }
         }));
@@ -585,6 +658,7 @@ pub(crate) async fn run_pull_transform_job(
     if let Some(err) = first_panic {
         return Err(err);
     }
+    bar.finish();
 
     let files = Arc::try_unwrap(processed_files)
         .map_err(|_| "internal error: processed file list still shared".to_string())?
@@ -603,7 +677,8 @@ pub(crate) async fn run_pull_transform_job(
         local_output,
         dedup::CONTENT_HASHES_FILE,
     )?);
-    let (placement_summary, placed_keys) = dedup::place_files(local_output, files, &mut dedup);
+    let (placement_summary, placed_keys) =
+        dedup::place_files(local_output, files, &mut dedup, &multi_progress);
     let placed_keys: HashSet<String> = placed_keys.into_iter().collect();
 
     // A root key is only checkpointed once every file it produced (itself,
@@ -645,7 +720,6 @@ pub(crate) async fn run_pull_transform_job(
             local_output.to_path_buf(),
             Arc::new(Mutex::new(uploaded_index)),
         );
-        let multi_progress = indicatif::MultiProgress::new();
         let upload_summary = upload::run_upload_phase(
             tasks,
             &uploaded_indexes,
@@ -675,6 +749,28 @@ fn is_zip_key(key: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn should_announce_download_is_false_below_the_threshold() {
+        assert!(!should_announce_download(
+            ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES - 1
+        ));
+        assert!(!should_announce_download(1024));
+    }
+
+    #[test]
+    fn should_announce_download_is_true_at_and_above_the_threshold() {
+        assert!(should_announce_download(ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES));
+        assert!(should_announce_download(
+            ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES + 1
+        ));
+    }
+
+    #[test]
+    fn format_mb_renders_one_decimal_place() {
+        assert_eq!(format_mb(50 * 1024 * 1024), "50.0 MB");
+        assert_eq!(format_mb(1024 * 1024 + 512 * 1024), "1.5 MB");
+    }
 
     #[test]
     fn classify_extension_recognizes_common_media_and_document_types() {
@@ -742,6 +838,7 @@ mod tests {
             &tmp_dir,
             &scratch_dir,
             &counter,
+            &MultiProgress::new(),
         )
         .await
         .unwrap();

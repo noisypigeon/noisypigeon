@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-27
 
+- [pigeon-cli] feat(adr-0075): add progress visibility to pull-transform -- a live bar plus named call-outs for large downloads/recodes, so a long run no longer looks hung ([#82](https://github.com/noisypigeon/noisypigeon/pull/82))
+
 - [pigeon-cli] feat(adr-0074): add pull-transform job -- pulls a bucket, expands zips, recodes media via ffmpeg with verify/fallback, dates and dedups by content, and organizes/uploads the result ([#81](https://github.com/noisypigeon/noisypigeon/pull/81))
 
 - [pigeon-cli] feat(adr-0073): add cross-cutting observability -- structured tracing, a durable JSONL log, and CPU/mem/disk telemetry via one Observable trait reused by every command ([#80](https://github.com/noisypigeon/noisypigeon/pull/80))

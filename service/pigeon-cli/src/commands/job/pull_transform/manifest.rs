@@ -16,6 +16,7 @@ use crate::commands::keyring::bucket::store::BucketConfig;
 /// queued dynamically there, never appear in this list.
 pub(crate) struct PullTask {
     pub key: String,
+    pub size: u64,
 }
 
 /// Per-extension rollup for the wizard's pre-run summary table.
@@ -86,7 +87,10 @@ pub(crate) async fn gather_pending(
         let bucket = by_extension.entry(extension).or_insert((0, 0));
         bucket.0 += 1;
         bucket.1 += entry.size;
-        tasks.push(PullTask { key: entry.key });
+        tasks.push(PullTask {
+            key: entry.key,
+            size: entry.size,
+        });
     }
 
     let type_summary = by_extension

@@ -11,6 +11,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use indicatif::MultiProgress;
+
+use crate::commands::job::email_sync::sink;
 use crate::core::data::{ContentIndex, Dedup, sanitize_filename, unique_path};
 
 use super::date::SimpleDate;
@@ -67,9 +70,11 @@ pub(crate) fn place_files(
     local_output: &std::path::Path,
     mut files: Vec<ProcessedFile>,
     dedup: &mut PullTransformDedup,
+    multi_progress: &MultiProgress,
 ) -> (PlacementSummary, Vec<String>) {
     files.sort_by(|a, b| a.original_key.cmp(&b.original_key));
 
+    let bar = sink::new_progress_bar("place".to_string(), files.len() as u64, multi_progress);
     let mut summary = PlacementSummary::default();
     let mut per_day_counters: HashMap<(String, String), u32> = HashMap::new();
     let mut finished_keys = Vec::with_capacity(files.len());
@@ -79,6 +84,7 @@ pub(crate) fn place_files(
             let _ = fs::remove_file(&file.scratch_path);
             summary.duplicates_skipped += 1;
             finished_keys.push(file.original_key);
+            bar.inc(1);
             continue;
         }
 
@@ -90,12 +96,15 @@ pub(crate) fn place_files(
                 "failed to place file"
             );
             summary.failed += 1;
+            bar.inc(1);
             continue;
         }
         summary.placed += 1;
         finished_keys.push(file.original_key);
+        bar.inc(1);
     }
 
+    bar.finish();
     (summary, finished_keys)
 }
 
@@ -181,7 +190,8 @@ mod tests {
             is_media: true,
         };
 
-        let (summary, _finished_keys) = place_files(output.path(), vec![file], &mut dedup);
+        let (summary, _finished_keys) =
+            place_files(output.path(), vec![file], &mut dedup, &MultiProgress::new());
 
         assert_eq!(summary.placed, 1);
         assert!(output.path().join("jpg/2024-01-26-1.jpg").exists());
@@ -217,7 +227,8 @@ mod tests {
             },
         ];
 
-        let (summary, _finished_keys) = place_files(output.path(), files, &mut dedup);
+        let (summary, _finished_keys) =
+            place_files(output.path(), files, &mut dedup, &MultiProgress::new());
 
         assert_eq!(summary.placed, 2);
         assert!(output.path().join("jpg/2024-01-26-1.jpg").exists());
@@ -254,7 +265,8 @@ mod tests {
             },
         ];
 
-        let (summary, _finished_keys) = place_files(output.path(), files, &mut dedup);
+        let (summary, _finished_keys) =
+            place_files(output.path(), files, &mut dedup, &MultiProgress::new());
 
         assert_eq!(summary.placed, 1);
         assert_eq!(summary.duplicates_skipped, 1);
@@ -276,7 +288,8 @@ mod tests {
             is_media: false,
         };
 
-        let (summary, _finished_keys) = place_files(output.path(), vec![file], &mut dedup);
+        let (summary, _finished_keys) =
+            place_files(output.path(), vec![file], &mut dedup, &MultiProgress::new());
 
         assert_eq!(summary.placed, 1);
         assert!(output.path().join("pdf/report.pdf").exists());
@@ -307,7 +320,8 @@ mod tests {
             },
         ];
 
-        let (summary, _finished_keys) = place_files(output.path(), files, &mut dedup);
+        let (summary, _finished_keys) =
+            place_files(output.path(), files, &mut dedup, &MultiProgress::new());
 
         assert_eq!(summary.placed, 2);
         assert!(output.path().join("pdf/report.pdf").exists());

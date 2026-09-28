@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+use std::io::IsTerminal;
 use std::path::PathBuf;
 
-use dialoguer::Input;
+use dialoguer::{Confirm, Input, MultiSelect, Select, theme::ColorfulTheme};
 
 use crate::commands::FAILURE_EXIT_CODE;
 use crate::commands::job::shared_wizard::{
@@ -12,7 +14,8 @@ use crate::core::job::Job;
 use crate::core::keyring::credentials;
 use crate::core::wizard::WizardInput;
 
-use super::media::check_ffmpeg_available;
+use super::manifest::{self, PullTask};
+use super::media::{self, TranscodeTargets, check_ffmpeg_available};
 use super::{PullTransformJob, TypeSummary};
 
 /// Resolves which bucket-config to pull from -- mandatory (unlike
@@ -111,12 +114,225 @@ fn fail(message: impl std::fmt::Display) -> i32 {
     FAILURE_EXIT_CODE
 }
 
+/// Resolves which file extensions to pull/transform/upload this run
+/// (ADR-0077): `--file-types` if given (the literal `none` maps to the
+/// `"(none)"` extensionless bucket, matching `TypeSummary`'s own sentinel);
+/// an interactive `MultiSelect` over the pending-summary table if omitted
+/// and stdin is a terminal, everything pre-checked so hitting Enter
+/// reproduces today's "pull everything" behavior exactly; every extension
+/// seen in the manifest otherwise (same default, non-interactively).
+struct FileTypesInput<'a> {
+    flag: Option<Vec<String>>,
+    available: &'a [TypeSummary],
+}
+
+impl WizardInput for FileTypesInput<'_> {
+    type Value = HashSet<String>;
+
+    fn flag_value(&self) -> Option<Result<HashSet<String>, String>> {
+        self.flag.as_ref().map(|values| {
+            Ok(values
+                .iter()
+                .map(|value| {
+                    if value.eq_ignore_ascii_case("none") {
+                        "(none)".to_string()
+                    } else {
+                        value.to_ascii_lowercase()
+                    }
+                })
+                .collect())
+        })
+    }
+
+    fn prompt(&self) -> Result<HashSet<String>, String> {
+        if self.available.is_empty() {
+            return Ok(HashSet::new());
+        }
+        let labels: Vec<String> = self
+            .available
+            .iter()
+            .map(|summary| {
+                format!(
+                    "{} ({}, {})",
+                    summary.extension,
+                    summary.count,
+                    format_bytes(summary.total_bytes)
+                )
+            })
+            .collect();
+        let defaults = vec![true; labels.len()];
+        let selected = MultiSelect::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select file types to pull/transform/upload")
+            .items(&labels)
+            .defaults(&defaults)
+            .interact()
+            .map_err(|err| format!("failed to read file-type selection: {err}"))?;
+        Ok(selected
+            .into_iter()
+            .map(|index| self.available[index].extension.clone())
+            .collect())
+    }
+
+    fn non_interactive_fallback(&self) -> Result<HashSet<String>, String> {
+        Ok(self
+            .available
+            .iter()
+            .map(|summary| summary.extension.clone())
+            .collect())
+    }
+}
+
+/// Resolves which pending zip objects get expanded+transformed this run
+/// (ADR-0077); every other pending zip is uploaded as-is, untouched.
+/// `--expand-zips` if given; an interactive `MultiSelect` over just the
+/// pending zips if omitted and stdin is a terminal, everything pre-checked
+/// so hitting Enter reproduces today's "expand every zip" behavior exactly;
+/// every pending zip otherwise (same default, non-interactively).
+struct ZipHandlingInput<'a> {
+    flag: Option<Vec<String>>,
+    zip_tasks: &'a [&'a PullTask],
+}
+
+impl WizardInput for ZipHandlingInput<'_> {
+    type Value = HashSet<String>;
+
+    fn flag_value(&self) -> Option<Result<HashSet<String>, String>> {
+        self.flag
+            .as_ref()
+            .map(|keys| Ok(keys.iter().cloned().collect()))
+    }
+
+    fn prompt(&self) -> Result<HashSet<String>, String> {
+        let labels: Vec<String> = self
+            .zip_tasks
+            .iter()
+            .map(|task| format!("{} ({})", task.key, format_bytes(task.size)))
+            .collect();
+        let defaults = vec![true; labels.len()];
+        let selected = MultiSelect::with_theme(&ColorfulTheme::default())
+            .with_prompt(
+                "Select zip files to expand and transform (unselected zips upload as-is, untouched)",
+            )
+            .items(&labels)
+            .defaults(&defaults)
+            .interact()
+            .map_err(|err| format!("failed to read zip-handling selection: {err}"))?;
+        Ok(selected
+            .into_iter()
+            .map(|index| self.zip_tasks[index].key.clone())
+            .collect())
+    }
+
+    fn non_interactive_fallback(&self) -> Result<HashSet<String>, String> {
+        Ok(self.zip_tasks.iter().map(|task| task.key.clone()).collect())
+    }
+}
+
+fn select_image_format(current: media::ImageFormat) -> Result<media::ImageFormat, String> {
+    let options = media::ImageFormat::all();
+    let labels: Vec<String> = options.iter().map(|option| option.to_string()).collect();
+    let default_index = options
+        .iter()
+        .position(|option| *option == current)
+        .unwrap_or(0);
+    let index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Image (photo/screenshot) target")
+        .items(&labels)
+        .default(default_index)
+        .interact()
+        .map_err(|err| format!("failed to read image format selection: {err}"))?;
+    Ok(options[index])
+}
+
+fn select_video_format(current: media::VideoFormat) -> Result<media::VideoFormat, String> {
+    let options = media::VideoFormat::all();
+    let labels: Vec<String> = options.iter().map(|option| option.to_string()).collect();
+    let default_index = options
+        .iter()
+        .position(|option| *option == current)
+        .unwrap_or(0);
+    let index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Video target")
+        .items(&labels)
+        .default(default_index)
+        .interact()
+        .map_err(|err| format!("failed to read video format selection: {err}"))?;
+    Ok(options[index])
+}
+
+fn select_audio_format(current: media::AudioFormat) -> Result<media::AudioFormat, String> {
+    let options = media::AudioFormat::all();
+    let labels: Vec<String> = options.iter().map(|option| option.to_string()).collect();
+    let default_index = options
+        .iter()
+        .position(|option| *option == current)
+        .unwrap_or(0);
+    let index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Audio target")
+        .items(&labels)
+        .default(default_index)
+        .interact()
+        .map_err(|err| format!("failed to read audio format selection: {err}"))?;
+    Ok(options[index])
+}
+
+/// Resolves the media-transcoding mapping for this run (ADR-0077), never
+/// persisted. Each of the three per-category flags always wins outright and
+/// is validated independently; if *none* of them was passed, and only then,
+/// a TTY is shown the resolved default mapping and asked once whether to
+/// adapt it at all -- declining (or non-interactive with no flags) keeps
+/// the exact pre-ADR-0077 mapping with zero prompts.
+fn resolve_transcode_targets(
+    image_flag: Option<String>,
+    video_flag: Option<String>,
+    audio_flag: Option<String>,
+) -> Result<TranscodeTargets, String> {
+    let any_flag = image_flag.is_some() || video_flag.is_some() || audio_flag.is_some();
+    let mut targets = TranscodeTargets::default();
+    if let Some(value) = image_flag {
+        targets.image = media::ImageFormat::parse(&value)?;
+    }
+    if let Some(value) = video_flag {
+        targets.video = media::VideoFormat::parse(&value)?;
+    }
+    if let Some(value) = audio_flag {
+        targets.audio = media::AudioFormat::parse(&value)?;
+    }
+    if any_flag || !std::io::stdin().is_terminal() {
+        return Ok(targets);
+    }
+
+    println!("Media transcoding mapping:");
+    println!("  Image (photo/screenshot) -> {}", targets.image);
+    println!("  Video                    -> {}", targets.video);
+    println!("  Audio                    -> {}", targets.audio);
+    let adapt = Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Adapt this before running?")
+        .default(false)
+        .interact()
+        .map_err(|err| format!("failed to read confirmation: {err}"))?;
+    if !adapt {
+        return Ok(targets);
+    }
+
+    targets.image = select_image_format(targets.image)?;
+    targets.video = select_video_format(targets.video)?;
+    targets.audio = select_audio_format(targets.audio)?;
+    Ok(targets)
+}
+
 /// Entry point for `pigeon job run pull-transform` (ADR-0074).
+#[allow(clippy::too_many_arguments)]
 pub fn dispatch(
     source_bucket: Option<String>,
     local_output: Option<PathBuf>,
     remote_output: Option<String>,
     encryption_key: Option<String>,
+    file_types: Option<Vec<String>>,
+    expand_zips: Option<Vec<String>>,
+    image_format: Option<String>,
+    video_format: Option<String>,
+    audio_format: Option<String>,
     concurrency: Option<usize>,
     yes: bool,
 ) -> i32 {
@@ -132,16 +348,27 @@ pub fn dispatch(
         local_output,
         remote_output,
         encryption_key,
+        file_types,
+        expand_zips,
+        image_format,
+        video_format,
+        audio_format,
         concurrency,
         yes,
     ))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn dispatch_async(
     source_bucket: Option<String>,
     local_output: Option<PathBuf>,
     remote_output: Option<String>,
     encryption_key: Option<String>,
+    file_types: Option<Vec<String>>,
+    expand_zips: Option<Vec<String>>,
+    image_format: Option<String>,
+    video_format: Option<String>,
+    audio_format: Option<String>,
     concurrency: Option<usize>,
     yes: bool,
 ) -> i32 {
@@ -199,6 +426,9 @@ async fn dispatch_async(
         local_output,
         remote: None,
         encryptor: None,
+        allowed_extensions: HashSet::new(),
+        expand_zip_keys: HashSet::new(),
+        transcode_targets: TranscodeTargets::default(),
     };
     let plan = match job.gather().await {
         Ok(plan) => plan,
@@ -211,6 +441,41 @@ async fn dispatch_async(
         return 0;
     }
     println!("{} pending object(s) found.", plan.tasks.len());
+
+    job.allowed_extensions = match (FileTypesInput {
+        flag: file_types,
+        available: &plan.type_summary,
+    })
+    .resolve()
+    {
+        Ok(set) => set,
+        Err(err) => return fail(err),
+    };
+
+    let zip_tasks: Vec<&PullTask> = plan
+        .tasks
+        .iter()
+        .filter(|task| manifest::extension_of(&task.key) == "zip")
+        .collect();
+    job.expand_zip_keys = if zip_tasks.is_empty() {
+        HashSet::new()
+    } else {
+        match (ZipHandlingInput {
+            flag: expand_zips,
+            zip_tasks: &zip_tasks,
+        })
+        .resolve()
+        {
+            Ok(set) => set,
+            Err(err) => return fail(err),
+        }
+    };
+
+    job.transcode_targets =
+        match resolve_transcode_targets(image_format, video_format, audio_format) {
+            Ok(targets) => targets,
+            Err(err) => return fail(err),
+        };
 
     let resolved_remote_alias = match (UploadTargetInput {
         flag: remote_output,
@@ -281,13 +546,14 @@ async fn dispatch_async(
     match job.run(plan, concurrency).await {
         Ok(summary) => {
             println!(
-                "Processed {} file(s), {} failed ({} download, {} archive, {} classify, {} placement), {} duplicate(s) skipped, {} recoded, {} kept as original (recode did not verify), {} uploaded, {} unchanged, {} upload failed.",
+                "Processed {} file(s), {} failed ({} download, {} archive, {} classify, {} placement), {} skipped (type not selected), {} duplicate(s) skipped, {} recoded, {} kept as original (recode did not verify), {} uploaded, {} unchanged, {} upload failed.",
                 summary.processed,
                 summary.failed,
                 summary.failure_breakdown.download,
                 summary.failure_breakdown.archive,
                 summary.failure_breakdown.classify,
                 summary.failure_breakdown.placement,
+                summary.skipped_type,
                 summary.duplicates_skipped,
                 summary.recoded,
                 summary.recode_fallback_to_original,
@@ -324,5 +590,97 @@ mod tests {
     #[test]
     fn format_bytes_uses_larger_units_for_larger_sizes() {
         assert_eq!(format_bytes(1024), "1.0 KB");
+    }
+
+    fn summary(extension: &str) -> TypeSummary {
+        TypeSummary {
+            extension: extension.to_string(),
+            count: 1,
+            total_bytes: 100,
+        }
+    }
+
+    #[test]
+    fn file_types_input_flag_maps_the_literal_none_to_the_none_sentinel() {
+        let input = FileTypesInput {
+            flag: Some(vec!["JPG".to_string(), "none".to_string()]),
+            available: &[],
+        };
+        let resolved = input.flag_value().unwrap().unwrap();
+        assert!(resolved.contains("jpg"));
+        assert!(resolved.contains("(none)"));
+    }
+
+    #[test]
+    fn file_types_input_non_interactive_fallback_selects_every_available_extension() {
+        let available = [summary("jpg"), summary("pdf"), summary("zip")];
+        let input = FileTypesInput {
+            flag: None,
+            available: &available,
+        };
+        let resolved = input.non_interactive_fallback().unwrap();
+        assert_eq!(resolved.len(), 3);
+        assert!(resolved.contains("jpg"));
+        assert!(resolved.contains("pdf"));
+        assert!(resolved.contains("zip"));
+    }
+
+    fn zip_task(key: &str) -> PullTask {
+        PullTask {
+            key: key.to_string(),
+            size: 1024,
+        }
+    }
+
+    #[test]
+    fn zip_handling_input_non_interactive_fallback_expands_every_pending_zip() {
+        let a = zip_task("a.zip");
+        let b = zip_task("b.zip");
+        let tasks = [&a, &b];
+        let input = ZipHandlingInput {
+            flag: None,
+            zip_tasks: &tasks,
+        };
+        let resolved = input.non_interactive_fallback().unwrap();
+        assert_eq!(resolved.len(), 2);
+        assert!(resolved.contains("a.zip"));
+        assert!(resolved.contains("b.zip"));
+    }
+
+    #[test]
+    fn zip_handling_input_flag_selects_only_the_named_keys() {
+        let a = zip_task("a.zip");
+        let tasks = [&a];
+        let input = ZipHandlingInput {
+            flag: Some(vec!["a.zip".to_string()]),
+            zip_tasks: &tasks,
+        };
+        let resolved = input.flag_value().unwrap().unwrap();
+        assert_eq!(resolved.len(), 1);
+        assert!(resolved.contains("a.zip"));
+    }
+
+    #[test]
+    fn resolve_transcode_targets_defaults_when_nothing_is_passed_non_interactively() {
+        // cargo test's stdin isn't a TTY, so this exercises the
+        // non-interactive branch deterministically.
+        let targets = resolve_transcode_targets(None, None, None).unwrap();
+        assert_eq!(targets.image, media::ImageFormat::Jpg);
+        assert_eq!(targets.video, media::VideoFormat::Mp4);
+        assert_eq!(targets.audio, media::AudioFormat::M4a);
+    }
+
+    #[test]
+    fn resolve_transcode_targets_applies_explicit_flags_and_defaults_the_rest() {
+        let targets = resolve_transcode_targets(Some("png".to_string()), None, None).unwrap();
+        assert_eq!(targets.image, media::ImageFormat::Png);
+        assert_eq!(targets.video, media::VideoFormat::Mp4);
+        assert_eq!(targets.audio, media::AudioFormat::M4a);
+    }
+
+    #[test]
+    fn resolve_transcode_targets_errors_on_an_unknown_format() {
+        let result = resolve_transcode_targets(None, Some("betamax".to_string()), None);
+        assert!(result.is_err());
     }
 }

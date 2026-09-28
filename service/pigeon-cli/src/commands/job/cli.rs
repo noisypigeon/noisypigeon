@@ -143,6 +143,35 @@ pub enum JobType {
         #[arg(long)]
         encryption_key: Option<String>,
 
+        /// File extensions to pull/transform/upload, comma-separated (e.g.
+        /// `jpg,mp4,pdf`; use the literal `none` for extensionless keys).
+        /// Everything else is left pending, untouched, for a future run --
+        /// never checkpointed as done (ADR-0077). Interactively selected
+        /// (all pre-checked) from the pending-summary table when omitted
+        /// and stdin is a terminal; defaults to everything otherwise.
+        #[arg(long, value_delimiter = ',')]
+        file_types: Option<Vec<String>>,
+
+        /// Keys of pending zip objects to expand and transform;
+        /// comma-separated. Every other pending zip is uploaded as-is,
+        /// untouched (ADR-0077). Interactively selected (all pre-checked)
+        /// when omitted and stdin is a terminal; defaults to expanding
+        /// every pending zip otherwise.
+        #[arg(long, value_delimiter = ',')]
+        expand_zips: Option<Vec<String>>,
+
+        /// Recode target for photos/screenshots: `jpg` (default) or `png`.
+        #[arg(long)]
+        image_format: Option<String>,
+
+        /// Recode target for video: `mp4` (default), `mkv`, or `webm`.
+        #[arg(long)]
+        video_format: Option<String>,
+
+        /// Recode target for audio: `m4a` (default), `mp3`, or `flac`.
+        #[arg(long)]
+        audio_format: Option<String>,
+
         /// Maximum number of files to download/recode concurrently.
         #[arg(long)]
         concurrency: Option<usize>,

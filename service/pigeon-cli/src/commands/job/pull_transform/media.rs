@@ -4,7 +4,8 @@
 //! has no mature pure-Rust implementation, so this shells out to the
 //! `ffmpeg`/`ffprobe` binaries rather than adding a codec crate.
 
-use std::io::{BufReader, Cursor};
+use std::fs::File;
+use std::io::BufReader;
 use std::path::Path;
 
 use serde::Deserialize;
@@ -223,13 +224,18 @@ pub(crate) async fn verify(before: ProbeInfo, after_path: &Path) -> Result<(), S
     Ok(())
 }
 
-/// Reads EXIF `DateTimeOriginal` from an image's bytes (JPEG/TIFF/HEIF/PNG/
-/// WebP -- `kamadak-exif` auto-detects the container). Absent for most
-/// screenshots (no camera wrote EXIF into them) and for images with no EXIF
-/// segment at all -- `None` either way, letting the caller fall through to
-/// its next date source.
-pub(crate) fn exif_date(bytes: &[u8]) -> Option<SimpleDate> {
-    let mut reader = BufReader::new(Cursor::new(bytes));
+/// Reads EXIF `DateTimeOriginal` from an image file on disk (JPEG/TIFF/
+/// HEIF/PNG/WebP -- `kamadak-exif` auto-detects the container and only
+/// reads as much of the file as each format actually needs, e.g. just the
+/// leading segments for JPEG). Reads from a real file rather than an
+/// in-memory buffer (ADR-0076) -- images are read straight off disk now,
+/// never held in memory as a whole `Vec<u8>`. Absent for most screenshots
+/// (no camera wrote EXIF into them) and for images with no EXIF segment at
+/// all -- `None` either way, letting the caller fall through to its next
+/// date source.
+pub(crate) fn exif_date(path: &Path) -> Option<SimpleDate> {
+    let file = File::open(path).ok()?;
+    let mut reader = BufReader::new(file);
     let exif = exif::Reader::new().read_from_container(&mut reader).ok()?;
     let field = exif.get_field(exif::Tag::DateTimeOriginal, exif::In::PRIMARY)?;
     parse_exif_datetime(&field.display_value().to_string())
@@ -308,7 +314,16 @@ mod tests {
 
     #[test]
     fn exif_date_returns_none_for_non_image_bytes() {
-        assert_eq!(exif_date(b"not an image"), None);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("not-an-image.jpg");
+        std::fs::write(&path, b"not an image").unwrap();
+        assert_eq!(exif_date(&path), None);
+    }
+
+    #[test]
+    fn exif_date_returns_none_for_a_missing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(exif_date(&dir.path().join("does-not-exist.jpg")), None);
     }
 
     /// Generates a tiny synthetic clip via `ffmpeg`'s `lavfi` test-source

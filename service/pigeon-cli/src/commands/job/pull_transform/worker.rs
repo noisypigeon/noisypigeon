@@ -1,9 +1,12 @@
 //! Concurrent download/expand/classify/recode/verify pipeline (ADR-0074
-//! §4), a sequential dedup/placement pass (§5, `dedup.rs`), and an optional
-//! concurrent upload phase (§6, reusing `commands::job::upload`).
+//! §4, hardened to stream everything through disk rather than memory by
+//! ADR-0076), a sequential dedup/placement pass (§5, `dedup.rs`), and an
+//! optional concurrent upload phase (§6, reusing `commands::job::upload`).
 
 use std::collections::HashSet;
 use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -36,6 +39,22 @@ const RECODE_ATTEMPTS: usize = 2;
 /// explains why one item might be visibly slower than the rest.
 const ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES: u64 = 50 * 1024 * 1024;
 
+/// PDF/OOXML date parsing (`lopdf`/`quick-xml`) needs the whole file in
+/// memory -- there's no realistic streaming alternative worth building for
+/// either. Below this size that's a non-issue for any real document; at or
+/// above it (ADR-0076), date extraction is skipped (falls through to the
+/// existing mtime/unknown-date chain) rather than risking an unbounded
+/// in-memory parse of a file mislabeled as a document.
+const MAX_IN_MEMORY_PARSE_BYTES: u64 = 512 * 1024 * 1024;
+
+/// A hard floor on free disk space this job insists on before starting a
+/// download or a zip expansion (ADR-0076) -- disk, not memory, is the
+/// resource a run can actually exhaust once everything is streamed rather
+/// than buffered. Deliberately a flat safety margin, not a precise
+/// prediction: a zip's expanded size isn't knowable up front, and a
+/// too-clever estimate is worse than a simple one here.
+const MIN_FREE_DISK_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+
 /// A plain `123.4 MB` label for a byte count -- these announcements are
 /// only ever for large files, so unlike `wizard.rs`'s `format_bytes` (which
 /// scales down to bytes/KB for the pre-run summary table) this always
@@ -49,6 +68,41 @@ fn format_mb(bytes: u64) -> String {
 /// threshold logic is unit-testable without capturing progress-bar output.
 fn should_announce_download(size: u64) -> bool {
     size >= ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES
+}
+
+/// The available space (in bytes) on whichever disk backs `path`, matched
+/// by the longest mount-point prefix -- `None` if that can't be determined
+/// (e.g. `path` doesn't exist yet), in which case the caller doesn't block
+/// on an unknown rather than failing safe-but-wrong.
+fn available_disk_space(path: &Path) -> Option<u64> {
+    let target = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    let disks = sysinfo::Disks::new_with_refreshed_list();
+    disks
+        .list()
+        .iter()
+        .filter(|disk| target.starts_with(disk.mount_point()))
+        .max_by_key(|disk| disk.mount_point().as_os_str().len())
+        .map(|disk| disk.available_space())
+}
+
+/// Fails fast, before starting a download or zip expansion, if the disk
+/// backing `path` doesn't have at least `needed` (or `MIN_FREE_DISK_BYTES`,
+/// whichever is larger) free -- disk space, not memory, is what this job
+/// can actually run out of once everything is disk-streamed (ADR-0076).
+/// Fails only the one item calling this, not the whole run.
+fn check_disk_space(path: &Path, needed: u64) -> Result<(), String> {
+    let Some(available) = available_disk_space(path) else {
+        return Ok(());
+    };
+    let required = needed.max(MIN_FREE_DISK_BYTES);
+    if available < required {
+        return Err(format!(
+            "not enough disk space: {} available, need at least {}",
+            format_mb(available),
+            format_mb(required)
+        ));
+    }
+    Ok(())
 }
 
 /// A `failed` count broken down by which stage the failure happened in
@@ -115,20 +169,23 @@ fn classify_extension(key: &str) -> (FileKind, String) {
 }
 
 /// One item on the shared work queue -- a top-level bucket object not yet
-/// downloaded (`source_key: Some`, `bytes: None`), or a zip member already
-/// read into memory during a parent's expansion (`source_key: None`,
-/// `bytes: Some`). Only a `depth == 0` item is ever checkpointed --
-/// checkpointing tracks "was this top-level object fully handled," not
-/// "was every last nested zip member placed" (ADR-0074 §3).
+/// downloaded (`source_key: Some`, `path: None`), or a file already on disk
+/// (`path: Some`) -- true both for a completed top-level download and for
+/// a zip member streamed straight to disk during a parent's expansion
+/// (ADR-0076 replaces the original in-memory `bytes` field with this).
+/// Only a `depth == 0` item is ever checkpointed -- checkpointing tracks
+/// "was this top-level object fully handled," not "was every last nested
+/// zip member placed" (ADR-0074 §3).
 struct QueueItem {
     source_key: Option<String>,
     display_key: String,
-    bytes: Option<Vec<u8>>,
+    path: Option<PathBuf>,
     depth: u32,
-    /// The object's size in bytes if not yet downloaded (from the bucket
-    /// listing), or the already-known size of an in-memory zip member --
-    /// used only to decide whether a download is worth announcing
-    /// (ADR-0075), never for correctness.
+    /// The object's declared size in bytes (from the bucket listing for a
+    /// top-level object, or the real streamed size for an extracted zip
+    /// member) -- used only to decide whether a download is worth
+    /// announcing (ADR-0075) and to size the disk-space preflight check
+    /// (ADR-0076), never trusted for correctness.
     size: u64,
 }
 
@@ -157,26 +214,52 @@ enum ItemOutcome {
     },
 }
 
+/// Streams `key` straight to `dest_path` (ADR-0076) -- never buffers the
+/// whole object in memory, so a 50-100GB object costs a small, fixed
+/// amount of RAM regardless of its size.
 async fn download(
     bucket_config: &BucketConfig,
     secret: &str,
     key: &str,
     size: u64,
+    dest_path: &Path,
     multi_progress: &MultiProgress,
-) -> Result<Vec<u8>, String> {
+) -> Result<(), String> {
     if should_announce_download(size) {
         let _ = multi_progress.println(format!("Downloading {key} ({})...", format_mb(size)));
     }
     retry_with_backoff(DOWNLOAD_RETRIES, DOWNLOAD_RETRY_BACKOFF, || {
-        client::get_object(bucket_config, secret, key)
+        client::download_object_to_file(bucket_config, secret, key, dest_path)
     })
-    .await
+    .await?;
+    Ok(())
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
     hex::encode(hasher.finalize())
+}
+
+/// Hashes a file by streaming it through `Sha256` in fixed-size chunks
+/// (ADR-0076) -- replaces `fs::read` + `sha256_hex` for every path that
+/// used to pull a whole (potentially huge, even post-recode) file into
+/// memory purely to hash it.
+fn sha256_file(path: &Path) -> Result<String, String> {
+    let mut file =
+        File::open(path).map_err(|err| format!("failed to open {}: {err}", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 64 * 1024];
+    loop {
+        let read = file
+            .read(&mut buf)
+            .map_err(|err| format!("failed to read {}: {err}", path.display()))?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buf[..read]);
+    }
+    Ok(hex::encode(hasher.finalize()))
 }
 
 /// A fresh, not-yet-existing path under `dir` named by `counter`
@@ -189,48 +272,40 @@ fn next_scratch_path(dir: &Path, counter: &AtomicU64, extension: &str) -> Result
     Ok(dir.join(format!("{name:012}.{extension}")))
 }
 
-/// Writes `bytes` to a fresh path under `dir` (see `next_scratch_path`).
-fn write_scratch_file(
-    dir: &Path,
-    counter: &AtomicU64,
-    extension: &str,
-    bytes: &[u8],
-) -> Result<PathBuf, String> {
-    let path = next_scratch_path(dir, counter, extension)?;
-    fs::write(&path, bytes).map_err(|err| format!("failed to write {}: {err}", path.display()))?;
-    Ok(path)
-}
-
-#[allow(clippy::too_many_arguments)]
 #[tracing::instrument(
-    skip(bytes, tmp_dir, scratch_dir, counter, multi_progress),
+    skip(input_path, scratch_dir, counter, multi_progress),
     fields(key = %display_key)
 )]
 async fn process_media(
     display_key: &str,
     extension: &str,
     kind: FileKind,
-    bytes: Vec<u8>,
-    tmp_dir: &Path,
+    input_path: PathBuf,
     scratch_dir: &Path,
     counter: &AtomicU64,
     multi_progress: &MultiProgress,
 ) -> Result<(ProcessedFile, bool, bool), String> {
-    let input_path = write_scratch_file(tmp_dir, counter, extension, &bytes)?;
     let probe_result = media::probe(&input_path).await;
-    let _ = fs::remove_file(&input_path);
 
     let Ok(before) = probe_result else {
         // Couldn't even probe it -- not confidently this file type despite
-        // its extension. No loss of data: place the original bytes as-is.
-        let scratch_path = write_scratch_file(scratch_dir, counter, extension, &bytes)?;
+        // its extension. No loss of data: keep the original file as-is.
+        let scratch_path = next_scratch_path(scratch_dir, counter, extension)?;
+        fs::rename(&input_path, &scratch_path).map_err(|err| {
+            format!(
+                "failed to move {} to {}: {err}",
+                input_path.display(),
+                scratch_path.display()
+            )
+        })?;
+        let content_hash = sha256_file(&scratch_path)?;
         return Ok((
             ProcessedFile {
                 original_key: display_key.to_string(),
                 scratch_path,
                 extension: extension.to_string(),
                 date: None,
-                content_hash: sha256_hex(&bytes),
+                content_hash,
                 is_media: false,
             },
             false,
@@ -240,7 +315,7 @@ async fn process_media(
 
     let (media_kind, date) = match kind {
         FileKind::Image => {
-            let date = media::exif_date(&bytes).or(before.creation_date);
+            let date = media::exif_date(&input_path).or(before.creation_date);
             let is_screenshot = before
                 .width
                 .zip(before.height)
@@ -259,9 +334,8 @@ async fn process_media(
         }
     };
 
-    let input_path = write_scratch_file(tmp_dir, counter, extension, &bytes)?;
     let canonical_extension = media_kind.canonical_extension();
-    let output_path = next_scratch_path(tmp_dir, counter, canonical_extension)?;
+    let output_path = next_scratch_path(scratch_dir, counter, canonical_extension)?;
     let already_aac_m4a = extension.eq_ignore_ascii_case("m4a");
 
     // Re-encoding is CPU-bound and slow independent of file size, unlike
@@ -290,23 +364,18 @@ async fn process_media(
         before,
     )
     .await;
-    let _ = fs::remove_file(&input_path);
 
     match recode_result {
         Ok(()) => {
-            let recoded_bytes = fs::read(&output_path).map_err(|err| {
-                format!("failed to read recoded {}: {err}", output_path.display())
-            })?;
-            let scratch_path =
-                write_scratch_file(scratch_dir, counter, canonical_extension, &recoded_bytes)?;
-            let _ = fs::remove_file(&output_path);
+            let _ = fs::remove_file(&input_path);
+            let content_hash = sha256_file(&output_path)?;
             Ok((
                 ProcessedFile {
                     original_key: display_key.to_string(),
-                    scratch_path,
+                    scratch_path: output_path,
                     extension: canonical_extension.to_string(),
                     date,
-                    content_hash: sha256_hex(&recoded_bytes),
+                    content_hash,
                     is_media: true,
                 },
                 true,
@@ -321,14 +390,22 @@ async fn process_media(
                 "recode did not verify after retries, keeping original file"
             );
             let _ = fs::remove_file(&output_path);
-            let scratch_path = write_scratch_file(scratch_dir, counter, extension, &bytes)?;
+            let scratch_path = next_scratch_path(scratch_dir, counter, extension)?;
+            fs::rename(&input_path, &scratch_path).map_err(|err| {
+                format!(
+                    "failed to move {} to {}: {err}",
+                    input_path.display(),
+                    scratch_path.display()
+                )
+            })?;
+            let content_hash = sha256_file(&scratch_path)?;
             Ok((
                 ProcessedFile {
                     original_key: display_key.to_string(),
                     scratch_path,
                     extension: extension.to_string(),
                     date,
-                    content_hash: sha256_hex(&bytes),
+                    content_hash,
                     is_media: date.is_some(),
                 },
                 false,
@@ -362,30 +439,69 @@ async fn recode_and_verify(
     Err(last_err.unwrap_or_else(|| "recode failed for an unknown reason".to_string()))
 }
 
+/// Reads `path` into memory only when it's under `MAX_IN_MEMORY_PARSE_BYTES`
+/// (ADR-0076) -- `lopdf`/`quick-xml` both need in-memory access for date
+/// parsing and there's no realistic streaming alternative worth building
+/// for either, but a file mislabeled as a document could otherwise be
+/// arbitrarily large.
+fn read_small_file(path: &Path, max_bytes: u64) -> Result<Option<Vec<u8>>, String> {
+    let metadata =
+        fs::metadata(path).map_err(|err| format!("failed to stat {}: {err}", path.display()))?;
+    if metadata.len() > max_bytes {
+        return Ok(None);
+    }
+    let bytes =
+        fs::read(path).map_err(|err| format!("failed to read {}: {err}", path.display()))?;
+    Ok(Some(bytes))
+}
+
 fn process_document_or_other(
     display_key: &str,
     extension: &str,
     kind: FileKind,
-    bytes: Vec<u8>,
+    input_path: PathBuf,
     scratch_dir: &Path,
     counter: &AtomicU64,
 ) -> Result<(ProcessedFile, bool, bool), String> {
-    let date = match kind {
-        FileKind::Pdf => documents::pdf_date(&bytes),
-        FileKind::Ooxml => documents::ooxml_date(&bytes),
-        FileKind::Other => None,
-        FileKind::Zip | FileKind::Image | FileKind::Video | FileKind::Audio => {
+    let small_file = read_small_file(&input_path, MAX_IN_MEMORY_PARSE_BYTES)?;
+
+    let date = match (&small_file, kind) {
+        (Some(bytes), FileKind::Pdf) => documents::pdf_date(bytes),
+        (Some(bytes), FileKind::Ooxml) => documents::ooxml_date(bytes),
+        (None, FileKind::Pdf | FileKind::Ooxml) => {
+            tracing::warn!(
+                key = %display_key,
+                step = "classify",
+                "file too large to parse for a date, skipping date extraction"
+            );
+            None
+        }
+        (_, FileKind::Other) => None,
+        (_, FileKind::Zip | FileKind::Image | FileKind::Video | FileKind::Audio) => {
             unreachable!("process_document_or_other is only called for Pdf/Ooxml/Other")
         }
     };
-    let scratch_path = write_scratch_file(scratch_dir, counter, extension, &bytes)?;
+
+    let scratch_path = next_scratch_path(scratch_dir, counter, extension)?;
+    fs::rename(&input_path, &scratch_path).map_err(|err| {
+        format!(
+            "failed to move {} to {}: {err}",
+            input_path.display(),
+            scratch_path.display()
+        )
+    })?;
+    let content_hash = match &small_file {
+        Some(bytes) => sha256_hex(bytes),
+        None => sha256_file(&scratch_path)?,
+    };
+
     Ok((
         ProcessedFile {
             original_key: display_key.to_string(),
             scratch_path,
             extension: extension.to_string(),
             date,
-            content_hash: sha256_hex(&bytes),
+            content_hash,
             is_media: false,
         },
         false,
@@ -398,60 +514,82 @@ async fn process_item(
     bucket_config: &BucketConfig,
     secret: &str,
     item: QueueItem,
-    tmp_dir: &Path,
+    raw_dir: &Path,
     scratch_dir: &Path,
     counter: &AtomicU64,
     extracted_bytes: &AtomicU64,
     multi_progress: &MultiProgress,
 ) -> ItemOutcome {
     let depth = item.depth;
-    let bytes = match item.bytes {
-        Some(bytes) => bytes,
+    let (kind, extension) = classify_extension(&item.display_key);
+
+    let path = match item.path {
+        Some(path) => path,
         None => {
             let key = item.source_key.as_deref().unwrap_or(&item.display_key);
-            match download(bucket_config, secret, key, item.size, multi_progress).await {
-                Ok(bytes) => bytes,
+            if let Err(err) = check_disk_space(raw_dir, item.size) {
+                tracing::warn!(key = %item.display_key, step = "download", error = %err, "not enough disk space");
+                return ItemOutcome::Failed {
+                    category: FailureCategory::Download,
+                };
+            }
+            let raw_path = match next_scratch_path(raw_dir, counter, &extension) {
+                Ok(path) => path,
                 Err(err) => {
-                    tracing::warn!(key = %item.display_key, step = "download", error = %err, "download failed");
+                    tracing::warn!(key = %item.display_key, step = "download", error = %err, "failed to allocate a raw path");
                     return ItemOutcome::Failed {
                         category: FailureCategory::Download,
                     };
                 }
+            };
+            if let Err(err) = download(
+                bucket_config,
+                secret,
+                key,
+                item.size,
+                &raw_path,
+                multi_progress,
+            )
+            .await
+            {
+                tracing::warn!(key = %item.display_key, step = "download", error = %err, "download failed");
+                let _ = fs::remove_file(&raw_path);
+                return ItemOutcome::Failed {
+                    category: FailureCategory::Download,
+                };
             }
+            raw_path
         }
     };
-
-    let (kind, extension) = classify_extension(&item.display_key);
 
     if kind == FileKind::Zip {
         if depth >= archive::MAX_ZIP_DEPTH {
             tracing::warn!(key = %item.display_key, step = "archive", depth, "zip nesting depth cap reached, not expanding further");
+            let _ = fs::remove_file(&path);
             return ItemOutcome::Failed {
                 category: FailureCategory::Archive,
             };
         }
-        return match archive::expand(&bytes) {
+        if let Err(err) = check_disk_space(raw_dir, 0) {
+            tracing::warn!(key = %item.display_key, step = "archive", error = %err, "not enough disk space to expand");
+            let _ = fs::remove_file(&path);
+            return ItemOutcome::Failed {
+                category: FailureCategory::Archive,
+            };
+        }
+        return match archive::expand_to_dir(&path, raw_dir, counter, extracted_bytes) {
             Ok(raw_members) => {
-                let mut members = Vec::with_capacity(raw_members.len());
-                for member in raw_members {
-                    let member_size = member.bytes.len() as u64;
-                    let total = extracted_bytes.fetch_add(member_size, Ordering::SeqCst);
-                    if total > archive::MAX_TOTAL_EXTRACTED_BYTES {
-                        tracing::warn!(
-                            key = %item.display_key,
-                            step = "archive",
-                            "total extracted-bytes cap reached, dropping remaining members of this archive"
-                        );
-                        break;
-                    }
-                    members.push(QueueItem {
+                let _ = fs::remove_file(&path);
+                let members = raw_members
+                    .into_iter()
+                    .map(|member| QueueItem {
                         source_key: None,
                         display_key: format!("{}!{}", item.display_key, member.name),
-                        bytes: Some(member.bytes),
+                        path: Some(member.path),
                         depth: depth + 1,
-                        size: member_size,
-                    });
-                }
+                        size: member.size,
+                    })
+                    .collect();
                 ItemOutcome::ZipExpanded {
                     display_key: item.display_key,
                     depth,
@@ -460,6 +598,7 @@ async fn process_item(
             }
             Err(err) => {
                 tracing::warn!(key = %item.display_key, step = "archive", error = %err, "failed to open zip archive");
+                let _ = fs::remove_file(&path);
                 ItemOutcome::Failed {
                     category: FailureCategory::Archive,
                 }
@@ -473,8 +612,7 @@ async fn process_item(
                 &item.display_key,
                 &extension,
                 kind,
-                bytes,
-                tmp_dir,
+                path,
                 scratch_dir,
                 counter,
                 multi_progress,
@@ -485,7 +623,7 @@ async fn process_item(
             &item.display_key,
             &extension,
             kind,
-            bytes,
+            path,
             scratch_dir,
             counter,
         ),
@@ -522,8 +660,16 @@ pub(crate) async fn run_pull_transform_job(
     remote: Option<(&BucketConfig, &str)>,
     encryptor: Option<&Aes256GcmSivEncryptor>,
 ) -> Result<PullTransformSummary, String> {
-    let tmp_dir = local_output.join(".staging").join("tmp");
+    // Everything downloaded/extracted lands here first (ADR-0076); a file
+    // only leaves this directory once it's either renamed into
+    // `scratch_dir` as final output or deleted (a consumed zip, a
+    // superseded recode input). No separate "tmp" directory is needed
+    // anymore -- a file is either not-yet-downloaded, raw-on-disk, or
+    // final; there's no intermediate in-memory stage to stage around.
+    let raw_dir = local_output.join(".staging").join("raw");
     let scratch_dir = local_output.join(".staging").join("scratch");
+    fs::create_dir_all(&raw_dir)
+        .map_err(|err| format!("failed to create {}: {err}", raw_dir.display()))?;
     let counter = Arc::new(AtomicU64::new(0));
     let extracted_bytes = Arc::new(AtomicU64::new(0));
 
@@ -541,7 +687,7 @@ pub(crate) async fn run_pull_transform_job(
             .map(|task| QueueItem {
                 source_key: Some(task.key.clone()),
                 display_key: task.key,
-                bytes: None,
+                path: None,
                 depth: 0,
                 size: task.size,
             })
@@ -569,7 +715,7 @@ pub(crate) async fn run_pull_transform_job(
         let extracted_bytes = Arc::clone(&extracted_bytes);
         let bucket_config = bucket_config.clone();
         let secret = secret.to_string();
-        let tmp_dir = tmp_dir.clone();
+        let raw_dir = raw_dir.clone();
         let scratch_dir = scratch_dir.clone();
         let multi_progress = multi_progress.clone();
         let bar = bar.clone();
@@ -590,7 +736,7 @@ pub(crate) async fn run_pull_transform_job(
                     &bucket_config,
                     &secret,
                     item,
-                    &tmp_dir,
+                    &raw_dir,
                     &scratch_dir,
                     &counter,
                     &extracted_bytes,
@@ -785,20 +931,69 @@ mod tests {
     }
 
     #[test]
-    fn write_scratch_file_produces_unique_paths() {
+    fn next_scratch_path_produces_unique_paths() {
         let dir = tempfile::tempdir().unwrap();
         let counter = AtomicU64::new(0);
-        let a = write_scratch_file(dir.path(), &counter, "jpg", b"a").unwrap();
-        let b = write_scratch_file(dir.path(), &counter, "jpg", b"b").unwrap();
+        let a = next_scratch_path(dir.path(), &counter, "jpg").unwrap();
+        let b = next_scratch_path(dir.path(), &counter, "jpg").unwrap();
         assert_ne!(a, b);
-        assert_eq!(fs::read(a).unwrap(), b"a");
-        assert_eq!(fs::read(b).unwrap(), b"b");
+    }
+
+    #[test]
+    fn sha256_file_matches_sha256_hex_for_identical_content() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("a.bin");
+        fs::write(&path, b"hello world").unwrap();
+
+        assert_eq!(sha256_file(&path).unwrap(), sha256_hex(b"hello world"));
+    }
+
+    #[test]
+    fn read_small_file_returns_bytes_under_the_cap() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("a.bin");
+        fs::write(&path, b"hello").unwrap();
+
+        assert_eq!(read_small_file(&path, 10).unwrap(), Some(b"hello".to_vec()));
+    }
+
+    #[test]
+    fn read_small_file_returns_none_over_the_cap() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("a.bin");
+        fs::write(&path, b"hello world").unwrap();
+
+        assert_eq!(read_small_file(&path, 5).unwrap(), None);
+    }
+
+    #[test]
+    fn available_disk_space_finds_a_positive_value_for_the_current_directory() {
+        let dir = tempfile::tempdir().unwrap();
+        let available = available_disk_space(dir.path());
+        assert!(available.unwrap_or(0) > 0);
+    }
+
+    #[test]
+    fn check_disk_space_fails_when_required_exceeds_available() {
+        let dir = tempfile::tempdir().unwrap();
+        // No real filesystem has an exbibyte free -- this must fail
+        // regardless of the test machine's actual disk size.
+        let result = check_disk_space(dir.path(), u64::MAX / 2);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn check_disk_space_succeeds_for_a_small_requirement() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(check_disk_space(dir.path(), 1).is_ok());
     }
 
     /// End-to-end regression coverage for `process_media` against a real
     /// `ffmpeg`-generated clip -- classify -> probe -> recode -> verify,
-    /// exactly as `process_item` drives it. Skipped (not failed) if
-    /// `ffmpeg` isn't on `PATH`, same reasoning as `media`'s own tests.
+    /// exactly as `process_item` drives it, now operating on an
+    /// already-on-disk path (ADR-0076) rather than in-memory bytes. Skipped
+    /// (not failed) if `ffmpeg` isn't on `PATH`, same reasoning as
+    /// `media`'s own tests.
     #[tokio::test]
     async fn process_media_recodes_a_real_video_to_mp4() {
         if media::check_ffmpeg_available().await.is_err() {
@@ -824,9 +1019,7 @@ mod tests {
             .await
             .unwrap();
         assert!(output.status.success());
-        let bytes = fs::read(&source).unwrap();
 
-        let tmp_dir = dir.path().join("tmp");
         let scratch_dir = dir.path().join("scratch");
         let counter = AtomicU64::new(0);
 
@@ -834,8 +1027,7 @@ mod tests {
             "clips/clip.mov",
             "mov",
             FileKind::Video,
-            bytes,
-            &tmp_dir,
+            source,
             &scratch_dir,
             &counter,
             &MultiProgress::new(),

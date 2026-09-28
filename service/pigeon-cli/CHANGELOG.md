@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- ADR-0076: streams `pull-transform` downloads and zip expansion straight to disk instead of buffering whole objects/zip contents in memory, root-causing and fixing a real SIGKILL crash against 50-100GB zip archives; adds a live disk-space preflight check ([#83](https://github.com/noisypigeon/pigeon/pull/83)).
 - ADR-0052: decides how to merge the separate `pigeon-do` repo's full history into this repo as `terraform/infrastructure/*`, renumbering its 12 ADRs to 0053-0064 and rewriting its module sources to point at `terraform/modules/` (documents the decision; the user performs the actual merge manually) ([#62](https://github.com/noisypigeon/pigeon/pull/62)).
 - ADR-0065: fixes a `job run email-sync` crash root-caused to `imap-proto` only recognizing `MESSAGE`/`RFC822` in `BODYSTRUCTURE` -- `pull_manifest` now bisects a failing UID batch to isolate the specific unparseable message(s) with a placeholder, instead of losing the whole mailbox's manifest data ([#65](https://github.com/noisypigeon/pigeon/pull/65)).
 - ADR-0068: fixes three IMAP `LOGOUT` calls that treated a logout failure as fatal even after the real work already succeeded -- `gather_pending` was discarding the whole identity's already-gathered manifest data on a logout-time disconnect; now best-effort, matching `worker.rs`'s existing pattern ([#67](https://github.com/noisypigeon/pigeon/pull/67)).

@@ -27,7 +27,7 @@ use super::archive;
 use super::dedup::{self, ProcessedFile, PullTransformDedup};
 use super::documents;
 use super::manifest::{self, PullTask, extension_of};
-use super::media::{self, MediaKind};
+use super::media::{self, MediaKind, TranscodeTargets};
 
 const DOWNLOAD_RETRIES: usize = 3;
 const DOWNLOAD_RETRY_BACKOFF: Duration = Duration::from_secs(2);
@@ -137,6 +137,10 @@ pub(crate) struct PullTransformSummary {
     pub uploaded: usize,
     pub unchanged: usize,
     pub upload_failed: usize,
+    /// Excluded by ADR-0077's `--file-types` filter -- deliberately not part
+    /// of `failed` (nothing went wrong) and never checkpointed for a
+    /// depth-0 item, so a later run with a broader filter still sees it.
+    pub skipped_type: usize,
 }
 
 /// Broad category driving both processing (does this need `ffmpeg`?) and
@@ -212,6 +216,11 @@ enum ItemOutcome {
     Failed {
         category: FailureCategory,
     },
+    /// Excluded by the `--file-types` filter (ADR-0077) before any
+    /// download/expansion work was done -- not a failure, and (unlike
+    /// `Processed`/`ZipExpanded`) never contributes to `finished_root_keys`,
+    /// so it's never checkpointed either.
+    Skipped,
 }
 
 /// Streams `key` straight to `dest_path` (ADR-0076) -- never buffers the
@@ -276,6 +285,7 @@ fn next_scratch_path(dir: &Path, counter: &AtomicU64, extension: &str) -> Result
     skip(input_path, scratch_dir, counter, multi_progress),
     fields(key = %display_key)
 )]
+#[allow(clippy::too_many_arguments)]
 async fn process_media(
     display_key: &str,
     extension: &str,
@@ -284,6 +294,7 @@ async fn process_media(
     scratch_dir: &Path,
     counter: &AtomicU64,
     multi_progress: &MultiProgress,
+    transcode_targets: &TranscodeTargets,
 ) -> Result<(ProcessedFile, bool, bool), String> {
     let probe_result = media::probe(&input_path).await;
 
@@ -334,9 +345,9 @@ async fn process_media(
         }
     };
 
-    let canonical_extension = media_kind.canonical_extension();
+    let canonical_extension = media_kind.canonical_extension(transcode_targets);
     let output_path = next_scratch_path(scratch_dir, counter, canonical_extension)?;
-    let already_aac_m4a = extension.eq_ignore_ascii_case("m4a");
+    let input_already_matches_target = extension.eq_ignore_ascii_case(canonical_extension);
 
     // Re-encoding is CPU-bound and slow independent of file size, unlike
     // the cheap mjpeg photo/screenshot path below -- always worth naming
@@ -360,7 +371,8 @@ async fn process_media(
         &input_path,
         &output_path,
         media_kind,
-        already_aac_m4a,
+        transcode_targets,
+        input_already_matches_target,
         before,
     )
     .await;
@@ -419,12 +431,21 @@ async fn recode_and_verify(
     input_path: &Path,
     output_path: &Path,
     kind: MediaKind,
-    already_aac_m4a: bool,
+    transcode_targets: &TranscodeTargets,
+    input_already_matches_target: bool,
     before: media::ProbeInfo,
 ) -> Result<(), String> {
     let mut last_err = None;
     for attempt in 1..=RECODE_ATTEMPTS {
-        let outcome = match media::recode(input_path, output_path, kind, already_aac_m4a).await {
+        let outcome = match media::recode(
+            input_path,
+            output_path,
+            kind,
+            transcode_targets,
+            input_already_matches_target,
+        )
+        .await
+        {
             Ok(()) => media::verify(before, output_path).await,
             Err(err) => Err(err),
         };
@@ -519,9 +540,31 @@ async fn process_item(
     counter: &AtomicU64,
     extracted_bytes: &AtomicU64,
     multi_progress: &MultiProgress,
+    allowed_extensions: &HashSet<String>,
+    expand_zip_keys: &HashSet<String>,
+    transcode_targets: &TranscodeTargets,
 ) -> ItemOutcome {
     let depth = item.depth;
     let (kind, extension) = classify_extension(&item.display_key);
+
+    // ADR-0077: excluded types are dropped before any download/expansion
+    // work, whether this is a top-level object or something already
+    // streamed to disk during a parent zip's expansion.
+    if !allowed_extensions.contains(&extension) {
+        if let Some(path) = &item.path {
+            let _ = fs::remove_file(path);
+        }
+        return ItemOutcome::Skipped;
+    }
+
+    // ADR-0077: a zip not selected for expansion is handled exactly like a
+    // non-media `Other` file -- hashed and placed/uploaded verbatim, never
+    // expanded.
+    let kind = if kind == FileKind::Zip && !expand_zip_keys.contains(&item.display_key) {
+        FileKind::Other
+    } else {
+        kind
+    };
 
     let path = match item.path {
         Some(path) => path,
@@ -616,6 +659,7 @@ async fn process_item(
                 scratch_dir,
                 counter,
                 multi_progress,
+                transcode_targets,
             )
             .await
         }
@@ -651,6 +695,7 @@ async fn process_item(
 /// checkpoint by the wizard); downloads/expands/classifies/recodes/verifies
 /// them concurrently at `concurrency`, places the results sequentially
 /// (dedup + naming), then uploads (if `remote` is given).
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn run_pull_transform_job(
     bucket_config: &BucketConfig,
     secret: &str,
@@ -659,6 +704,9 @@ pub(crate) async fn run_pull_transform_job(
     concurrency: usize,
     remote: Option<(&BucketConfig, &str)>,
     encryptor: Option<&Aes256GcmSivEncryptor>,
+    allowed_extensions: HashSet<String>,
+    expand_zip_keys: HashSet<String>,
+    transcode_targets: TranscodeTargets,
 ) -> Result<PullTransformSummary, String> {
     // Everything downloaded/extracted lands here first (ADR-0076); a file
     // only leaves this directory once it's either renamed into
@@ -700,6 +748,9 @@ pub(crate) async fn run_pull_transform_job(
     let failure_breakdown = Arc::new(Mutex::new(FailureBreakdown::default()));
     let recoded_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let fallback_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let skipped_type_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let allowed_extensions = Arc::new(allowed_extensions);
+    let expand_zip_keys = Arc::new(expand_zip_keys);
 
     let worker_count = concurrency.max(1);
     let mut handles = Vec::with_capacity(worker_count);
@@ -711,6 +762,9 @@ pub(crate) async fn run_pull_transform_job(
         let failure_breakdown = Arc::clone(&failure_breakdown);
         let recoded_count = Arc::clone(&recoded_count);
         let fallback_count = Arc::clone(&fallback_count);
+        let skipped_type_count = Arc::clone(&skipped_type_count);
+        let allowed_extensions = Arc::clone(&allowed_extensions);
+        let expand_zip_keys = Arc::clone(&expand_zip_keys);
         let counter = Arc::clone(&counter);
         let extracted_bytes = Arc::clone(&extracted_bytes);
         let bucket_config = bucket_config.clone();
@@ -741,6 +795,9 @@ pub(crate) async fn run_pull_transform_job(
                     &counter,
                     &extracted_bytes,
                     &multi_progress,
+                    &allowed_extensions,
+                    &expand_zip_keys,
+                    &transcode_targets,
                 )
                 .await;
 
@@ -755,6 +812,9 @@ pub(crate) async fn run_pull_transform_job(
                         if depth == 0 {
                             finished_root_keys.lock().unwrap().push(display_key);
                         }
+                    }
+                    ItemOutcome::Skipped => {
+                        skipped_type_count.fetch_add(1, Ordering::SeqCst);
                     }
                     ItemOutcome::Processed {
                         depth,
@@ -844,6 +904,7 @@ pub(crate) async fn run_pull_transform_job(
         duplicates_skipped: placement_summary.duplicates_skipped,
         recoded: recoded_count.load(Ordering::SeqCst),
         recode_fallback_to_original: fallback_count.load(Ordering::SeqCst),
+        skipped_type: skipped_type_count.load(Ordering::SeqCst),
         ..Default::default()
     };
     summary.failure_breakdown.merge(&failure_breakdown);
@@ -1031,6 +1092,7 @@ mod tests {
             &scratch_dir,
             &counter,
             &MultiProgress::new(),
+            &TranscodeTargets::default(),
         )
         .await
         .unwrap();
@@ -1041,5 +1103,111 @@ mod tests {
         assert!(file.is_media);
         assert!(file.scratch_path.exists());
         assert!(!file.content_hash.is_empty());
+    }
+
+    fn all_extensions(exts: &[&str]) -> HashSet<String> {
+        exts.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[tokio::test]
+    async fn process_item_skips_an_excluded_extension_before_downloading() {
+        let dir = tempfile::tempdir().unwrap();
+        let raw_dir = dir.path().join("raw");
+        let scratch_dir = dir.path().join("scratch");
+        let counter = AtomicU64::new(0);
+        let extracted_bytes = AtomicU64::new(0);
+
+        let bucket_config = BucketConfig {
+            alias: "unused".to_string(),
+            endpoint: "http://127.0.0.1:1".to_string(),
+            bucket: "unused".to_string(),
+            access_key_id: "unused".to_string(),
+            encryption_key_alias: None,
+        };
+
+        let item = QueueItem {
+            source_key: Some("photo.pdf".to_string()),
+            display_key: "photo.pdf".to_string(),
+            path: None,
+            depth: 0,
+            size: 100,
+        };
+
+        let outcome = process_item(
+            &bucket_config,
+            "unused-secret",
+            item,
+            &raw_dir,
+            &scratch_dir,
+            &counter,
+            &extracted_bytes,
+            &MultiProgress::new(),
+            &all_extensions(&["jpg"]),
+            &all_extensions(&[]),
+            &TranscodeTargets::default(),
+        )
+        .await;
+
+        assert!(matches!(outcome, ItemOutcome::Skipped));
+        assert!(!raw_dir.exists() || fs::read_dir(&raw_dir).unwrap().next().is_none());
+    }
+
+    #[test]
+    fn process_item_zip_not_in_expand_set_passes_through_as_other() {
+        let dir = tempfile::tempdir().unwrap();
+        let raw_dir = dir.path().join("raw");
+        fs::create_dir_all(&raw_dir).unwrap();
+        let scratch_dir = dir.path().join("scratch");
+        let counter = AtomicU64::new(0);
+        let extracted_bytes = AtomicU64::new(0);
+
+        let zip_path = raw_dir.join("archive.zip");
+        fs::write(&zip_path, b"not really a zip, just opaque bytes").unwrap();
+
+        let item = QueueItem {
+            source_key: None,
+            display_key: "archive.zip".to_string(),
+            path: Some(zip_path),
+            depth: 0,
+            size: 36,
+        };
+
+        let bucket_config = BucketConfig {
+            alias: "unused".to_string(),
+            endpoint: "http://127.0.0.1:1".to_string(),
+            bucket: "unused".to_string(),
+            access_key_id: "unused".to_string(),
+            encryption_key_alias: None,
+        };
+
+        let outcome = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(process_item(
+                &bucket_config,
+                "unused-secret",
+                item,
+                &raw_dir,
+                &scratch_dir,
+                &counter,
+                &extracted_bytes,
+                &MultiProgress::new(),
+                &all_extensions(&["zip"]),
+                &all_extensions(&[]), // "archive.zip" not selected for expansion
+                &TranscodeTargets::default(),
+            ));
+
+        match outcome {
+            ItemOutcome::Processed { file, .. } => {
+                assert_eq!(file.extension, "zip");
+                assert!(file.scratch_path.exists());
+            }
+            ItemOutcome::Failed { .. } => panic!("expected Processed (passthrough), got Failed"),
+            ItemOutcome::Skipped => panic!("expected Processed (passthrough), got Skipped"),
+            ItemOutcome::ZipExpanded { .. } => {
+                panic!("expected Processed (passthrough), got ZipExpanded")
+            }
+        }
     }
 }

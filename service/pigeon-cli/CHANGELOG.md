@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- ADR-0077: adds `--file-types`, `--expand-zips`, and `--image-format`/`--video-format`/`--audio-format` to `pull-transform`, letting a run filter which extensions get pulled/transformed/uploaded, opt individual zips out of expansion (upload as-is instead), and adapt the media-transcoding mapping from a small vetted per-category menu ([#84](https://github.com/noisypigeon/pigeon/pull/84)).
 - ADR-0076: streams `pull-transform` downloads and zip expansion straight to disk instead of buffering whole objects/zip contents in memory, root-causing and fixing a real SIGKILL crash against 50-100GB zip archives; adds a live disk-space preflight check ([#83](https://github.com/noisypigeon/pigeon/pull/83)).
 - ADR-0052: decides how to merge the separate `pigeon-do` repo's full history into this repo as `terraform/infrastructure/*`, renumbering its 12 ADRs to 0053-0064 and rewriting its module sources to point at `terraform/modules/` (documents the decision; the user performs the actual merge manually) ([#62](https://github.com/noisypigeon/pigeon/pull/62)).
 - ADR-0065: fixes a `job run email-sync` crash root-caused to `imap-proto` only recognizing `MESSAGE`/`RFC822` in `BODYSTRUCTURE` -- `pull_manifest` now bisects a failing UID batch to isolate the specific unparseable message(s) with a placeholder, instead of losing the whole mailbox's manifest data ([#65](https://github.com/noisypigeon/pigeon/pull/65)).

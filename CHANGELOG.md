@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-27
 
+- [pigeon-cli] feat(adr-0077): add pull-transform file-type selection, adaptable transcoding mapping, and zip pass-through ([#84](https://github.com/noisypigeon/noisypigeon/pull/84))
+
 - [pigeon-cli] fix(adr-0076): stream pull-transform downloads and zip expansion to disk instead of buffering whole objects/zips in memory, fixing a real SIGKILL crash against 50-100GB zip archives ([#83](https://github.com/noisypigeon/noisypigeon/pull/83))
 
 - [pigeon-cli] feat(adr-0075): add progress visibility to pull-transform -- a live bar plus named call-outs for large downloads/recodes, so a long run no longer looks hung ([#82](https://github.com/noisypigeon/noisypigeon/pull/82))

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use bytes::Bytes;
 use futures::StreamExt;
 use minio::s3::MinioClient;
@@ -141,14 +143,20 @@ pub async fn list_objects(
     Ok(entries)
 }
 
-/// Downloads `key` from `bucket_config`'s bucket into memory. Whole-object,
-/// non-streaming -- fine for the email-archive-sized files this project
-/// deals with; chunked/multipart transfer is future work if that changes.
-pub async fn get_object(
+/// Downloads `key` from `bucket_config`'s bucket straight to `dest_path`,
+/// streaming the response body in chunks the whole way (ADR-0076) -- never
+/// buffers the whole object in memory, so a 50-100GB object costs a small,
+/// fixed amount of RAM regardless of its size. `ObjectContent::to_file` (the
+/// `minio` crate's own streaming helper, not a hand-rolled one) also
+/// verifies the response's checksum incrementally per chunk and creates
+/// `dest_path`'s parent directory if needed. Returns the number of bytes
+/// written.
+pub async fn download_object_to_file(
     bucket_config: &BucketConfig,
     secret_key: &str,
     key: &str,
-) -> Result<Vec<u8>, String> {
+    dest_path: &Path,
+) -> Result<u64, String> {
     let client = build_client(bucket_config, secret_key)?;
     let resp = client
         .get_object(bucket_config.bucket.as_str(), key)
@@ -157,13 +165,16 @@ pub async fn get_object(
         .send()
         .await
         .map_err(|err| format!("failed to download '{key}': {}", format_error(&err)))?;
-    let content = resp
-        .content()
+    resp.content()
         .map_err(|err| format!("failed to read '{key}': {err}"))?
-        .to_segmented_bytes()
+        .to_file(dest_path)
         .await
-        .map_err(|err| format!("failed to read '{key}': {err}"))?;
-    Ok(content.to_bytes().to_vec())
+        .map_err(|err| {
+            format!(
+                "failed to download '{key}' to {}: {err}",
+                dest_path.display()
+            )
+        })
 }
 
 /// Uploads `data` to `key` in `bucket_config`'s bucket, but only if it

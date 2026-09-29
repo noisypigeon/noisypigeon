@@ -16,10 +16,14 @@ variable "user_name" {
 
 variable "buckets" {
   type = list(object({
-    bucket_name  = string
-    bucket_alias = string
+    bucket_name       = string
+    bucket_alias      = string
+    bucket_endpoint   = string
+    bucket_access_key = string
+    bucket_secret_key = string
+    bucket_provider   = string
   }))
-  description = "Buckets to configure in rclone (name + alias)"
+  description = "Buckets to configure in rclone"
 
   validation {
     condition     = length(var.buckets) > 0

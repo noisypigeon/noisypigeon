@@ -8,7 +8,6 @@ A DigitalOcean droplet (`digitalocean_droplet`) with cloud-init provisioning (rc
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone | <pre>list(object({<br/>    bucket_name       = string<br/>    bucket_alias      = string<br/>    bucket_endpoint   = string<br/>    bucket_access_key = string<br/>    bucket_secret_key = string<br/>    bucket_provider   = string<br/>  }))</pre> | n/a | yes |
-| <a name="input_cloudflare_zone_id"></a> [cloudflare\_zone\_id](#input\_cloudflare\_zone\_id) | Cloudflare zone ID | `string` | n/a | yes |
 | <a name="input_image"></a> [image](#input\_image) | Droplet image (slug or ID) | `string` | n/a | yes |
 | <a name="input_lvm_filesystem"></a> [lvm\_filesystem](#input\_lvm\_filesystem) | LVM filesystem type | `string` | `"xfs"` | no |
 | <a name="input_lvm_mount_point"></a> [lvm\_mount\_point](#input\_lvm\_mount\_point) | LVM mount point for combined attached volumes | `string` | `"/mnt/data"` | no |
@@ -24,7 +23,6 @@ A DigitalOcean droplet (`digitalocean_droplet`) with cloud-init provisioning (rc
 
 | Name | Description |
 |------|-------------|
-| <a name="output_hostname"></a> [hostname](#output\_hostname) | DNS hostname on the Cloudflare zone |
 | <a name="output_id"></a> [id](#output\_id) | Droplet ID |
 | <a name="output_ipv4_address"></a> [ipv4\_address](#output\_ipv4\_address) | Droplet IPv4 address |
 | <a name="output_name"></a> [name](#output\_name) | Computed droplet name |

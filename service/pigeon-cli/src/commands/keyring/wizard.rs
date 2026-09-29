@@ -142,12 +142,28 @@ fn add_email(
         return fail(err);
     }
 
+    let max_imap_connections = match confirm(
+        "Cap simultaneous IMAP connections for this identity?",
+        false,
+    ) {
+        Ok(true) => match Input::<u32>::new()
+            .with_prompt("Max simultaneous IMAP connections")
+            .interact_text()
+        {
+            Ok(value) => Some(value.max(1)),
+            Err(err) => return fail(format!("failed to read max IMAP connections: {err}")),
+        },
+        Ok(false) => None,
+        Err(err) => return fail(err),
+    };
+
     store.push(Entry::Email(Identity {
         alias: alias.clone(),
         email: email.clone(),
         provider,
         host,
         port,
+        max_imap_connections,
     }));
     if let Err(err) = store.save(&path) {
         // The keychain write already succeeded; don't leave an orphaned
@@ -408,12 +424,31 @@ fn modify_email(store: &mut Store, path: &std::path::Path, current: &Identity) -
         return fail(err);
     }
 
+    let max_imap_connections = match confirm(
+        "Cap simultaneous IMAP connections for this identity?",
+        current.max_imap_connections.is_some(),
+    ) {
+        Ok(true) => {
+            let mut input = Input::<u32>::new().with_prompt("Max simultaneous IMAP connections");
+            if let Some(current_cap) = current.max_imap_connections {
+                input = input.default(current_cap);
+            }
+            match input.interact_text() {
+                Ok(value) => Some(value.max(1)),
+                Err(err) => return fail(format!("failed to read max IMAP connections: {err}")),
+            }
+        }
+        Ok(false) => None,
+        Err(err) => return fail(err),
+    };
+
     let updated = Identity {
         alias: current.alias.clone(),
         email: current.email.clone(),
         provider,
         host,
         port,
+        max_imap_connections,
     };
     store.remove(&current.alias);
     store.push(Entry::Email(updated));

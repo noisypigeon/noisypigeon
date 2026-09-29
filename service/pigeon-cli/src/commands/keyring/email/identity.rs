@@ -14,6 +14,15 @@ pub struct Identity {
     pub provider: Provider,
     pub host: String,
     pub port: u16,
+    /// Caps how many simultaneous IMAP connections `job run email-sync`
+    /// (`commands::job::email_sync::worker`) will open to this identity,
+    /// overriding that job's `--max-connections-per-identity` default for
+    /// this identity only (ADR-0080). `None` (the default for every
+    /// existing `keyring.toml` entry, via `#[serde(default)]`) means "use
+    /// the job's default cap" -- set via `pigeon keyring add/modify email`
+    /// once a provider is known to reject that default for this account.
+    #[serde(default)]
+    pub max_imap_connections: Option<u32>,
 }
 
 impl crate::core::keyring::KeyringEntry for Identity {
@@ -24,7 +33,10 @@ impl crate::core::keyring::KeyringEntry for Identity {
         "email"
     }
     fn detail(&self) -> String {
-        format!("{} ({})", self.email, self.provider)
+        match self.max_imap_connections {
+            Some(cap) => format!("{} ({}, max {cap} IMAP conns)", self.email, self.provider),
+            None => format!("{} ({})", self.email, self.provider),
+        }
     }
 }
 

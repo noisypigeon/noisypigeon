@@ -81,16 +81,27 @@ impl Transform for EmailTransform {
     /// Returns `Ok(None)` on a lenient skip (unparseable message, missing
     /// `Date` header, or a filename that doesn't parse as a `u32` UID --
     /// needed for the `uid:` frontmatter field) with a warning already
-    /// printed; `Err` only for a hard I/O failure.
+    /// logged via `tracing::warn!` (ADR-0080; previously an `eprintln!`
+    /// invisible to the JSONL observability log); `Err` only for a hard
+    /// I/O failure.
     fn transform(&self, eml_path: PathBuf) -> Result<Option<TransformOutcome>, String> {
+        // Computed up front (`mailbox_tag` only needs `eml_path`/`input_root`,
+        // not the parsed `uid`) so every lenient-skip warning below can
+        // attach it, matching `worker.rs`'s `identity`/`mailbox`/`step`
+        // field convention.
+        let mailbox = mailbox_tag(&eml_path, &self.input_root);
+
         let Some(uid) = eml_path
             .file_stem()
             .and_then(|stem| stem.to_str())
             .and_then(|stem| stem.parse::<u32>().ok())
         else {
-            eprintln!(
-                "Warning: {} is not named <uid>.eml, skipping",
-                eml_path.display()
+            tracing::warn!(
+                identity = %self.identity.alias,
+                mailbox = %mailbox,
+                step = "transform",
+                file = %eml_path.display(),
+                "eml filename doesn't parse as <uid>.eml, skipping"
             );
             return Ok(None);
         };
@@ -98,7 +109,15 @@ impl Transform for EmailTransform {
         let bytes = match fs::read(&eml_path) {
             Ok(bytes) => bytes,
             Err(err) => {
-                eprintln!("Warning: failed to read {}: {err}", eml_path.display());
+                tracing::warn!(
+                    identity = %self.identity.alias,
+                    mailbox = %mailbox,
+                    step = "transform",
+                    uid,
+                    file = %eml_path.display(),
+                    error = %err,
+                    "failed to read eml file, skipping"
+                );
                 return Ok(None);
             }
         };
@@ -106,19 +125,29 @@ impl Transform for EmailTransform {
         let message_hash = format!("{:x}", md5::compute(&bytes));
 
         let Some(message) = MessageParser::default().parse(&bytes) else {
-            eprintln!("Warning: failed to parse {}, skipping", eml_path.display());
-            return Ok(None);
-        };
-
-        let Some(date) = message.date() else {
-            eprintln!(
-                "Warning: {} has no Date header, skipping",
-                eml_path.display()
+            tracing::warn!(
+                identity = %self.identity.alias,
+                mailbox = %mailbox,
+                step = "transform",
+                uid,
+                file = %eml_path.display(),
+                "failed to parse eml file, skipping"
             );
             return Ok(None);
         };
 
-        let mailbox = mailbox_tag(&eml_path, &self.input_root);
+        let Some(date) = message.date() else {
+            tracing::warn!(
+                identity = %self.identity.alias,
+                mailbox = %mailbox,
+                step = "transform",
+                uid,
+                file = %eml_path.display(),
+                "eml file has no Date header, skipping"
+            );
+            return Ok(None);
+        };
+
         let relative_dir = eml_path
             .strip_prefix(&self.input_root)
             .ok()
@@ -515,6 +544,7 @@ mod tests {
             provider: crate::commands::keyring::email::provider::Provider::Gmail,
             host: "imap.gmail.com".to_string(),
             port: 993,
+            max_imap_connections: None,
         }
     }
 
@@ -728,5 +758,130 @@ mod tests {
             "the dangling, header-less trailing part should not be staged as an attachment"
         );
         assert!(verify_transformed(&outcome).is_ok());
+    }
+
+    /// A minimal `tracing_subscriber::Layer` that captures every event's
+    /// fields into a plain map, for asserting on the `tracing::warn!`
+    /// calls added by ADR-0080 without needing a global subscriber or an
+    /// extra test-only crate dependency. `%`-sigil fields are recorded via
+    /// `record_debug` with a `Debug` impl that forwards straight to
+    /// `Display`, so captured values come through unquoted.
+    #[derive(Clone, Default)]
+    struct CapturedEvents(
+        std::sync::Arc<std::sync::Mutex<Vec<std::collections::HashMap<String, String>>>>,
+    );
+
+    struct CaptureLayer(CapturedEvents);
+
+    impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for CaptureLayer {
+        fn on_event(
+            &self,
+            event: &tracing::Event<'_>,
+            _ctx: tracing_subscriber::layer::Context<'_, S>,
+        ) {
+            struct Visitor(std::collections::HashMap<String, String>);
+            impl tracing::field::Visit for Visitor {
+                fn record_debug(
+                    &mut self,
+                    field: &tracing::field::Field,
+                    value: &dyn std::fmt::Debug,
+                ) {
+                    self.0
+                        .insert(field.name().to_string(), format!("{value:?}"));
+                }
+                fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+                    // Plain string-literal field values (e.g. `step =
+                    // "transform"`) go through `record_str`, not
+                    // `record_debug` -- without this override they'd pick
+                    // up `Debug`'s surrounding quotes.
+                    self.0.insert(field.name().to_string(), value.to_string());
+                }
+            }
+            let mut visitor = Visitor(std::collections::HashMap::new());
+            event.record(&mut visitor);
+            self.0.0.lock().unwrap().push(visitor.0);
+        }
+    }
+
+    fn capture_warnings(run: impl FnOnce()) -> Vec<std::collections::HashMap<String, String>> {
+        use tracing_subscriber::layer::SubscriberExt as _;
+
+        let events = CapturedEvents::default();
+        let subscriber = tracing_subscriber::registry().with(CaptureLayer(events.clone()));
+        tracing::subscriber::with_default(subscriber, run);
+        events.0.lock().unwrap().clone()
+    }
+
+    #[test]
+    fn transform_one_logs_a_structured_warning_for_a_missing_eml_file() {
+        let staging = tempfile::tempdir().unwrap();
+        let input = tempfile::tempdir().unwrap();
+        let inbox = input.path().join("inbox");
+        fs::create_dir_all(&inbox).unwrap();
+        // Deliberately never written -- exercises the "fetch never staged
+        // this UID" lenient skip (ADR-0080's replacement for the old
+        // `eprintln!`, invisible to the JSONL log per the report this ADR
+        // addresses).
+        let missing_path = inbox.join("5.eml");
+
+        let transformer = transformer(input.path(), staging.path());
+        let events = capture_warnings(|| {
+            let outcome = transformer.transform(missing_path).unwrap();
+            assert!(outcome.is_none());
+        });
+
+        assert_eq!(events.len(), 1);
+        let fields = &events[0];
+        assert_eq!(fields.get("step").map(String::as_str), Some("transform"));
+        assert_eq!(
+            fields.get("identity").map(String::as_str),
+            Some("first-last")
+        );
+        assert_eq!(
+            fields.get("mailbox").map(String::as_str),
+            Some("mailbox/inbox")
+        );
+        assert_eq!(fields.get("uid").map(String::as_str), Some("5"));
+        assert!(fields.contains_key("error"));
+        assert!(
+            fields
+                .get("file")
+                .is_some_and(|file| file.ends_with("5.eml"))
+        );
+    }
+
+    #[test]
+    fn transform_one_logs_a_structured_warning_for_a_non_uid_named_file() {
+        let staging = tempfile::tempdir().unwrap();
+        let input = tempfile::tempdir().unwrap();
+        let inbox = input.path().join("inbox");
+        fs::create_dir_all(&inbox).unwrap();
+        fs::write(inbox.join("not-a-uid.eml"), plain_text_eml("Hello")).unwrap();
+
+        let transformer = transformer(input.path(), staging.path());
+        let events = capture_warnings(|| {
+            let outcome = transformer.transform(inbox.join("not-a-uid.eml")).unwrap();
+            assert!(outcome.is_none());
+        });
+
+        assert_eq!(events.len(), 1);
+        let fields = &events[0];
+        assert_eq!(fields.get("step").map(String::as_str), Some("transform"));
+        assert_eq!(
+            fields.get("identity").map(String::as_str),
+            Some("first-last")
+        );
+        assert_eq!(
+            fields.get("mailbox").map(String::as_str),
+            Some("mailbox/inbox")
+        );
+        // No UID could be parsed from the filename, so there's nothing to
+        // attach a `uid` field for.
+        assert!(!fields.contains_key("uid"));
+        assert!(
+            fields
+                .get("file")
+                .is_some_and(|file| file.ends_with("not-a-uid.eml"))
+        );
     }
 }

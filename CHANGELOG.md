@@ -15,6 +15,7 @@ backfill of prior history.
 
 ## 2026-09-28
 
+- [pigeon-cli] feat(adr-0080): add a per-identity IMAP connection cap via keyring, and route transform lenient-skip warnings through tracing ([#87](https://github.com/noisypigeon/noisypigeon/pull/87))
 - [repo] feat(adr-0078): formalize a job-run log analysis procedure and package it as the `analyze-job-run` Claude Code skill ([#85](https://github.com/noisypigeon/noisypigeon/pull/85))
 
 ## 2026-09-27

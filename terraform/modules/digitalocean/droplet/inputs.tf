@@ -56,11 +56,6 @@ variable "size" {
   description = "Droplet size slug"
 }
 
-variable "cloudflare_zone_id" {
-  type        = string
-  description = "Cloudflare zone ID"
-}
-
 variable "public_networking" {
   type        = bool
   description = "Public networking enabled (true/false)"

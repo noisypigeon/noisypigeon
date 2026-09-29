@@ -130,10 +130,10 @@ the way direct stdout/stderr writes do.
 - Extending ADR-0071's `BATCH_RETRIES`/backoff for `connect`/`examine` batch failures -- the
   per-identity cap above is the direct fix for the incident as analyzed; revisit only if a
   future incident shows the cap alone insufficient.
-- `"Validation error occurred"` S3-client error investigation (report item 3) -- needs its own
+- `"Validation error occurred"` S3-client error investigation (report item 3) -- needs its own ([#88](https://github.com/noisypigeon/noisypigeon/issues/88))
   reproduction against a single bucket-config and the actual underlying S3 response before a
   fix can be designed. Filed as a GitHub issue via `mise run adr-issue`.
-- `pull-transform` `SIGKILL` root cause (report item 4) -- genuinely open, confirmed not
+- `pull-transform` `SIGKILL` root cause (report item 4) -- genuinely open, confirmed not ([#89](https://github.com/noisypigeon/noisypigeon/issues/89))
   self-inflicted; needs system-level correlation on recurrence. Filed as a GitHub issue via
   `mise run adr-issue`.
 

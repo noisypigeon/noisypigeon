@@ -16,11 +16,11 @@ locals {
 
   secrets = local.root_secrets
 
-  # Bucket-name secrets: any .env key suffixed _BUCKET_NAME is exposed as a
+  # Injected secrets/sensitive values: any .env key prefixed ENV_DO_ is exposed as a
   # local named. See docs/adr/0006-automatic-bucket-name-locals.md.
   bucket_name_secrets = {
-    for k, v in local.secrets : "${lower(k)}" => get_env(k, v)
-    if endswith(k, "_BUCKET_NAME")
+    for k, v in local.secrets : "${lower(trimprefix(k, "ENV_DO_"))}" => get_env(k, v)
+    if startswith(k, "ENV_DO_")
   }
 }
 

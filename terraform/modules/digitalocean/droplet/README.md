@@ -7,7 +7,7 @@ A DigitalOcean droplet (`digitalocean_droplet`) with cloud-init provisioning (rc
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone (name + alias) | <pre>list(object({<br/>    bucket_name  = string<br/>    bucket_alias = string<br/>  }))</pre> | n/a | yes |
+| <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone | <pre>list(object({<br/>    bucket_name       = string<br/>    bucket_alias      = string<br/>    bucket_endpoint   = string<br/>    bucket_access_key = string<br/>    bucket_secret_key = string<br/>    bucket_provider   = string<br/>  }))</pre> | n/a | yes |
 | <a name="input_cloudflare_zone_id"></a> [cloudflare\_zone\_id](#input\_cloudflare\_zone\_id) | Cloudflare zone ID | `string` | n/a | yes |
 | <a name="input_image"></a> [image](#input\_image) | Droplet image (slug or ID) | `string` | n/a | yes |
 | <a name="input_lvm_filesystem"></a> [lvm\_filesystem](#input\_lvm\_filesystem) | LVM filesystem type | `string` | `"xfs"` | no |

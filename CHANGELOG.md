@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-09-28
+
+- [repo] feat(adr-0078): formalize a job-run log analysis procedure and package it as the `analyze-job-run` Claude Code skill ([#85](https://github.com/noisypigeon/noisypigeon/pull/85))
+
 ## 2026-09-27
 
 - [pigeon-cli] feat(adr-0077): add pull-transform file-type selection, adaptable transcoding mapping, and zip pass-through ([#84](https://github.com/noisypigeon/noisypigeon/pull/84))

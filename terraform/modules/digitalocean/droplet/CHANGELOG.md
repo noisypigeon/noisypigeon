@@ -4,6 +4,33 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.0] - 2026-09-29
+
+### Drop Cloudflare DNS record integration
+
+This module no longer creates a Cloudflare DNS record for the droplet: `dns_record.tf` (the `cloudflare_dns_record` resource and its `cloudflare_zone` data source), the `cloudflare_zone_id` input variable, and the `hostname` output are all removed. The now-unreferenced `cloudflare` provider requirement in `versions.tf` is removed as well.
+
+This is a breaking change: any caller passing `cloudflare_zone_id` or consuming this module's `hostname` output must be updated. DNS for a droplet provisioned by this module is now entirely the caller's own responsibility.
+
+## Migration
+
+Before:
+```hcl
+module "droplet" {
+  source             = "..."
+  cloudflare_zone_id = var.zone_id
+  # ...
+}
+
+output "hostname" {
+  value = module.droplet.hostname
+}
+```
+
+After: drop `cloudflare_zone_id` from the module call, and create the DNS record (if still needed) alongside the module instead of consuming a `hostname` output from it -- e.g. a `cloudflare_dns_record` resource pointed at `module.droplet.ipv4_address`.
+
+[#91](https://github.com/noisypigeon/noisypigeon/pull/91)
+
 ## [1.0.0] - 2026-09-29
 
 ### Accept caller-supplied bucket credentials per rclone remote

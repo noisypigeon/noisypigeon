@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-29
 
+- [terraform/digitalocean/droplet] Drop Cloudflare DNS record integration ([#91](https://github.com/noisypigeon/noisypigeon/pull/91))
+
 - [terraform/digitalocean/droplet] Accept caller-supplied bucket credentials per rclone remote ([#90](https://github.com/noisypigeon/noisypigeon/pull/90))
 
 - [terraform/scaleway/compute-instance] docs(adr-0079): add scaleway/compute-instance module ([#86](https://github.com/noisypigeon/noisypigeon/pull/86))

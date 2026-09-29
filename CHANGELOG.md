@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-09-29
+
+- [terraform/scaleway/compute-instance] docs(adr-0079): add scaleway/compute-instance module ([#86](https://github.com/noisypigeon/noisypigeon/pull/86))
+
 ## 2026-09-28
 
 - [repo] feat(adr-0078): formalize a job-run log analysis procedure and package it as the `analyze-job-run` Claude Code skill ([#85](https://github.com/noisypigeon/noisypigeon/pull/85))

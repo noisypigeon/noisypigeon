@@ -476,7 +476,9 @@ pub(crate) struct JobSummary {
 ///
 /// `max_connections_per_identity` bounds how many workers can be connected
 /// to any one identity at once (ADR-0071), independent of `concurrency`
-/// itself -- see `run_worker`'s doc comment for why that's needed.
+/// itself -- see `run_worker`'s doc comment for why that's needed. An
+/// identity with its own `Identity.max_imap_connections` set (ADR-0080)
+/// uses that cap instead of this job-wide default.
 pub(crate) async fn run_email_sync_job(
     identities: Vec<IdentityContext>,
     pending_by_identity: Vec<Vec<PendingMailbox>>,
@@ -520,10 +522,18 @@ pub(crate) async fn run_email_sync_job(
     let identity_semaphores: Arc<Vec<Arc<Semaphore>>> = Arc::new(
         identities
             .iter()
-            .map(|_| {
-                Arc::new(Semaphore::new(
-                    concurrency.min(max_connections_per_identity).max(1),
-                ))
+            .map(|ctx| {
+                // A per-identity `max_imap_connections` (ADR-0080) overrides
+                // this job's global default cap for that identity only --
+                // set via `pigeon keyring add/modify email` once a
+                // provider is known to reject the default for that
+                // account.
+                let cap = ctx
+                    .identity
+                    .max_imap_connections
+                    .map(|value| value as usize)
+                    .unwrap_or(max_connections_per_identity);
+                Arc::new(Semaphore::new(concurrency.min(cap).max(1)))
             })
             .collect(),
     );

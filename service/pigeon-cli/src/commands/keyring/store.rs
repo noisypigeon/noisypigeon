@@ -277,6 +277,7 @@ mod tests {
             provider: Provider::Gmail,
             host: "imap.gmail.com".to_string(),
             port: 993,
+            max_imap_connections: None,
         }
     }
 
@@ -340,6 +341,51 @@ mod tests {
             loaded_bucket.detail(),
             "https://nyc3.digitaloceanspaces.com (my-bucket), encrypts with 'primary'"
         );
+    }
+
+    #[test]
+    fn email_identity_max_imap_connections_round_trips_through_toml() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("keyring.toml");
+
+        let mut identity = sample_identity("willow");
+        identity.max_imap_connections = Some(2);
+
+        let mut store = Store::default();
+        store.push(Entry::Email(identity));
+        store.save(&path).unwrap();
+
+        let loaded = Store::load(&path).unwrap();
+        let loaded_identity = loaded.email_identities().next().unwrap();
+        assert_eq!(loaded_identity.max_imap_connections, Some(2));
+        assert_eq!(
+            loaded_identity.detail(),
+            "willow@example.com (gmail, max 2 IMAP conns)"
+        );
+    }
+
+    #[test]
+    fn email_identity_without_max_imap_connections_field_defaults_to_none() {
+        // Simulates a `keyring.toml` written before ADR-0080 added this
+        // field -- `#[serde(default)]` must let it parse rather than fail.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("keyring.toml");
+        std::fs::write(
+            &path,
+            r#"[[entries]]
+kind = "email"
+alias = "willow"
+email = "willow@example.com"
+provider = "gmail"
+host = "imap.gmail.com"
+port = 993
+"#,
+        )
+        .unwrap();
+
+        let loaded = Store::load(&path).unwrap();
+        let loaded_identity = loaded.email_identities().next().unwrap();
+        assert_eq!(loaded_identity.max_imap_connections, None);
     }
 
     #[test]

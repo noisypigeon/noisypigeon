@@ -591,6 +591,7 @@ mod tests {
                 provider: Provider::Gmail,
                 host: "imap.gmail.com".to_string(),
                 port: 993,
+                max_imap_connections: None,
             },
             input_root: input.path().to_path_buf(),
             staging_root: staging.path().to_path_buf(),

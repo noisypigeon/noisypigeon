@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [terraform/scaleway/project] Add optional ssh_key input to scaleway/project ([#106](https://github.com/noisypigeon/noisypigeon/pull/106))
+
 - [terraform/scaleway/compute-instance] Add routed IPv6 and instance-specific SSH keys to scaleway/compute-instance ([#105](https://github.com/noisypigeon/noisypigeon/pull/105))
 
 - [terraform/scaleway/compute-instance] Add rclone/neovim cloud-init and bucket access to scaleway/compute-instance ([#104](https://github.com/noisypigeon/noisypigeon/pull/104))

@@ -17,9 +17,9 @@ Unlike `topology-v1`, `pigeon-do` only scaffolds a single domain/DO team (`pigeo
 
 ### Toolchain (`mise`)
 
-- [Mise](https://mise.jdx.dev) manages the `terraform` and `terragrunt` binaries via `.mise.toml`, the same role it plays for the Rust toolchain in `pigeon-cli` (ADR-0002/0004 there). `mise install` gives any contributor the exact same pinned versions — no system-wide `tfenv`/`tgenv` or manually-managed binaries.
+- [Mise](https://mise.jdx.dev) manages the `terraform` and `terragrunt` binaries via `.mise.toml`, the same role it plays for the Rust toolchain in `pigeon-cli` (ADR-0002/0004 there, now archived in `noisypigeon/pigeon-cli`). `mise install` gives any contributor the exact same pinned versions — no system-wide `tfenv`/`tgenv` or manually-managed binaries.
 - Versions are pinned to whatever's latest stable at implementation time (`mise use terraform@latest terragrunt@latest`), then locked as exact versions in the committed `.mise.toml` — not invented ahead of time in this ADR.
-- Mise tasks front the common workflows (e.g. `fmt`, `plan`, `apply`, each wrapping the equivalent `terragrunt`/`terraform` invocation) as the single documented entry point per workflow, mirroring `pigeon-cli` ADR-0004's rationale: `mise run plan` reads as what it does, and keeps `terragrunt run-all plan`-style incantations from needing to be memorized or re-discovered.
+- Mise tasks front the common workflows (e.g. `fmt`, `plan`, `apply`, each wrapping the equivalent `terragrunt`/`terraform` invocation) as the single documented entry point per workflow, mirroring `pigeon-cli` ADR-0004's (now archived in `noisypigeon/pigeon-cli`) rationale: `mise run plan` reads as what it does, and keeps `terragrunt run-all plan`-style incantations from needing to be memorized or re-discovered.
 
 ### `root.hcl` setup
 
@@ -49,7 +49,7 @@ Unlike `topology-v1`, `pigeon-do` only scaffolds a single domain/DO team (`pigeo
 
 - No `modules/` directory or resource modules are designed or created by this ADR.
 - The expected future convention is `modules/<provider>/<resource>` (mirroring `topology-v1`'s `modules/digitalocean/{access-key,block-volume,droplet,object-bucket,project,resource-project-attachment}`), but this ADR does not commit to that shape.
-- Actual module design is deferred to a follow-up ADR, written once the first real resource (e.g. the first droplet or DNS record) is implemented — consistent with how `pigeon-cli`'s ADR-0002 backfilled scaffolding decisions rather than speculating on them upfront.
+- Actual module design is deferred to a follow-up ADR, written once the first real resource (e.g. the first droplet or DNS record) is implemented — consistent with how `pigeon-cli`'s ADR-0002 (now archived in `noisypigeon/pigeon-cli`) backfilled scaffolding decisions rather than speculating on them upfront.
 
 ## Consequences
 

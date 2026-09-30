@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- ADR-0081: implements `pigeon job run email-pull` -- fetches raw `.eml` files straight to their final location and extracts attachments into a deduplicated `attachments/` folder, with no Markdown/frontmatter transform and no encryption support, optionally uploading the result unencrypted to a bucket-config ([#93](https://github.com/noisypigeon/noisypigeon/pull/93)).
 - ADR-0081: adds `pigeon job run email-pull`, a sibling to `email-sync` that pulls raw `.eml` files and unpacked attachments (no Markdown/frontmatter transform), deduplicates attachments only by content hash, never encrypts, and optionally uploads unencrypted to a bucket-config ([#92](https://github.com/noisypigeon/noisypigeon/pull/92)).
 - ADR-0080: adds an optional per-identity IMAP connection cap on `Identity` (set via `pigeon keyring add/modify email`), overriding `job run email-sync`'s job-wide `--max-connections-per-identity` default for that identity only; routes `transform.rs`'s four lenient-skip warnings through `tracing::warn!` instead of `eprintln!`, so they now reach the JSONL observability log ([#87](https://github.com/noisypigeon/noisypigeon/pull/87)).
 - ADR-0078: formalizes a repeatable procedure for analyzing `pigeon.jsonl` job-run logs (isolating a run, reading the resource-sample stream, cross-checking failure tallies) and packages it as the `.claude/skills/analyze-job-run` skill -- no source changes ([#85](https://github.com/noisypigeon/pigeon/pull/85)).

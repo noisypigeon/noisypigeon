@@ -376,6 +376,82 @@ fn job_run_email_sync_with_unknown_identity_fails_fast() {
 }
 
 #[test]
+fn job_run_help_lists_email_pull() {
+    pigeon()
+        .args(["job", "run", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("email-pull"));
+}
+
+#[test]
+fn job_run_email_pull_help_shows_identities_and_concurrency_flags() {
+    pigeon()
+        .args(["job", "run", "email-pull", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--identities"))
+        .stdout(predicate::str::contains("--local-output"))
+        .stdout(predicate::str::contains("--remote-output"))
+        .stdout(predicate::str::contains("--concurrency"))
+        .stdout(predicate::str::contains("--max-connections-per-identity"))
+        .stdout(predicate::str::contains("--yes"))
+        // ADR-0081 §4: email-pull never offers encryption, at all.
+        .stdout(predicate::str::contains("--encryption-key").not());
+}
+
+#[test]
+fn job_run_email_pull_without_identities_fails_fast_non_interactively() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "email-pull",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "--identities is required when not running interactively",
+        ));
+}
+
+#[test]
+fn job_run_email_pull_with_unknown_identity_fails_fast() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+    write_identity(&config_dir, "first-last", "first.last@example.com");
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "email-pull",
+            "--identities",
+            "no-such-alias",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "no identity with alias 'no-such-alias'",
+        ));
+}
+
+#[test]
 fn job_run_help_lists_decrypt_files() {
     pigeon()
         .args(["job", "run", "--help"])

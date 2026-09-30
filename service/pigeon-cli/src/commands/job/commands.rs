@@ -1,5 +1,5 @@
 use crate::commands::job::cli::{JobCommands, JobType};
-use crate::commands::job::{decrypt_files, email_sync, pull_transform};
+use crate::commands::job::{decrypt_files, email_pull, email_sync, pull_transform};
 use crate::core::observability::Observable as _;
 
 pub fn dispatch(command: JobCommands) -> i32 {
@@ -20,6 +20,21 @@ pub fn dispatch(command: JobCommands) -> i32 {
                     local_output,
                     remote_output,
                     encryption_key,
+                    concurrency,
+                    max_connections_per_identity,
+                    yes,
+                ),
+                JobType::EmailPull {
+                    identities,
+                    local_output,
+                    remote_output,
+                    concurrency,
+                    max_connections_per_identity,
+                    yes,
+                } => email_pull::wizard::dispatch(
+                    identities,
+                    local_output,
+                    remote_output,
                     concurrency,
                     max_connections_per_identity,
                     yes,

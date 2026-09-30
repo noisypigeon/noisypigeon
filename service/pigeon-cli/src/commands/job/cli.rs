@@ -113,6 +113,48 @@ pub enum JobType {
         yes: bool,
     },
 
+    /// Fetches raw `.eml` files and unpacked attachments (no Markdown/
+    /// frontmatter transform) for one or more authenticated email
+    /// identities, deduplicating attachments by content, and optionally
+    /// uploads the result unencrypted to a bucket-config (ADR-0081).
+    EmailPull {
+        /// Aliases of the identities to pull, comma-separated.
+        /// Interactively selected from the authenticated identities when
+        /// omitted and stdin is a terminal; required otherwise.
+        #[arg(long, value_delimiter = ',')]
+        identities: Option<Vec<String>>,
+
+        /// Local directory to stage and store output under, shared across
+        /// every selected identity. Defaults to a directory under the OS
+        /// temp directory when omitted.
+        #[arg(long)]
+        local_output: Option<PathBuf>,
+
+        /// Alias of a configured bucket-config to upload each identity's
+        /// local result tree to, once its local fetch/dedupe phase is
+        /// complete. Always uploaded unencrypted -- this job never offers
+        /// encryption (ADR-0081).
+        #[arg(long)]
+        remote_output: Option<String>,
+
+        /// Maximum number of fetch/extract workers to run concurrently,
+        /// spanning every selected identity's every mailbox. Interactively
+        /// prompted (with a rough time estimate) when omitted and stdin is
+        /// a terminal; required otherwise.
+        #[arg(long)]
+        concurrency: Option<usize>,
+
+        /// Maximum number of simultaneous IMAP connections opened to any
+        /// one identity, regardless of `--concurrency`. Defaults to 6 when
+        /// omitted; not interactively prompted.
+        #[arg(long)]
+        max_connections_per_identity: Option<usize>,
+
+        /// Skip the final "proceed?" confirmation.
+        #[arg(long)]
+        yes: bool,
+    },
+
     /// Recursively pulls every object from a bucket-config, expands zips,
     /// recodes media into a size-optimized canonical format per category
     /// (photo/screenshot -> jpg, video -> mp4, audio -> m4a), dates and
@@ -187,6 +229,7 @@ impl Observable for JobType {
         match self {
             JobType::EmailSync { .. } => "job.email-sync",
             JobType::DecryptFiles { .. } => "job.decrypt-files",
+            JobType::EmailPull { .. } => "job.email-pull",
             JobType::PullTransform { .. } => "job.pull-transform",
         }
     }

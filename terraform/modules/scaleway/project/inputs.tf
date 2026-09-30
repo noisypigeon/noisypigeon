@@ -15,3 +15,12 @@ variable "organization_id" {
   description = "Organization ID for the project — defaults to the provider's own; changing this recreates the resource"
   default     = null
 }
+
+variable "ssh_key" {
+  type = object({
+    alias      = string
+    public_key = string
+  })
+  description = "SSH key to register for instance access in this project — omit to skip creating one"
+  default     = null
+}

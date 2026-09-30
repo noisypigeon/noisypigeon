@@ -222,6 +222,42 @@ pub enum JobType {
         #[arg(long)]
         yes: bool,
     },
+
+    /// Recursively scans a bucket, always inflates every zip found (the
+    /// zip container itself is never uploaded, only its inflated
+    /// contents), content-hashes every file bucket-wide to keep one
+    /// byte-identical copy of each, writes a human-readable merge report,
+    /// and optionally uploads the result unencrypted to a (possibly
+    /// different) bucket-config (ADR-0082). Unlike `pull-transform`, every
+    /// file is always processed and every zip is always expanded -- there
+    /// is no file-type or zip-expansion selection, and this job never
+    /// offers encryption.
+    Dedupe {
+        /// Alias of a configured bucket-config to pull from. Interactively
+        /// selected from the configured bucket-configs when omitted and
+        /// stdin is a terminal; required otherwise.
+        #[arg(long)]
+        source_bucket: Option<String>,
+
+        /// Local directory to stage and store output under. Defaults to a
+        /// directory under the OS temp directory when omitted.
+        #[arg(long)]
+        local_output: Option<PathBuf>,
+
+        /// Alias of a configured bucket-config to upload the deduped
+        /// result to, once local processing is complete. Always uploaded
+        /// unencrypted.
+        #[arg(long)]
+        remote_output: Option<String>,
+
+        /// Maximum number of files to download/hash concurrently.
+        #[arg(long)]
+        concurrency: Option<usize>,
+
+        /// Skip the final "proceed?" confirmation.
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 impl Observable for JobType {
@@ -231,6 +267,7 @@ impl Observable for JobType {
             JobType::DecryptFiles { .. } => "job.decrypt-files",
             JobType::EmailPull { .. } => "job.email-pull",
             JobType::PullTransform { .. } => "job.pull-transform",
+            JobType::Dedupe { .. } => "job.dedupe",
         }
     }
 }

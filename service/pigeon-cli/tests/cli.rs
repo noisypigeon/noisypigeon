@@ -600,6 +600,84 @@ fn job_run_pull_transform_with_unknown_bucket_fails_fast() {
 }
 
 #[test]
+fn job_run_help_lists_dedupe() {
+    pigeon()
+        .args(["job", "run", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("dedupe"));
+}
+
+#[test]
+fn job_run_dedupe_help_shows_source_bucket_and_concurrency_flags() {
+    pigeon()
+        .args(["job", "run", "dedupe", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--source-bucket"))
+        .stdout(predicate::str::contains("--local-output"))
+        .stdout(predicate::str::contains("--remote-output"))
+        .stdout(predicate::str::contains("--concurrency"))
+        .stdout(predicate::str::contains("--yes"))
+        // ADR-0082 §0/§1: dedupe never offers encryption or file-type/
+        // zip-expansion selection -- every file is always processed and
+        // every zip is always expanded.
+        .stdout(predicate::str::contains("--encryption-key").not())
+        .stdout(predicate::str::contains("--file-types").not())
+        .stdout(predicate::str::contains("--expand-zips").not());
+}
+
+#[test]
+fn job_run_dedupe_without_source_bucket_fails_fast_non_interactively() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "dedupe",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "--source-bucket is required when not running interactively",
+        ));
+}
+
+#[test]
+fn job_run_dedupe_with_unknown_bucket_fails_fast() {
+    let config_dir = TempDir::new().unwrap();
+    let local_output = TempDir::new().unwrap();
+
+    pigeon_in(&config_dir)
+        .args([
+            "job",
+            "run",
+            "dedupe",
+            "--source-bucket",
+            "no-such-bucket",
+            "--local-output",
+            local_output.path().to_str().unwrap(),
+            "--concurrency",
+            "4",
+            "--yes",
+        ])
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "no bucket-config named 'no-such-bucket'",
+        ));
+}
+
+#[test]
 fn job_run_pull_transform_without_ffmpeg_on_path_fails_fast_with_a_clear_error() {
     let config_dir = TempDir::new().unwrap();
     let local_output = TempDir::new().unwrap();

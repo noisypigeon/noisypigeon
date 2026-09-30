@@ -5,23 +5,19 @@
 
 use std::collections::HashSet;
 use std::fs;
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use indicatif::MultiProgress;
-use sha2::{Digest, Sha256};
 
+use crate::commands::job::download;
 use crate::commands::job::email_sync::sink;
 use crate::commands::job::upload;
-use crate::commands::keyring::bucket::client;
 use crate::commands::keyring::bucket::store::BucketConfig;
 use crate::core::crypto::Aes256GcmSivEncryptor;
 use crate::core::data::ContentIndex;
-use crate::core::retry::retry_with_backoff;
 
 use super::archive;
 use super::dedup::{self, ProcessedFile, PullTransformDedup};
@@ -29,15 +25,7 @@ use super::documents;
 use super::manifest::{self, PullTask, extension_of};
 use super::media::{self, MediaKind, TranscodeTargets};
 
-const DOWNLOAD_RETRIES: usize = 3;
-const DOWNLOAD_RETRY_BACKOFF: Duration = Duration::from_secs(2);
 const RECODE_ATTEMPTS: usize = 2;
-
-/// Below this size, a download is fast enough not to need its own named
-/// call-out -- the overall progress bar already shows it completing
-/// (ADR-0075). At or above it, a `Downloading <key> (<size>)...` line
-/// explains why one item might be visibly slower than the rest.
-const ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES: u64 = 50 * 1024 * 1024;
 
 /// PDF/OOXML date parsing (`lopdf`/`quick-xml`) needs the whole file in
 /// memory -- there's no realistic streaming alternative worth building for
@@ -46,64 +34,6 @@ const ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES: u64 = 50 * 1024 * 1024;
 /// existing mtime/unknown-date chain) rather than risking an unbounded
 /// in-memory parse of a file mislabeled as a document.
 const MAX_IN_MEMORY_PARSE_BYTES: u64 = 512 * 1024 * 1024;
-
-/// A hard floor on free disk space this job insists on before starting a
-/// download or a zip expansion (ADR-0076) -- disk, not memory, is the
-/// resource a run can actually exhaust once everything is streamed rather
-/// than buffered. Deliberately a flat safety margin, not a precise
-/// prediction: a zip's expanded size isn't knowable up front, and a
-/// too-clever estimate is worse than a simple one here.
-const MIN_FREE_DISK_BYTES: u64 = 2 * 1024 * 1024 * 1024;
-
-/// A plain `123.4 MB` label for a byte count -- these announcements are
-/// only ever for large files, so unlike `wizard.rs`'s `format_bytes` (which
-/// scales down to bytes/KB for the pre-run summary table) this always
-/// renders in MB.
-fn format_mb(bytes: u64) -> String {
-    format!("{:.1} MB", bytes as f64 / (1024.0 * 1024.0))
-}
-
-/// Whether a download of `size` bytes is worth a named call-out (ADR-0075)
-/// -- a pure predicate, kept separate from `download()` itself so the
-/// threshold logic is unit-testable without capturing progress-bar output.
-fn should_announce_download(size: u64) -> bool {
-    size >= ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES
-}
-
-/// The available space (in bytes) on whichever disk backs `path`, matched
-/// by the longest mount-point prefix -- `None` if that can't be determined
-/// (e.g. `path` doesn't exist yet), in which case the caller doesn't block
-/// on an unknown rather than failing safe-but-wrong.
-fn available_disk_space(path: &Path) -> Option<u64> {
-    let target = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    let disks = sysinfo::Disks::new_with_refreshed_list();
-    disks
-        .list()
-        .iter()
-        .filter(|disk| target.starts_with(disk.mount_point()))
-        .max_by_key(|disk| disk.mount_point().as_os_str().len())
-        .map(|disk| disk.available_space())
-}
-
-/// Fails fast, before starting a download or zip expansion, if the disk
-/// backing `path` doesn't have at least `needed` (or `MIN_FREE_DISK_BYTES`,
-/// whichever is larger) free -- disk space, not memory, is what this job
-/// can actually run out of once everything is disk-streamed (ADR-0076).
-/// Fails only the one item calling this, not the whole run.
-fn check_disk_space(path: &Path, needed: u64) -> Result<(), String> {
-    let Some(available) = available_disk_space(path) else {
-        return Ok(());
-    };
-    let required = needed.max(MIN_FREE_DISK_BYTES);
-    if available < required {
-        return Err(format!(
-            "not enough disk space: {} available, need at least {}",
-            format_mb(available),
-            format_mb(required)
-        ));
-    }
-    Ok(())
-}
 
 /// A `failed` count broken down by which stage the failure happened in
 /// (same shape as `email_sync::worker::FailureBreakdown`, ADR-0033).
@@ -223,54 +153,6 @@ enum ItemOutcome {
     Skipped,
 }
 
-/// Streams `key` straight to `dest_path` (ADR-0076) -- never buffers the
-/// whole object in memory, so a 50-100GB object costs a small, fixed
-/// amount of RAM regardless of its size.
-async fn download(
-    bucket_config: &BucketConfig,
-    secret: &str,
-    key: &str,
-    size: u64,
-    dest_path: &Path,
-    multi_progress: &MultiProgress,
-) -> Result<(), String> {
-    if should_announce_download(size) {
-        let _ = multi_progress.println(format!("Downloading {key} ({})...", format_mb(size)));
-    }
-    retry_with_backoff(DOWNLOAD_RETRIES, DOWNLOAD_RETRY_BACKOFF, || {
-        client::download_object_to_file(bucket_config, secret, key, dest_path)
-    })
-    .await?;
-    Ok(())
-}
-
-fn sha256_hex(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    hex::encode(hasher.finalize())
-}
-
-/// Hashes a file by streaming it through `Sha256` in fixed-size chunks
-/// (ADR-0076) -- replaces `fs::read` + `sha256_hex` for every path that
-/// used to pull a whole (potentially huge, even post-recode) file into
-/// memory purely to hash it.
-fn sha256_file(path: &Path) -> Result<String, String> {
-    let mut file =
-        File::open(path).map_err(|err| format!("failed to open {}: {err}", path.display()))?;
-    let mut hasher = Sha256::new();
-    let mut buf = [0u8; 64 * 1024];
-    loop {
-        let read = file
-            .read(&mut buf)
-            .map_err(|err| format!("failed to read {}: {err}", path.display()))?;
-        if read == 0 {
-            break;
-        }
-        hasher.update(&buf[..read]);
-    }
-    Ok(hex::encode(hasher.finalize()))
-}
-
 /// A fresh, not-yet-existing path under `dir` named by `counter`
 /// (monotonically increasing, shared across concurrent workers) plus
 /// `extension` -- reserved for `ffmpeg` (or some other tool) to write into
@@ -309,7 +191,7 @@ async fn process_media(
                 scratch_path.display()
             )
         })?;
-        let content_hash = sha256_file(&scratch_path)?;
+        let content_hash = download::sha256_file(&scratch_path)?;
         return Ok((
             ProcessedFile {
                 original_key: display_key.to_string(),
@@ -380,7 +262,7 @@ async fn process_media(
     match recode_result {
         Ok(()) => {
             let _ = fs::remove_file(&input_path);
-            let content_hash = sha256_file(&output_path)?;
+            let content_hash = download::sha256_file(&output_path)?;
             Ok((
                 ProcessedFile {
                     original_key: display_key.to_string(),
@@ -410,7 +292,7 @@ async fn process_media(
                     scratch_path.display()
                 )
             })?;
-            let content_hash = sha256_file(&scratch_path)?;
+            let content_hash = download::sha256_file(&scratch_path)?;
             Ok((
                 ProcessedFile {
                     original_key: display_key.to_string(),
@@ -512,8 +394,8 @@ fn process_document_or_other(
         )
     })?;
     let content_hash = match &small_file {
-        Some(bytes) => sha256_hex(bytes),
-        None => sha256_file(&scratch_path)?,
+        Some(bytes) => download::sha256_hex(bytes),
+        None => download::sha256_file(&scratch_path)?,
     };
 
     Ok((
@@ -570,7 +452,7 @@ async fn process_item(
         Some(path) => path,
         None => {
             let key = item.source_key.as_deref().unwrap_or(&item.display_key);
-            if let Err(err) = check_disk_space(raw_dir, item.size) {
+            if let Err(err) = download::check_disk_space(raw_dir, item.size) {
                 tracing::warn!(key = %item.display_key, step = "download", error = %err, "not enough disk space");
                 return ItemOutcome::Failed {
                     category: FailureCategory::Download,
@@ -585,7 +467,7 @@ async fn process_item(
                     };
                 }
             };
-            if let Err(err) = download(
+            if let Err(err) = download::download_with_retry(
                 bucket_config,
                 secret,
                 key,
@@ -613,7 +495,7 @@ async fn process_item(
                 category: FailureCategory::Archive,
             };
         }
-        if let Err(err) = check_disk_space(raw_dir, 0) {
+        if let Err(err) = download::check_disk_space(raw_dir, 0) {
             tracing::warn!(key = %item.display_key, step = "archive", error = %err, "not enough disk space to expand");
             let _ = fs::remove_file(&path);
             return ItemOutcome::Failed {
@@ -958,28 +840,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_announce_download_is_false_below_the_threshold() {
-        assert!(!should_announce_download(
-            ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES - 1
-        ));
-        assert!(!should_announce_download(1024));
-    }
-
-    #[test]
-    fn should_announce_download_is_true_at_and_above_the_threshold() {
-        assert!(should_announce_download(ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES));
-        assert!(should_announce_download(
-            ANNOUNCE_DOWNLOAD_THRESHOLD_BYTES + 1
-        ));
-    }
-
-    #[test]
-    fn format_mb_renders_one_decimal_place() {
-        assert_eq!(format_mb(50 * 1024 * 1024), "50.0 MB");
-        assert_eq!(format_mb(1024 * 1024 + 512 * 1024), "1.5 MB");
-    }
-
-    #[test]
     fn classify_extension_recognizes_common_media_and_document_types() {
         assert_eq!(classify_extension("a.jpg").0, FileKind::Image);
         assert_eq!(classify_extension("a.JPEG").0, FileKind::Image);
@@ -1001,15 +861,6 @@ mod tests {
     }
 
     #[test]
-    fn sha256_file_matches_sha256_hex_for_identical_content() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("a.bin");
-        fs::write(&path, b"hello world").unwrap();
-
-        assert_eq!(sha256_file(&path).unwrap(), sha256_hex(b"hello world"));
-    }
-
-    #[test]
     fn read_small_file_returns_bytes_under_the_cap() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("a.bin");
@@ -1025,28 +876,6 @@ mod tests {
         fs::write(&path, b"hello world").unwrap();
 
         assert_eq!(read_small_file(&path, 5).unwrap(), None);
-    }
-
-    #[test]
-    fn available_disk_space_finds_a_positive_value_for_the_current_directory() {
-        let dir = tempfile::tempdir().unwrap();
-        let available = available_disk_space(dir.path());
-        assert!(available.unwrap_or(0) > 0);
-    }
-
-    #[test]
-    fn check_disk_space_fails_when_required_exceeds_available() {
-        let dir = tempfile::tempdir().unwrap();
-        // No real filesystem has an exbibyte free -- this must fail
-        // regardless of the test machine's actual disk size.
-        let result = check_disk_space(dir.path(), u64::MAX / 2);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn check_disk_space_succeeds_for_a_small_requirement() {
-        let dir = tempfile::tempdir().unwrap();
-        assert!(check_disk_space(dir.path(), 1).is_ok());
     }
 
     /// End-to-end regression coverage for `process_media` against a real

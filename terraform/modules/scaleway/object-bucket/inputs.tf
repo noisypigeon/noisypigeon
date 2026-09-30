@@ -29,3 +29,9 @@ variable "storage_class" {
     error_message = "storage_class must be \"standard\" or \"glacier\"."
   }
 }
+
+variable "force_destroy" {
+  type        = bool
+  description = "Boolean that, when set to true, allows the deletion of all objects (including locked objects) when the bucket is destroyed."
+  default     = false
+}

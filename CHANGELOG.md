@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-09-30
+
+- [pigeon-cli] docs(adr-0081): add email-pull job ADR ([#92](https://github.com/noisypigeon/noisypigeon/pull/92))
+
 ## 2026-09-29
 
 - [terraform/digitalocean/droplet] Drop Cloudflare DNS record integration ([#91](https://github.com/noisypigeon/noisypigeon/pull/91))

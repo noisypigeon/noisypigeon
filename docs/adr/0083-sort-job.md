@@ -183,7 +183,7 @@ no file-type/zip-expansion selection, no encryption-key resolution.
 - Extension canonicalization/recoding — "sort" organizes by each file's
   literal, as-found extension only.
 - Encryption — never offered, permanent per this ADR.
-- Generalizing the bucket-listing/`TypeSummary`/checkpoint pattern now
+- Generalizing the bucket-listing/`TypeSummary`/checkpoint pattern now ([#97](https://github.com/noisypigeon/noisypigeon-2/issues/97))
   duplicated three times — deferred via `mise run adr-issue` (ADR-0031),
   not a permanent boundary; see Context for why it isn't done here
   (on-disk checkpoint-location migration risk for two already-shipped

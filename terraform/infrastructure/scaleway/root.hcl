@@ -29,7 +29,25 @@ locals {
   }
   scaleway_region = lookup(local.scaleway_region_zone, local.leaf_region_segment, local.scaleway_region_zone["fr-par"]).region
   scaleway_zone   = lookup(local.scaleway_region_zone, local.leaf_region_segment, local.scaleway_region_zone["fr-par"]).zone
+
+  # Injected secrets/sensitive values: any .env key prefixed ENV_SW_ is exposed as a
+  # local named. See docs/adr/0006-automatic-bucket-name-locals.md.
+  bucket_name_secrets = {
+    for k, v in local.secrets : "${lower(trimprefix(k, "ENV_SW_"))}" => get_env(k, v)
+    if startswith(k, "ENV_SW_")
+  }
 }
+
+generate "bucket_names" {
+path      = "bucket_names_generated.tf"
+if_exists = "overwrite"
+contents  = <<EOF
+locals {
+${join("\n", [for k, v in local.bucket_name_secrets : "  ${k} = \"${v}\""])}
+}
+EOF
+}
+
 
 generate "provider" {
   path      = "provider_generated.tf"

@@ -4,6 +4,16 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-09-30
+
+### Add force_destroy input to object-bucket
+
+Adds a `force_destroy` input to the `scaleway/object-bucket` module, wired straight through to `scaleway_object_bucket`'s `force_destroy` argument. When set to `true`, this allows Terraform to delete all objects in the bucket (including locked objects) as part of destroying the bucket itself, rather than failing because the bucket isn't empty.
+
+Defaults to `false`, matching the underlying provider's default, so existing callers of this module are unaffected unless they opt in.
+
+[#101](https://github.com/noisypigeon/noisypigeon/pull/101)
+
 ## [0.1.1] - 2026-09-27
 
 ### fix(adr-0072): raise GLACIER transition to Scaleway's 90-day minimum

@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [terraform/scaleway/object-bucket] Add force_destroy input to object-bucket ([#101](https://github.com/noisypigeon/noisypigeon/pull/101))
+
 - [repo] docs(adr-0084): prune repo to terraform+blog scope ([#100](https://github.com/noisypigeon/noisypigeon/pull/100))
 - [repo] docs(adr-0084): split pigeon-cli into its own repo ([#99](https://github.com/noisypigeon/noisypigeon/pull/99))
 - [pigeon-cli] feat(adr-0083): implement sort job ([#98](https://github.com/noisypigeon/noisypigeon/pull/98))

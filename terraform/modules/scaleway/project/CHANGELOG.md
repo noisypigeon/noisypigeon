@@ -4,6 +4,16 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-09-30
+
+### Fix scaleway/project ssh_key to scope to the created project
+
+`scaleway/project`'s `scaleway_iam_ssh_key` resource (added in v0.2.0) was missing `project_id`, so it registered the SSH key against the Scaleway provider's default project rather than the project this module just created. This adds `project_id = scaleway_account_project.project.id` so the key is correctly scoped to the module's own project.
+
+No input or output changes — this only fixes the behavior of the existing `ssh_key` input.
+
+[#107](https://github.com/noisypigeon/noisypigeon/pull/107)
+
 ## [0.2.0] - 2026-09-30
 
 ### Add optional ssh_key input to scaleway/project

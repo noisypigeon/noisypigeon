@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [terraform/scaleway/project] Fix scaleway/project ssh_key to scope to the created project ([#107](https://github.com/noisypigeon/noisypigeon/pull/107))
+
 - [terraform/scaleway/project] Add optional ssh_key input to scaleway/project ([#106](https://github.com/noisypigeon/noisypigeon/pull/106))
 
 - [terraform/scaleway/compute-instance] Add routed IPv6 and instance-specific SSH keys to scaleway/compute-instance ([#105](https://github.com/noisypigeon/noisypigeon/pull/105))

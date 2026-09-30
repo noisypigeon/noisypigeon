@@ -8,6 +8,7 @@ A Scaleway Object Storage bucket (`scaleway_object_bucket`) with a randomized na
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_enable_versioning"></a> [enable\_versioning](#input\_enable\_versioning) | Object versioning enabled (true/false) | `bool` | `false` | no |
+| <a name="input_force_destroy"></a> [force\_destroy](#input\_force\_destroy) | Boolean that, when set to true, allows the deletion of all objects (including locked objects) when the bucket is destroyed. | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | Bucket name suffix | `string` | n/a | yes |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Bucket name prefix | `string` | n/a | yes |
 | <a name="input_storage_class"></a> [storage\_class](#input\_storage\_class) | Storage class for new objects (standard/glacier) | `string` | `"standard"` | no |

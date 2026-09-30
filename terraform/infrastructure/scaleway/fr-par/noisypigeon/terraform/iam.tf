@@ -9,6 +9,8 @@ module "iam" {
     "InstancesFullAccess",
     "ObjectStorageFullAccess",
     "VPCFullAccess",
+    "InstancesFullAccess",
+    "BlockStorageFullAccess"
   ]
 
   organization_id = local.scaleway_organization_id

@@ -8,9 +8,11 @@ A Scaleway compute Instance (`scaleway_instance_server`) with a randomized name 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone (rclone/neovim always install regardless) | <pre>list(object({<br/>    bucket_name       = string<br/>    bucket_alias      = string<br/>    bucket_endpoint   = string<br/>    bucket_access_key = string<br/>    bucket_secret_key = string<br/>    bucket_provider   = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_enable_ipv6"></a> [enable\_ipv6](#input\_enable\_ipv6) | Create and attach a routed IPv6 address (true/false) | `bool` | `false` | no |
 | <a name="input_image"></a> [image](#input\_image) | Instance image (UUID or marketplace label) | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | Instance name suffix | `string` | n/a | yes |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Instance name prefix | `string` | n/a | yes |
+| <a name="input_ssh_keys"></a> [ssh\_keys](#input\_ssh\_keys) | SSH public keys granted instance-specific access via Scaleway's AUTHORIZED\_KEY tag convention, in addition to account-wide keys | `list(string)` | `[]` | no |
 | <a name="input_type"></a> [type](#input\_type) | Instance commercial type | `string` | `"STARDUST1-S"` | no |
 
 ## Outputs

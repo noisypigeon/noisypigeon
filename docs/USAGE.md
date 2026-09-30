@@ -5,9 +5,10 @@ the live Terragrunt/Terraform configuration that consumes them, and the
 Zola-based static site for [noisypigeon.com](https://noisypigeon.com).
 
 `service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into
-its own, `noisypigeon/pigeon-cli`, via ADR-0084 — this repo's
-`docs/archived/adr/` and `docs/archived/reports/` hold its pre-split ADR
-and report history for reference.
+its own, `noisypigeon/pigeon-cli`, via ADR-0084 — its pre-split, pigeon-cli-
+only ADR and report history was deleted from this repo once no longer
+needed here (surviving terraform/blog ADRs live flat in `docs/adr/`; the
+full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 
 ## Structure
 
@@ -22,11 +23,8 @@ and report history for reference.
 - [`service/blog/`](service/blog/) — the Zola site for
   [noisypigeon.com](https://noisypigeon.com).
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
-  terraform/blog changes in this repo going forward.
-- [`docs/archived/adr/`](docs/archived/adr/) /
-  [`docs/archived/reports/`](docs/archived/reports/) — the full ADR and
-  report history from before `service/pigeon-cli` split out (ADR-0084),
-  kept for reference.
+  terraform/blog changes in this repo, including every surviving pre-split
+  ADR (renumbered inline, not archived separately).
 
 ## Getting started
 

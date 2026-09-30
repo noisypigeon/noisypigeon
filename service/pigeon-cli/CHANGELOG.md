@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- ADR-0082: implements `pigeon job run dedupe` -- reuses `pull_transform::archive`'s zip expansion directly, hoists `pull-transform`'s disk-space-preflight/streaming-download helpers into a new shared `commands/job/download.rs` (refactoring `pull-transform` to use it), and scopes checkpoint/content-hash bookkeeping and the upload walk so `dedupe-report.txt` can never leak into the destination bucket ([#95](https://github.com/noisypigeon/noisypigeon-2/pull/95)).
 - ADR-0082: adds `pigeon job run dedupe`, a bucket-to-bucket job that recursively scans a source bucket, always inflates zips (containers never uploaded, only their inflated contents), content-hashes everything bucket-wide to keep one byte-identical copy of each file, writes a human-readable merge report, and optionally uploads unencrypted to a different bucket-config; hoists `pull-transform`'s disk-space-preflight/streaming-download helpers into a new shared `commands/job/download.rs` ([#94](https://github.com/noisypigeon/noisypigeon/pull/94)).
 
 - ADR-0081: implements `pigeon job run email-pull` -- fetches raw `.eml` files straight to their final location and extracts attachments into a deduplicated `attachments/` folder, with no Markdown/frontmatter transform and no encryption support, optionally uploading the result unencrypted to a bucket-config ([#93](https://github.com/noisypigeon/noisypigeon/pull/93)).

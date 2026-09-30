@@ -11,6 +11,7 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [pigeon-cli] feat(adr-0082): implement dedupe job ([#95](https://github.com/noisypigeon/noisypigeon-2/pull/95))
 - [pigeon-cli] docs(adr-0082): add dedupe job ADR ([#94](https://github.com/noisypigeon/noisypigeon/pull/94))
 - [pigeon-cli] feat(adr-0081): implement email-pull job ([#93](https://github.com/noisypigeon/noisypigeon/pull/93))
 - [pigeon-cli] docs(adr-0081): add email-pull job ADR ([#92](https://github.com/noisypigeon/noisypigeon/pull/92))

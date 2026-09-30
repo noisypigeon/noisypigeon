@@ -10,6 +10,7 @@
 versioned, reusable Terraform modules (DigitalOcean, Scaleway), consumed by
 `pigeon-do` today via a sibling git clone pinned to a tag. This ADR merges it
 into `pigeon-cli`, continuing the monorepo direction ADR-0036 started
+(now archived in `noisypigeon/pigeon-cli`)
 (`service/pigeon-cli/` for the Rust CLI, `.github/` for repo-meta tooling):
 `pigeon-tf`'s modules become `terraform/modules/{digitalocean,scaleway}/*`,
 its two GitHub Actions workflows and one Claude Code skill come across
@@ -41,12 +42,13 @@ Three placement questions were resolved with the user before writing this
 decision:
 - `pigeon-tf`'s README (a module index table + versioning/consumption notes)
   becomes a new `terraform/README.md`, not a section bolted onto this repo's
-  root `README.md` (which is crates.io-facing per ADR-0018 and unrelated to
-  Terraform).
+  root `README.md` (which is crates.io-facing per ADR-0018, now archived in
+  `noisypigeon/pigeon-cli`, and unrelated to Terraform).
 - `pigeon-tf`'s `CLAUDE.md` (a one-line product description plus a 2-bullet
   ADR index) does not survive as its own file — its content folds into this
   repo's existing root `CLAUDE.md`, which already treats `docs/adr/` as one
-  shared, repo-wide sequence (per ADR-0036). No per-service `CLAUDE.md`
+  shared, repo-wide sequence (per ADR-0036, now archived in
+  `noisypigeon/pigeon-cli`). No per-service `CLAUDE.md`
   precedent exists yet, and introducing one only for `terraform/` would be
   inconsistent with how `service/pigeon-cli/` has none of its own.
 - The standalone `pigeon-tf` GitHub repo itself is left untouched by this
@@ -125,7 +127,8 @@ conflict-free `git merge --allow-unrelated-histories`:
 
 Beyond the Origin bullet and internal ADR-number renumbering, each migrated
 ADR's prose is reviewed occurrence-by-occurrence (per ADR-0036's own
-established precedent — not a blind find-and-replace) for two more things:
+established precedent, now archived in `noisypigeon/pigeon-cli` — not a
+blind find-and-replace) for two more things:
 bare `digitalocean/<module>` / `scaleway/<module>` path citations become
 `terraform/modules/digitalocean/<module>` / `terraform/modules/scaleway/<module>`,
 and mentions of "root `README.md`" meaning `pigeon-tf`'s own become
@@ -171,7 +174,8 @@ in each module's `CHANGELOG.md`, which moves over intact with its module.
 
 - This repo gains its first GitHub-Actions-driven automation
   (`module-docs.yml`/`module-release.yml`), coexisting with ADR-0029's
-  otherwise fully local/manual dev cycle (`mise run ci` + manual PR merge) —
+  (now archived in `noisypigeon/pigeon-cli`) otherwise fully local/manual dev
+  cycle (`mise run ci` + manual PR merge) —
   two different automation philosophies in one repo now, noted plainly here,
   not reconciled.
 - `pigeon-do`'s existing consumption of `pigeon-tf` (sibling clone, tag

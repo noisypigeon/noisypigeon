@@ -52,7 +52,8 @@ than assumed:
 
 New content lives at `service/blog/`, a Zola project root, added as a new
 sibling under `service/` alongside `service/pigeon-cli/` (ADR-0008/ADR-0036's
-one-folder-per-service precedent). It is **not** a Cargo crate — no
+one-folder-per-service precedent, both now archived in
+`noisypigeon/pigeon-cli`). It is **not** a Cargo crate — no
 `[[bin]]`/`[[test]]` entries, just a Zola site.
 
 Content (posts' Markdown, CSS, images) is **copied in fresh**, not merged via
@@ -194,8 +195,9 @@ easily reads as implying a DNS migration, and here it doesn't.
   `service/blog` (see Location & scope); it remains intact in the standalone
   repo.
 - Root `/CHANGELOG.md` gains a new `[blog]` tag prefix (alongside the
-  existing `[pigeon-cli]`) for this new service, applying ADR-0050's
-  per-service tagging convention to a service that's neither the Rust crate
+  existing `[pigeon-cli]`) for this new service, applying ADR-0050's (now
+  archived in `noisypigeon/pigeon-cli`) per-service tagging convention to a
+  service that's neither the Rust crate
   nor a Terraform module.
 - This repo's root `CLAUDE.md` gains a one-line description of
   `service/blog/`'s stack, alongside its existing `pigeon-cli`/`terraform/`

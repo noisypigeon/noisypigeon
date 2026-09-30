@@ -4,6 +4,13 @@
 - **Date**: 2026-09-25.
 - **Status**: Accepted.
 
+> **Note**: This ADR is kept in this repo (unlike its sibling `pigeon-cli`
+> ADRs, deleted per ADR-0084's split into `noisypigeon/pigeon-cli`) because
+> `mise run adr-issue` remains a live command here. Most other ADR numbers
+> this document cites below (e.g. the `ADR-0003`-`0030` range, ADR-0008,
+> ADR-0009, ADR-0011, ADR-0017, ADR-0022, ADR-0023, ADR-0029, ADR-0036) no
+> longer have a file in this repo — they now live in `noisypigeon/pigeon-cli`.
+
 ## Context
 
 Every ADR from 0002 onward carries an `## Out of scope` section, and a lot of those bullets are genuine deferred work -- not permanent design boundaries -- that nobody has been tracking anywhere. They just sit in a Markdown file, with no way to see them as a backlog, prioritize them, or notice when the same gap has been raised more than once. GitHub Issues is now enabled on this repo, which makes it possible to close that gap without inventing new infrastructure.

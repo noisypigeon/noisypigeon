@@ -81,10 +81,12 @@ Researched read-only via `gh api` (the same technique ADR-0037 used for
   already renumbered `pigeon-tf`'s ADR-0002/0003 to this repo's
   ADR-0039/0040, these citations need rewriting to the *new* numbers once
   merged — the same occurrence-by-occurrence discipline ADR-0036/ADR-0037
-  already established, not a blind find-and-replace. **Distinct and
-  unaffected**: citations of `pigeon-cli ADR-0002/0004` (e.g. in
-  `pigeon-do`'s ADR-0001) already use this repo's real, never-renumbered
-  ADR-0002/0004 — those need no change.
+  already established, not a blind find-and-replace. **Distinct**: citations
+  of `pigeon-cli ADR-0002/0004` (e.g. in `pigeon-do`'s ADR-0001) already use
+  this repo's real, never-renumbered ADR-0002/0004 — those needed no change
+  at merge time. (Both were later deleted from this repo per ADR-0084's
+  split into `noisypigeon/pigeon-cli`, where they now live — an unrelated,
+  much later event this ADR's text predates.)
 - **`pigeon-do` repo itself stays untouched** (not archived) — same
   leave-it-alone treatment ADR-0037 gave `pigeon-tf`.
 
@@ -138,8 +140,11 @@ migrated ADR gains an **Origin** bullet in its header block (e.g.
 table, and every `pigeon-tf ADR-000N` citation rewritten to ADR-0037's
 renumbering map (0038-0049) — occurrence-by-occurrence, per ADR-0036's
 established precedent, not a blind find-and-replace. Citations of
-`pigeon-cli ADR-000N` are left untouched; they already point at this repo's
-real, never-renumbered ADRs.
+`pigeon-cli ADR-000N` are left untouched, since renumbering is specific to
+the `pigeon-tf`/`pigeon-do` merges. (Most `pigeon-cli` ADRs cited elsewhere
+in this history were later deleted from this repo per ADR-0084's split into
+`noisypigeon/pigeon-cli`, where they now live; ADR-0031 is the one exception,
+kept in this repo since `mise run adr-issue` still depends on it.)
 
 ### History-preserving merge mechanism
 
@@ -244,8 +249,9 @@ these modules are actually consumed.
   infrastructure content, categorically distinct from `terraform/modules/`'s
   reusable-template-only content — worth stating plainly so it doesn't read
   as an inconsistency later.
-- Three coexisting automation philosophies in one repo now: ADR-0029's
-  local, fully manual `mise run ci` dev cycle; ADR-0037's GitHub-Actions
+- Three coexisting automation philosophies in one repo now: ADR-0029's (now
+  archived in `noisypigeon/pigeon-cli`) local, fully manual `mise run ci` dev
+  cycle; ADR-0037's GitHub-Actions
   module release/docs automation; and this ADR's new `infra-*` mise tasks.
   Noted here, not reconciled.
 - No real secrets move as part of this merge: `pigeon-do`'s `.env` files

@@ -258,6 +258,44 @@ pub enum JobType {
         #[arg(long)]
         yes: bool,
     },
+
+    /// Downloads every object from a source bucket and flattens it into
+    /// top-level `<extension>/` folders by each file's literal, as-found
+    /// extension (no canonicalization -- `.jpg` and `.jpeg` stay
+    /// separate), then uploads the result unencrypted to a mandatory
+    /// output bucket (ADR-0083). A filename collision is always
+    /// disambiguated, never hash-checked or merged -- this job assumes
+    /// uniqueness was already established by whatever produced the
+    /// source bucket's contents, e.g. a prior `job run dedupe`. Never
+    /// offers encryption, never expands zips, never deduplicates.
+    Sort {
+        /// Alias of a configured bucket-config to pull from. Interactively
+        /// selected from the configured bucket-configs when omitted and
+        /// stdin is a terminal; required otherwise.
+        #[arg(long)]
+        source_bucket: Option<String>,
+
+        /// Local directory to stage and store output under. Defaults to a
+        /// directory under the OS temp directory when omitted.
+        #[arg(long)]
+        local_output: Option<PathBuf>,
+
+        /// Alias of a configured bucket-config to upload the flattened
+        /// result to. Always uploaded unencrypted. Interactively selected
+        /// from the configured bucket-configs when omitted and stdin is a
+        /// terminal; required otherwise -- uploading is mandatory for
+        /// this job.
+        #[arg(long)]
+        remote_output: Option<String>,
+
+        /// Maximum number of files to download concurrently.
+        #[arg(long)]
+        concurrency: Option<usize>,
+
+        /// Skip the final "proceed?" confirmation.
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 impl Observable for JobType {
@@ -268,6 +306,7 @@ impl Observable for JobType {
             JobType::EmailPull { .. } => "job.email-pull",
             JobType::PullTransform { .. } => "job.pull-transform",
             JobType::Dedupe { .. } => "job.dedupe",
+            JobType::Sort { .. } => "job.sort",
         }
     }
 }

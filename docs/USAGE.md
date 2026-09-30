@@ -1,14 +1,16 @@
-# pigeon
+# noisypigeon
 
-A monorepo for personal infrastructure: `pigeon`, a Rust CLI that
-authenticates, syncs, transforms, and optionally encrypts personal data to
-local storage or S3-compatible remotes; and a set of versioned, reusable
-Terraform modules used to provision that infrastructure.
+Personal infrastructure: a set of versioned, reusable Terraform modules,
+the live Terragrunt/Terraform configuration that consumes them, and the
+Zola-based static site for [noisypigeon.com](https://noisypigeon.com).
+
+`service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into
+its own, `noisypigeon/pigeon-cli`, via ADR-0084 — this repo's
+`docs/archived/adr/` and `docs/archived/reports/` hold its pre-split ADR
+and report history for reference.
 
 ## Structure
 
-- [`service/pigeon-cli/`](service/pigeon-cli/) — the Rust CLI. See its own
-  [README](service/pigeon-cli/README.md) for the command reference.
 - [`terraform/modules/`](terraform/modules/) — versioned DigitalOcean and
   Scaleway Terraform modules. See
   [`terraform/modules/README.md`](terraform/modules/README.md) for the
@@ -17,38 +19,31 @@ Terraform modules used to provision that infrastructure.
   owner's live Terragrunt/Terraform configuration for personal
   infrastructure, consuming the modules above. See
   [`terraform/infrastructure/README.md`](terraform/infrastructure/README.md).
-- [`docs/adr/`](docs/adr/) — architecture decision records governing every
-  change in this repo, across both of the above.
+- [`service/blog/`](service/blog/) — the Zola site for
+  [noisypigeon.com](https://noisypigeon.com).
+- [`docs/adr/`](docs/adr/) — architecture decision records governing
+  terraform/blog changes in this repo going forward.
+- [`docs/archived/adr/`](docs/archived/adr/) /
+  [`docs/archived/reports/`](docs/archived/reports/) — the full ADR and
+  report history from before `service/pigeon-cli` split out (ADR-0084),
+  kept for reference.
 
 ## Getting started
 
-This repo uses [mise](https://mise.jdx.dev/) as the single entry point for
-all Rust tooling — it wires up the toolchain and runs `cargo` against
-`service/pigeon-cli/`'s manifest, so these work unchanged from the repo
-root:
+This repo uses [mise](https://mise.jdx.dev/) as the entry point for
+Terraform/Terragrunt and the blog:
 
 ```sh
-mise run build              # build the pigeon binary
-mise run pigeon -- <args>   # run it, e.g. `mise run pigeon -- keyring list`
-mise run test                # run the test suite
-mise run fmt                 # format
-mise run fmt-check           # check formatting
-mise run lint                 # clippy, warnings denied
-mise run ci                   # the full local gate (fmt-check + lint + test)
+mise run fmt-terraform         # terragrunt hcl format + terraform fmt
+mise run fmt-check-terraform   # check formatting
+mise run plan                  # terragrunt run --all -- plan
+mise run apply                 # terragrunt run --all -- apply
+mise run blog-build            # zola build (service/blog)
+mise run blog-serve            # zola serve (service/blog)
 ```
 
 Terraform module changes follow their own PR discipline — see the
 `release-pr` Claude Code skill and `terraform/modules/README.md`.
-
-## Install (published crate)
-
-```sh
-cargo install pigeon-cli
-```
-
-This installs a binary named `pigeon`. See
-[`service/pigeon-cli/README.md`](service/pigeon-cli/README.md) for the full
-command reference.
 
 ## License
 

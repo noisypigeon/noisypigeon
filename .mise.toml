@@ -1,46 +1,7 @@
 [tools]
-rust = "1.92.0"
 terraform = "1.16.3"
 terragrunt = "1.1.6"
 zola = "0.23.6"
-
-[tasks.build]
-run = """
-cargo build --manifest-path service/pigeon-cli/Cargo.toml
-if [ "$(uname)" = "Darwin" ]; then
-  codesign --force -s - --identifier "dev.pigeon.cli" service/pigeon-cli/target/debug/pigeon
-fi
-"""
-
-[tasks.pigeon]
-run = """
-cargo build --manifest-path service/pigeon-cli/Cargo.toml
-if [ "$(uname)" = "Darwin" ]; then
-  codesign --force -s - --identifier "dev.pigeon.cli" service/pigeon-cli/target/debug/pigeon
-fi
-exec service/pigeon-cli/target/debug/pigeon "$@"
-"""
-
-[tasks.test]
-run = "cargo test --manifest-path service/pigeon-cli/Cargo.toml"
-
-[tasks.fmt]
-run = "cargo fmt --manifest-path service/pigeon-cli/Cargo.toml --all"
-
-[tasks.fmt-check]
-run = "cargo fmt --manifest-path service/pigeon-cli/Cargo.toml --all -- --check"
-
-[tasks.lint]
-run = "cargo clippy --manifest-path service/pigeon-cli/Cargo.toml --all-targets --all-features -- -D warnings"
-
-[tasks.ci]
-depends = ["fmt-check", "lint", "test"]
-
-[tasks.publish-dry-run]
-run = "cargo publish --manifest-path service/pigeon-cli/Cargo.toml --dry-run"
-
-[tasks.publish]
-run = "cargo publish --manifest-path service/pigeon-cli/Cargo.toml"
 
 [tasks.adr-issue]
 run = ".github/scripts/adr-issue.sh \"$@\""

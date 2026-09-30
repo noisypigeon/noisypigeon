@@ -6,10 +6,17 @@ resource "random_string" "suffix" {
   special = false
 }
 
+resource "scaleway_instance_ip" "ipv6" {
+  count = var.enable_ipv6 ? 1 : 0
+  type  = "routed_ipv6"
+}
+
 resource "scaleway_instance_server" "server" {
   name  = "${var.namespace}-${random_string.suffix.result}-${var.name}"
   image = var.image
   type  = var.type
+  ip_id = var.enable_ipv6 ? scaleway_instance_ip.ipv6[0].id : null
+  tags  = [for key in var.ssh_keys : "AUTHORIZED_KEY=${replace(key, " ", "_")}"]
 
   user_data = {
     cloud-init = <<-EOF

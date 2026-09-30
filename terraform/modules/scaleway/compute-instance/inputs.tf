@@ -46,3 +46,15 @@ variable "buckets" {
     error_message = "Bucket aliases must be unique."
   }
 }
+
+variable "enable_ipv6" {
+  type        = bool
+  description = "Create and attach a routed IPv6 address (true/false)"
+  default     = false
+}
+
+variable "ssh_keys" {
+  type        = list(string)
+  description = "SSH public keys granted instance-specific access via Scaleway's AUTHORIZED_KEY tag convention, in addition to account-wide keys"
+  default     = []
+}

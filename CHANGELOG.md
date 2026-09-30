@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [terraform/scaleway/compute-instance] Add rclone/neovim cloud-init and bucket access to scaleway/compute-instance ([#104](https://github.com/noisypigeon/noisypigeon/pull/104))
+
 - [terraform/scaleway/object-bucket] Add force_destroy input to object-bucket ([#101](https://github.com/noisypigeon/noisypigeon/pull/101))
 
 - [repo] docs(adr-0084): prune repo to terraform+blog scope ([#100](https://github.com/noisypigeon/noisypigeon/pull/100))

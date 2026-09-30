@@ -11,6 +11,7 @@ backfill of prior history.
 
 ## 2026-09-30
 
+- [repo] docs(adr-0084): split pigeon-cli into its own repo ([#99](https://github.com/noisypigeon/noisypigeon/pull/99))
 - [pigeon-cli] feat(adr-0083): implement sort job ([#98](https://github.com/noisypigeon/noisypigeon/pull/98))
 - [pigeon-cli] docs(adr-0083): add sort job ADR ([#96](https://github.com/noisypigeon/noisypigeon-2/pull/96))
 - [pigeon-cli] feat(adr-0082): implement dedupe job ([#95](https://github.com/noisypigeon/noisypigeon-2/pull/95))

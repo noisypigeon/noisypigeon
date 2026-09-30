@@ -219,7 +219,7 @@ clean simplification versus `pull-transform`'s mandatory preflight check.
   documents differing only in metadata) — explicitly out of scope per the
   Context section's answer to the hash-reliability question; this job
   detects byte-identical duplicates only.
-- Generalizing `pull_transform::manifest`'s listing/checkpoint pattern into
+- Generalizing `pull_transform::manifest`'s listing/checkpoint pattern into ([#97](https://github.com/noisypigeon/noisypigeon-2/issues/97))
   a shared module alongside `download.rs` — `dedupe` is only the second
   consumer of that specific shape; per this codebase's own "duplicate
   until the third consumer" precedent (ADR-0074 §0 itself only hoisted

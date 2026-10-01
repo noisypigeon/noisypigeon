@@ -10,7 +10,9 @@ module "iam" {
     "ObjectStorageFullAccess",
     "VPCFullAccess",
     "InstancesFullAccess",
-    "BlockStorageFullAccess"
+    "BlockStorageFullAccess",
+    "SSHKeysReadOnly",
+    "SSHKeysFullAccess"
   ]
 
   organization_id = local.scaleway_organization_id

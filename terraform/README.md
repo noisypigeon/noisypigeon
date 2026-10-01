@@ -3,7 +3,7 @@
 Two independent trees:
 
 - [`modules/`](modules/) — versioned, reusable Terraform modules
-  (DigitalOcean, Scaleway). See [`modules/README.md`](modules/README.md)
+  (Scaleway). See [`modules/README.md`](modules/README.md)
   for the module index, versioning, and how to consume them.
 - [`infrastructure/`](infrastructure/) — this repo owner's actual, live
   Terragrunt/Terraform configuration for personal infrastructure,

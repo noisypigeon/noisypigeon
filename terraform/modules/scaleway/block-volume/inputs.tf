@@ -23,3 +23,8 @@ variable "iops" {
   description = "Volume IOPS"
   default     = 15000
 }
+
+variable "project_id" {
+  type        = string
+  description = "Project ID"
+}

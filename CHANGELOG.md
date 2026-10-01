@@ -9,6 +9,12 @@ where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-10-01
+
+- [terraform/scaleway/compute-instance] Add scaleway/block-volume module and compute-instance volume attachment ([#109](https://github.com/noisypigeon/noisypigeon/pull/109))
+
+- [terraform/scaleway/block-volume] Add scaleway/block-volume module and compute-instance volume attachment ([#109](https://github.com/noisypigeon/noisypigeon/pull/109))
+
 ## 2026-09-30
 
 - [terraform/scaleway/compute-instance] Force instance replacement when compute-instance cloud-init changes ([#108](https://github.com/noisypigeon/noisypigeon/pull/108))

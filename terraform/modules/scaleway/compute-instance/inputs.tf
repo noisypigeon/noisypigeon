@@ -47,6 +47,12 @@ variable "buckets" {
   }
 }
 
+variable "enable_ipv4" {
+  type        = bool
+  description = "Create and attach a routed IPv4 address (true/false)"
+  default     = true
+}
+
 variable "enable_ipv6" {
   type        = bool
   description = "Create and attach a routed IPv6 address (true/false)"

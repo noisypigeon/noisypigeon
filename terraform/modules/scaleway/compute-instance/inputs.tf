@@ -58,3 +58,9 @@ variable "ssh_keys" {
   description = "SSH public keys granted instance-specific access via Scaleway's AUTHORIZED_KEY tag convention, in addition to account-wide keys"
   default     = []
 }
+
+variable "additional_volume_ids" {
+  type        = list(string)
+  description = "IDs of pre-created block volumes (e.g. scaleway/block-volume's id output) to attach to the instance"
+  default     = []
+}

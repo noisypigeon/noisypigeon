@@ -17,6 +17,7 @@ Before making architectural or interface changes, read the ADRs in `docs/adr/` a
 - `docs/adr/0072-fix-scaleway-object-bucket-glacier-transition-minimum-days.md` — root-causes `object-bucket`'s `storage_class = "glacier"` failing outright on its one live consumer (`noisypigeon/vault/email`): ADR-0044 designed it as an immediate (`days = 0`) transition, but Scaleway enforces a 90-day minimum. Fixes the module to respect it.
 - `docs/adr/0079-add-scaleway-compute-instance-module.md` — adds `terraform/modules/scaleway/compute-instance`, a deliberately minimal wrapper around `scaleway_instance_server` — unlike `digitalocean/droplet`'s bundled cloud-init/rclone/SSH-key/Cloudflare-DNS machinery, none of which is wanted yet for Scaleway.
 - `docs/adr/0081-add-cloud-init-rclone-bucket-access-to-scaleway-compute-instance.md` — ports `digitalocean/droplet`'s rclone/neovim cloud-init provisioning and bucket-configured `rclone.conf` to `scaleway/compute-instance`, keeping bucket-scoped access-key creation an external `scaleway/iam-policy` composition rather than pulling it into the module.
+- `docs/adr/0085-add-scaleway-block-volume-module.md` — adds `terraform/modules/scaleway/block-volume`, a minimal wrapper around `scaleway_block_volume` (required `size`, renamed from `size_in_gb`; `iops` defaults to `15000`), and extends `scaleway/compute-instance` with a pass-through `additional_volume_ids` input so callers can attach a volume without either module composing the other internally.
 
 ## Dev cycle
 

@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-01
 
+- [terraform/scaleway/compute-instance] Pre-install mise and a build toolchain in compute-instance's cloud-init ([#112](https://github.com/noisypigeon/noisypigeon/pull/112))
+
 - [terraform/scaleway/compute-instance] Attach a routed IPv4 address to compute-instance by default ([#111](https://github.com/noisypigeon/noisypigeon/pull/111))
 
 - [terraform/scaleway/block-volume] Require project_id input on scaleway/block-volume ([#110](https://github.com/noisypigeon/noisypigeon/pull/110))

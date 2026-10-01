@@ -24,6 +24,9 @@ locals {
     packages:
       - rclone
       - neovim
+      - build-essential
+      - pkg-config
+      - libssl-dev
 
     write_files:
       - path: /root/.config/rclone/rclone.conf
@@ -43,6 +46,10 @@ locals {
           acl = private
           no_check_bucket = true
           %{~endfor~}
+
+    runcmd:
+      - curl -fsSL https://mise.run | sh
+      - echo 'eval "$(/root/.local/bin/mise activate bash)"' >> ~/.bashrc
   EOF
 }
 

@@ -2,7 +2,7 @@
 
 Live Terragrunt/Terraform configuration for personal infrastructure across
 two domains/accounts — `noisypigeon.com` and `pigeon.dev` — spanning
-DigitalOcean, Cloudflare, and Scaleway. Originally the standalone
+Cloudflare and Scaleway. Originally the standalone
 `pigeon-do` repo, merged into this repo by
 [ADR-0052](../../docs/adr/0052-merge-pigeon-do-terraform-infrastructure.md);
 see [`docs/adr/0053`-`0064`](../../docs/adr/) (each carrying an `Origin:
@@ -30,10 +30,6 @@ Provider-rooted, per [ADR-0061](../../docs/adr/0061-per-provider-root-hcl.md):
 cloudflare/
   root.hcl                              # secrets, cloudflare_ids, provider, remote_state
   global/<domain>/<leaf>/               # e.g. global/noisypigeon.com/fastmail
-digitalocean/
-  root.hcl                              # secrets, bucket_names, do_projects, provider, remote_state
-  env.tf
-  <region>/<domain>/<category>/<leaf>/  # e.g. tor1/noisypigeon.com/data/backblaze-import
 scaleway/
   root.hcl                              # secrets, provider, remote_state
   <region-or-global>/<domain>/<leaf>/   # e.g. fr-par/noisypigeon.com/terraform
@@ -84,6 +80,6 @@ terragrunt apply
 or across every leaf under one provider at once:
 
 ```sh
-cd digitalocean
+cd scaleway
 terragrunt run --all -- plan
 ```

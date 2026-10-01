@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This repo holds `terraform/modules/` — versioned, reusable Terraform modules (DigitalOcean, Scaleway), merged in from the former `pigeon-tf` repo (ADR-0037) and `pigeon-do` repo (ADR-0052) — plus `terraform/infrastructure/`, this repo owner's live Terragrunt/Terraform configuration consuming those modules, and `service/blog/`, a Zola-based static site for the personal blog at `noisypigeon.com`, rewritten from Jekyll (ADR-0067). `service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into its own, `noisypigeon/pigeon-cli`, via ADR-0084 — that ADR (and this repo's full pre-split, pigeon-cli-only ADR/report history) was deleted from this repo once no longer needed here; it survives only in `noisypigeon/pigeon-cli`.
+This repo holds `terraform/modules/` — versioned, reusable Terraform modules (Scaleway), merged in from the former `pigeon-tf` repo (ADR-0037) and `pigeon-do` repo (ADR-0052) — plus `terraform/infrastructure/`, this repo owner's live Terragrunt/Terraform configuration consuming those modules, and `service/blog/`, a Zola-based static site for the personal blog at `noisypigeon.com`, rewritten from Jekyll (ADR-0067). `service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into its own, `noisypigeon/pigeon-cli`, via ADR-0084 — that ADR (and this repo's full pre-split, pigeon-cli-only ADR/report history) was deleted from this repo once no longer needed here; it survives only in `noisypigeon/pigeon-cli`.
 
 ## ADRs govern this project
 
@@ -18,6 +18,7 @@ Before making architectural or interface changes, read the ADRs in `docs/adr/` a
 - `docs/adr/0079-add-scaleway-compute-instance-module.md` — adds `terraform/modules/scaleway/compute-instance`, a deliberately minimal wrapper around `scaleway_instance_server` — unlike `digitalocean/droplet`'s bundled cloud-init/rclone/SSH-key/Cloudflare-DNS machinery, none of which is wanted yet for Scaleway.
 - `docs/adr/0081-add-cloud-init-rclone-bucket-access-to-scaleway-compute-instance.md` — ports `digitalocean/droplet`'s rclone/neovim cloud-init provisioning and bucket-configured `rclone.conf` to `scaleway/compute-instance`, keeping bucket-scoped access-key creation an external `scaleway/iam-policy` composition rather than pulling it into the module.
 - `docs/adr/0085-add-scaleway-block-volume-module.md` — adds `terraform/modules/scaleway/block-volume`, a minimal wrapper around `scaleway_block_volume` (required `size`, renamed from `size_in_gb`; `iops` defaults to `15000`), and extends `scaleway/compute-instance` with a pass-through `additional_volume_ids` input so callers can attach a volume without either module composing the other internally.
+- `docs/adr/0086-decommission-digitalocean.md` — documents the completed migration off DigitalOcean once Scaleway module parity landed: deletes all 6 `terraform/modules/digitalocean/*` modules and the remaining `terraform/infrastructure/digitalocean/*` leaves, leaving Scaleway + Cloudflare as this repo's only providers, and fixes the prose docs/CI workflows (`module-release.yml`, `module-docs.yml`) that still described the now-deleted DigitalOcean surface.
 
 ## Dev cycle
 

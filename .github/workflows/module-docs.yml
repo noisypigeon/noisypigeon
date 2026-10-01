@@ -25,7 +25,7 @@ jobs:
       - name: Generate module docs
         uses: terraform-docs/gh-actions@v1.4.1
         with:
-          working-dir: terraform/modules/digitalocean/access-key,terraform/modules/digitalocean/standard-storage-bucket,terraform/modules/digitalocean/cold-storage-bucket,terraform/modules/digitalocean/project,terraform/modules/digitalocean/droplet,terraform/modules/digitalocean/block-storage-volume,terraform/modules/scaleway/project,terraform/modules/scaleway/object-bucket,terraform/modules/scaleway/iam-policy,terraform/modules/scaleway/compute-instance,terraform/modules/scaleway/block-volume
+          working-dir: terraform/modules/scaleway/project,terraform/modules/scaleway/object-bucket,terraform/modules/scaleway/iam-policy,terraform/modules/scaleway/compute-instance,terraform/modules/scaleway/block-volume
           output-file: README.md
           output-method: inject
           output-format: markdown table

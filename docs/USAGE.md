@@ -12,8 +12,8 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 
 ## Structure
 
-- [`terraform/modules/`](terraform/modules/) — versioned DigitalOcean and
-  Scaleway Terraform modules. See
+- [`terraform/modules/`](terraform/modules/) — versioned Scaleway
+  Terraform modules. See
   [`terraform/modules/README.md`](terraform/modules/README.md) for the
   module index.
 - [`terraform/infrastructure/`](terraform/infrastructure/) — this repo

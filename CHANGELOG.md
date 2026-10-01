@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-01
 
+- [terraform/scaleway/compute-instance] Attach a routed IPv4 address to compute-instance by default ([#111](https://github.com/noisypigeon/noisypigeon/pull/111))
+
 - [terraform/scaleway/block-volume] Require project_id input on scaleway/block-volume ([#110](https://github.com/noisypigeon/noisypigeon/pull/110))
 
 - [terraform/scaleway/compute-instance] Add scaleway/block-volume module and compute-instance volume attachment ([#109](https://github.com/noisypigeon/noisypigeon/pull/109))

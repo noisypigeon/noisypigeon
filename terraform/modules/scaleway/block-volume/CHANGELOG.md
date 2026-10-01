@@ -4,6 +4,16 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0] - 2026-10-01
+
+### Require project_id input on scaleway/block-volume
+
+Adds a new required input, `project_id`, to `scaleway/block-volume`, wired straight through to `scaleway_block_volume`'s existing `project_id` argument.
+
+This is a breaking change to the module's interface: existing callers must now pass `project_id` explicitly, since the resource no longer falls back to the provider's default project for volumes created through this module.
+
+[#110](https://github.com/noisypigeon/noisypigeon/pull/110)
+
 ## [0.1.0] - 2026-10-01
 
 ### Add scaleway/block-volume module and compute-instance volume attachment

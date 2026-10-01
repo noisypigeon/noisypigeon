@@ -11,6 +11,11 @@ resource "scaleway_instance_ip" "ipv6" {
   type  = "routed_ipv6"
 }
 
+resource "scaleway_instance_ip" "ipv4" {
+  count = var.enable_ipv4 ? 1 : 0
+  type  = "routed_ipv4"
+}
+
 locals {
   cloud_init = <<-EOF
     #cloud-config
@@ -46,10 +51,13 @@ resource "terraform_data" "cloud_init" {
 }
 
 resource "scaleway_instance_server" "server" {
-  name                  = "${var.namespace}-${random_string.suffix.result}-${var.name}"
-  image                 = var.image
-  type                  = var.type
-  ip_id                 = var.enable_ipv6 ? scaleway_instance_ip.ipv6[0].id : null
+  name  = "${var.namespace}-${random_string.suffix.result}-${var.name}"
+  image = var.image
+  type  = var.type
+  ip_ids = compact([
+    var.enable_ipv4 ? scaleway_instance_ip.ipv4[0].id : null,
+    var.enable_ipv6 ? scaleway_instance_ip.ipv6[0].id : null,
+  ])
   tags                  = [for key in var.ssh_keys : "AUTHORIZED_KEY=${replace(key, " ", "_")}"]
   additional_volume_ids = var.additional_volume_ids
 

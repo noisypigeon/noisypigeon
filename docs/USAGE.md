@@ -20,8 +20,13 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
   owner's live Terragrunt/Terraform configuration for personal
   infrastructure, consuming the modules above. See
   [`terraform/infrastructure/README.md`](terraform/infrastructure/README.md).
-- [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
-  [noisypigeon.com](https://noisypigeon.com).
+- [`workloads/`](workloads/) — each workload gets its own
+  `workloads/<name>/` (terraform colocated with the resource it's part
+  of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
+  - [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
+    [noisypigeon.com](https://noisypigeon.com).
+  - [`workloads/blog/terraform/`](workloads/blog/terraform/) — the
+    Cloudflare DNS records pointing `noisypigeon.com` at GitHub Pages.
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
   ADR (renumbered inline, not archived separately).

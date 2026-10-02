@@ -1,3 +1,4 @@
 .DS_Store
+*.env
 /workloads/blog/src/public
 .claude/worktrees

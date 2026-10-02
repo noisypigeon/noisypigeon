@@ -33,9 +33,16 @@ locals {
       - rclone
       - neovim
     %{~endif~}
-    %{~if var.profile == "pigeon-cli"~}
 
     write_files:
+      - path: /etc/profile.d/pigeon-env.sh
+        permissions: '0600'
+        defer: true
+        content: |
+          %{~for key, value in var.environment_variables~}
+          export ${key}="${value}"
+          %{~endfor~}
+    %{~if var.profile == "pigeon-cli"~}
       - path: /root/.config/rclone/rclone.conf
         permissions: '0600'
         defer: true
@@ -74,7 +81,9 @@ locals {
           endpoint = "${entry.endpoint}"
           bucket = "${entry.bucket}"
           access_key_id = "${entry.access_key_id}"
+          %{~if entry.encryption_key_alias != null~}
           encryption_key_alias = "${entry.encryption_key_alias}"
+          %{~endif~}
           %{~endif~}
           %{~if entry.kind == "encryption-key"~}
           created_at = "${entry.created_at}"
@@ -85,6 +94,7 @@ locals {
 
     runcmd:
       - export HOME=/root
+      - . /etc/profile.d/pigeon-env.sh
     %{~if length(var.additional_volume_ids) > 0~}
       - mkfs.ext4 -L data /dev/sdb
       - mkdir -p /mnt/data

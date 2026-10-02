@@ -108,6 +108,18 @@ variable "keyring_entries" {
   }
 }
 
+variable "environment_variables" {
+  type        = map(string)
+  description = "Key/value environment variables exported on the instance for any profile (e.g. pigeon-cli secrets, by convention named PIGEON_SECRET_<ALIAS> but not enforced by this module)"
+  default     = {}
+  sensitive   = true
+
+  validation {
+    condition     = alltrue([for k in keys(var.environment_variables) : can(regex("^[A-Za-z_][A-Za-z0-9_]*$", k))])
+    error_message = "environment_variables keys must be valid shell variable names."
+  }
+}
+
 variable "enable_ipv4" {
   type        = bool
   description = "Create and attach a routed IPv4 address (true/false)"

@@ -21,12 +21,7 @@ locals {
     #cloud-config
     package_update: true
     package_upgrade: false
-    %{~if var.profile != "pigeon-cli"~}
     packages:
-    %{~if var.profile == "rclone"~}
-      - rclone
-      - neovim
-    %{~endif~}
     %{~if var.profile == "docker"~}
       - apt-transport-https
       - ca-certificates
@@ -34,8 +29,11 @@ locals {
       - gnupg
       - lsb-release
     %{~endif~}
+    %{~if var.profile == "pigeon-cli"~}
+      - rclone
+      - neovim
     %{~endif~}
-    %{~if var.profile == "rclone"~}
+    %{~if var.profile == "pigeon-cli"~}
 
     write_files:
       - path: /root/.config/rclone/rclone.conf

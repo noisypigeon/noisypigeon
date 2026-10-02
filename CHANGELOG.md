@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-02
 
+- [scaleway/compute-instance] Merge rclone cloud-init profile into pigeon-cli ([#125](https://github.com/noisypigeon/noisypigeon/pull/125))
+
 - [scaleway/project] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
 
 - [scaleway/object-bucket] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))

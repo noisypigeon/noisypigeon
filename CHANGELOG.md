@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-02
 
+- [terraform/scaleway/compute-instance] Auto-mount attached volume and inline pigeon-cli bootstrap on scaleway/compute-instance ([#116](https://github.com/noisypigeon/noisypigeon/pull/116))
+
 - [terraform/scaleway/compute-instance] Add pigeon-cli cloud-init profile and ipv4_address output to scaleway/compute-instance ([#115](https://github.com/noisypigeon/noisypigeon/pull/115))
 
 - [terraform/scaleway/compute-instance] Add cloud-init profiles (rclone/docker) to scaleway/compute-instance ([#114](https://github.com/noisypigeon/noisypigeon/pull/114))

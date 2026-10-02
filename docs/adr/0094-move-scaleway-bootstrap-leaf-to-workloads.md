@@ -40,18 +40,46 @@ A new `generate "scaleway_ids"` block produces the two exact local names `iam.tf
 
 ### The actual state migration — manual, not performed in this session
 
-This is a live state relocation against this repo's own state-bucket-and-deployer-credential leaf. Consistent with this session's established caution around real credentials, and with every prior leaf-move ADR in this repo (ADR-0092) deferring live `terragrunt init`/state migration to the user, **this ADR does not execute it.** Runbook, to be run by the user once this PR merges:
+This is a live state relocation against this repo's own state-bucket-and-deployer-credential leaf. Consistent with this session's established caution around real credentials, and with every prior leaf-move ADR in this repo (ADR-0092) deferring live `terragrunt init`/state migration to the user, **this ADR does not execute it.**
 
-1. `cd workloads/scaleway/terraform`
-2. `terragrunt init` — Terraform detects the backend config changed (new `key`, same bucket/backend type) and prompts to copy existing state to the new backend. Answer **yes**. This copies the state object from the old key to the new one, within the same bucket — it does not touch resource addresses and does not destroy/recreate anything. It does not delete the old state object either (S3 versioning on the bucket is an additional, independent safety net regardless).
-3. `terragrunt plan` — **must show zero changes.** This is the verification that the move was purely bookkeeping. If it proposes any change, stop and investigate before applying anything.
-4. Optional, low-priority, can be done anytime later or skipped: remove the now-orphaned old state object at `scaleway/fr-par/noisypigeon/terraform/terraform.tfstate` directly (not a Terraform operation).
+**First attempt (tried live, documented here because it failed instructively):** running plain `terragrunt init` then `terragrunt plan` in the new `workloads/scaleway/terraform` directory did **not** prompt to migrate state — it did a normal fresh init against the new, empty backend key and `plan` proposed creating all 5 resources from scratch. Root cause: `terraform init`'s "backend changed, copy state?" detection depends on a *local* pointer file (`.terraform/terraform.tfstate`) in the **same working directory** that previously ran `init` against the old backend. Terragrunt runs the actual `terraform`/`tofu` commands inside a `.terragrunt-cache/<hash-of-absolute-path>/...` directory derived from the leaf's filesystem path — since `workloads/scaleway/terraform` is a brand-new path (via `git mv`), its cache directory has no memory of ever being initialized against the old backend, so no migration prompt is possible. **This means the interactive `init -migrate-state` flow does not work across a Terragrunt leaf's directory move — only for an in-place backend reconfig.** No damage was done (`plan` is non-mutating), but `apply` was correctly not run on that plan.
+
+**Working runbook** — transfers the real state content directly via `terraform state pull`/`push`, sourcing the old state from a temporary `git worktree` checked out at the commit before the move:
+
+```bash
+# 1. Temporary worktree at the commit before the leaf moved, so the OLD
+#    terragrunt.hcl (pointing at scaleway/root.hcl's OLD backend key) exists on disk again.
+cd /Users/pigeon/Developer/noisypigeon
+git worktree add /tmp/old-scaleway-leaf <commit-before-the-move>
+
+# 2. Init against the OLD backend and pull its real, current state.
+cd /tmp/old-scaleway-leaf/terraform/infrastructure/scaleway/fr-par/noisypigeon/terraform
+terragrunt init
+terragrunt state pull > /tmp/scaleway-bootstrap.tfstate
+
+# 3. Push that exact state content to the NEW backend key.
+cd /Users/pigeon/Developer/noisypigeon/workloads/scaleway/terraform
+terragrunt state push /tmp/scaleway-bootstrap.tfstate
+
+# 4. Verify -- MUST show "No changes." before trusting this is done.
+terragrunt plan
+
+# 5. Clean up.
+cd /Users/pigeon/Developer/noisypigeon
+git worktree remove /tmp/old-scaleway-leaf
+rm /tmp/scaleway-bootstrap.tfstate
+```
+
+Neither `state pull` nor `state push` talks to the Scaleway API or touches any real resource — they only move the state file's content (a JSON description of what already exists and its resource IDs) between backend locations. Step 4's "No changes" is the proof the new key's state now agrees with reality.
+
+Optional, low-priority, can be done anytime later or skipped entirely: remove the now-orphaned old state object at `scaleway/fr-par/noisypigeon/terraform/terraform.tfstate` directly (not a Terraform operation; S3 versioning on the bucket is an additional, independent safety net regardless).
 
 ## Consequences
 
 - Until the user runs the manual migration, `workloads/scaleway/terraform` exists with no state behind it yet at its new key — not runnable as-is immediately after merge. Expected, not a defect.
 - Every other `scaleway/*` leaf's `.env`-sourced credentials are unaffected by this move, provided the migration step is a state copy rather than a destroy+apply — verified safe by the lack of any `dependency` block and the existing S3 versioning safety net.
 - `terraform/infrastructure/scaleway/fr-par/noisypigeon/` loses one leaf but keeps the others; no other leaf references this one by path or Terragrunt dependency.
+- The original runbook's `init -migrate-state` approach doesn't generalize to *any* future Terragrunt leaf directory move in this repo — the same local-pointer-file gap applies whenever a leaf's filesystem path changes, not just this one. The working `state pull`/`push`-via-worktree runbook above is the pattern to reuse next time, not the original one.
 
 ## Out of scope
 

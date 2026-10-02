@@ -1,6 +1,6 @@
 module "iam" {
   source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v1.1.1"
-  name   = "${module.bucket.name}-iam"
+  name   = "${local.job_name}-${local.bucket_alias}-iam"
 
   expires_at = "2027-09-25T22:32:12Z"
 

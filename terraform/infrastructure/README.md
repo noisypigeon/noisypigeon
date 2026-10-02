@@ -32,7 +32,7 @@ cloudflare/
   global/<domain>/<leaf>/               # e.g. global/noisypigeon.com/fastmail
 scaleway/
   root.hcl                              # secrets, provider, remote_state
-  <region-or-global>/<domain>/<leaf>/   # e.g. fr-par/noisypigeon.com/terraform
+  <region-or-global>/<domain>/<leaf>/   # e.g. fr-par/noisypigeon/custodian/dhj
 ```
 
 Every leaf's `terragrunt.hcl` is the same shape:

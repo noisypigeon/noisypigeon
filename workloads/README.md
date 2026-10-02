@@ -12,7 +12,11 @@ manages, not grouped by cloud provider.
 blog/
   src/        # the Zola site (ADR-0091)
   terraform/  # the Cloudflare DNS records that point noisypigeon.com at it (ADR-0092)
+scaleway/
+  terraform/  # the deployer IAM application and the Terraform state bucket itself (ADR-0094)
 ```
+
+Not every workload has a `src/` sibling — `scaleway/` is infrastructure/bootstrap plumbing (the Scaleway deployer identity and this repo's own remote-state bucket), not a deployable app, so it's `terraform/` alone. The convention doesn't require `src/`; it just happens to exist for `blog/`.
 
 ## Terraform convention: `workloads/<name>/terraform/`
 
@@ -39,9 +43,10 @@ even if a `terragrunt.hcl` is mistakenly added there.
 Secrets, provider wiring, and the remote-state backend follow the same
 pattern as `terraform/infrastructure/`'s provider roots — see
 [`terraform/infrastructure/README.md`](../terraform/infrastructure/README.md#secrets).
-`workloads/root.hcl` only wires what's actually needed today (Cloudflare,
-for the blog's DNS leaf); add a provider when a future workload actually
-needs it, not preemptively.
+`workloads/root.hcl` only wires what's actually needed (Cloudflare for the
+blog's DNS leaf, Scaleway for the `scaleway/terraform` leaf, added by
+[ADR-0094](../docs/adr/0094-move-scaleway-bootstrap-leaf-to-workloads.md));
+add a provider when a future workload actually needs it, not preemptively.
 
 ## Adding a new workload
 

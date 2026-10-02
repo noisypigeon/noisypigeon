@@ -17,6 +17,10 @@ locals {
   cloudflare_api_token  = get_env("CLOUDFLARE_NOISYPIGEON_COM_TOKEN", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_TOKEN", ""))
   cloudflare_account_id = get_env("CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", ""))
 
+  scaleway_access_key      = get_env("SCALEWAY_ACCESS_KEY", lookup(local.secrets, "SCALEWAY_ACCESS_KEY", ""))
+  scaleway_secret_key      = get_env("SCALEWAY_SECRET_KEY", lookup(local.secrets, "SCALEWAY_SECRET_KEY", ""))
+  scaleway_organization_id = get_env("SCALEWAY_ORGANIZATION_ID", lookup(local.secrets, "SCALEWAY_ORGANIZATION_ID", ""))
+
   # Enforce the workloads/<name>/terraform convention: exclude any leaf
   # whose path relative to this root.hcl isn't exactly "<name>/terraform"
   # from run --all -- see
@@ -54,11 +58,34 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5"
     }
+    scaleway = {
+      source  = "scaleway/scaleway"
+      version = "~> 2.0"
+    }
   }
 }
 
 provider "cloudflare" {
   api_token = "${local.cloudflare_api_token}"
+}
+
+provider "scaleway" {
+  access_key      = "${local.scaleway_access_key}"
+  secret_key      = "${local.scaleway_secret_key}"
+  organization_id = "${local.scaleway_organization_id}"
+  zone            = "fr-par-1"
+  region          = "fr-par"
+}
+EOF
+}
+
+generate "scaleway_ids" {
+  path      = "scaleway_ids_generated.tf"
+  if_exists = "overwrite"
+  contents  = <<EOF
+locals {
+  scaleway_organization_id        = "${local.scaleway_organization_id}"
+  scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
 }
 EOF
 }

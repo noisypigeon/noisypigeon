@@ -25,6 +25,9 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     [noisypigeon.com](https://noisypigeon.com).
   - [`workloads/blog/terraform/`](workloads/blog/terraform/) — the
     Cloudflare DNS records pointing `noisypigeon.com` at GitHub Pages.
+  - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
+    this repo's own Terraform state bucket and deployer IAM
+    application/policy/API key.
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
   ADR (renumbered inline, not archived separately).

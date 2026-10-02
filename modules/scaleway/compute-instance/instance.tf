@@ -53,6 +53,34 @@ locals {
           acl = private
           no_check_bucket = true
           %{~endfor~}
+      - path: /root/.config/pigeon/keyring.toml
+        permissions: '0600'
+        defer: true
+        content: |
+          %{~for entry in var.keyring_entries~}
+          [[entries]]
+          kind = "${entry.kind}"
+          alias = "${entry.alias}"
+          %{~if entry.kind == "email"~}
+          email = "${entry.email}"
+          provider = "${entry.provider}"
+          host = "${entry.host}"
+          port = ${entry.port}
+          %{~if entry.max_imap_connections != null~}
+          max_imap_connections = ${entry.max_imap_connections}
+          %{~endif~}
+          %{~endif~}
+          %{~if entry.kind == "bucket"~}
+          endpoint = "${entry.endpoint}"
+          bucket = "${entry.bucket}"
+          access_key_id = "${entry.access_key_id}"
+          encryption_key_alias = "${entry.encryption_key_alias}"
+          %{~endif~}
+          %{~if entry.kind == "encryption-key"~}
+          created_at = "${entry.created_at}"
+          %{~endif~}
+
+          %{~endfor~}
     %{~endif~}
 
     runcmd:

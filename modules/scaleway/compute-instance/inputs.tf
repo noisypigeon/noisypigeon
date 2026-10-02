@@ -63,6 +63,51 @@ variable "buckets" {
   }
 }
 
+variable "keyring_entries" {
+  type = list(object({
+    kind  = string
+    alias = string
+
+    # kind = "email"
+    email                = optional(string)
+    provider             = optional(string)
+    host                 = optional(string)
+    port                 = optional(number)
+    max_imap_connections = optional(number)
+
+    # kind = "bucket"
+    endpoint             = optional(string)
+    bucket               = optional(string)
+    access_key_id        = optional(string)
+    encryption_key_alias = optional(string)
+
+    # kind = "encryption-key"
+    created_at = optional(string)
+  }))
+  description = "pigeon-cli keyring.toml entries; only used when profile = \"pigeon-cli\""
+  default     = []
+
+  validation {
+    condition     = alltrue([for e in var.keyring_entries : contains(["email", "bucket", "encryption-key"], e.kind)])
+    error_message = "keyring_entries.kind must be one of \"email\", \"bucket\", \"encryption-key\"."
+  }
+
+  validation {
+    condition     = alltrue([for e in var.keyring_entries : can(regex("^[a-z0-9][a-z0-9-]*[a-z0-9]$", e.alias))])
+    error_message = "keyring_entries aliases must be lowercase alphanumeric with hyphens."
+  }
+
+  validation {
+    condition     = length(var.keyring_entries) == length(distinct([for e in var.keyring_entries : e.alias]))
+    error_message = "keyring_entries aliases must be unique."
+  }
+
+  validation {
+    condition     = var.profile == "pigeon-cli" || length(var.keyring_entries) == 0
+    error_message = "keyring_entries is only used when profile = \"pigeon-cli\"."
+  }
+}
+
 variable "enable_ipv4" {
   type        = bool
   description = "Create and attach a routed IPv4 address (true/false)"

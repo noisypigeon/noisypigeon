@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `terraform/<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-10-02
+
+- [terraform/scaleway/compute-instance] Add cloud-init profiles (rclone/docker) to scaleway/compute-instance ([#114](https://github.com/noisypigeon/noisypigeon/pull/114))
+
 ## 2026-10-01
 
 - [terraform/scaleway/compute-instance] Pre-install mise and a build toolchain in compute-instance's cloud-init ([#112](https://github.com/noisypigeon/noisypigeon/pull/112))

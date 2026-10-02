@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-02
 
+- [terraform/scaleway/compute-instance] Add pigeon-cli cloud-init profile and ipv4_address output to scaleway/compute-instance ([#115](https://github.com/noisypigeon/noisypigeon/pull/115))
+
 - [terraform/scaleway/compute-instance] Add cloud-init profiles (rclone/docker) to scaleway/compute-instance ([#114](https://github.com/noisypigeon/noisypigeon/pull/114))
 
 ## 2026-10-01

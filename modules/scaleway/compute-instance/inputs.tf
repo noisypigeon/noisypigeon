@@ -26,12 +26,12 @@ variable "type" {
 
 variable "profile" {
   type        = string
-  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf), \"docker\" (Docker CE), or \"pigeon-cli\" (runs the pigeon-cli bootstrap script directly on first boot)"
-  default     = "rclone"
+  description = "Cloud-init provisioning profile: \"docker\" (Docker CE), or \"pigeon-cli\" (rclone/neovim + rclone.conf from buckets, plus runs the pigeon-cli bootstrap script directly on first boot)"
+  default     = "pigeon-cli"
 
   validation {
-    condition     = contains(["rclone", "docker", "pigeon-cli"], var.profile)
-    error_message = "profile must be \"rclone\", \"docker\", or \"pigeon-cli\"."
+    condition     = contains(["docker", "pigeon-cli"], var.profile)
+    error_message = "profile must be \"docker\" or \"pigeon-cli\"."
   }
 }
 
@@ -44,7 +44,7 @@ variable "buckets" {
     bucket_secret_key = string
     bucket_provider   = string
   }))
-  description = "Buckets to configure in rclone; only used when profile = \"rclone\""
+  description = "Buckets to configure in rclone; only used when profile = \"pigeon-cli\""
   default     = []
 
   validation {
@@ -58,8 +58,8 @@ variable "buckets" {
   }
 
   validation {
-    condition     = var.profile == "rclone" || length(var.buckets) == 0
-    error_message = "buckets is only used when profile = \"rclone\"."
+    condition     = var.profile == "pigeon-cli" || length(var.buckets) == 0
+    error_message = "buckets is only used when profile = \"pigeon-cli\"."
   }
 }
 

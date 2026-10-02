@@ -22,11 +22,18 @@ locals {
     package_update: true
     package_upgrade: false
     packages:
+    %{~if var.profile == "rclone"~}
       - rclone
       - neovim
-      - build-essential
-      - pkg-config
-      - libssl-dev
+    %{~endif~}
+    %{~if var.profile == "docker"~}
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    %{~endif~}
+    %{~if var.profile == "rclone"~}
 
     write_files:
       - path: /root/.config/rclone/rclone.conf
@@ -46,10 +53,20 @@ locals {
           acl = private
           no_check_bucket = true
           %{~endfor~}
+    %{~endif~}
 
     runcmd:
       - curl -fsSL https://mise.run | sh
       - echo 'eval "$(/root/.local/bin/mise activate bash)"' >> ~/.bashrc
+    %{~if var.profile == "docker"~}
+      - mkdir -p /etc/apt/keyrings
+      - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      - apt-get update
+      - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+      - systemctl enable docker
+      - systemctl start docker
+    %{~endif~}
   EOF
 }
 

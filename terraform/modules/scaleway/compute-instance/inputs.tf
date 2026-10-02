@@ -24,6 +24,17 @@ variable "type" {
   default     = "STARDUST1-S"
 }
 
+variable "profile" {
+  type        = string
+  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf) or \"docker\" (Docker CE)"
+  default     = "rclone"
+
+  validation {
+    condition     = contains(["rclone", "docker"], var.profile)
+    error_message = "profile must be \"rclone\" or \"docker\"."
+  }
+}
+
 variable "buckets" {
   type = list(object({
     bucket_name       = string
@@ -33,7 +44,7 @@ variable "buckets" {
     bucket_secret_key = string
     bucket_provider   = string
   }))
-  description = "Buckets to configure in rclone (rclone/neovim always install regardless)"
+  description = "Buckets to configure in rclone; only used when profile = \"rclone\""
   default     = []
 
   validation {
@@ -44,6 +55,11 @@ variable "buckets" {
   validation {
     condition     = length(var.buckets) == length(distinct([for b in var.buckets : b.bucket_alias]))
     error_message = "Bucket aliases must be unique."
+  }
+
+  validation {
+    condition     = var.profile == "rclone" || length(var.buckets) == 0
+    error_message = "buckets is only used when profile = \"rclone\"."
   }
 }
 

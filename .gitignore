@@ -4,3 +4,5 @@
 .claude/worktrees
 .terraform.lock.hcl
 .terragrunt-cache/
+.terraform/
+*.tfstate*

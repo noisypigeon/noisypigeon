@@ -1,8 +1,8 @@
 # Terraform modules
 
 Versioned, reusable Terraform modules, consumed by this repo's own
-[`terraform/infrastructure/`](../terraform/infrastructure/) and any future
-infra repos. Originally the standalone `pigeon-tf` repo, merged into this
+[`workloads/`](../workloads/) and any future infra repos. Originally the
+standalone `pigeon-tf` repo, merged into this
 repo by [ADR-0037](../docs/adr/0037-merge-pigeon-tf-terraform-modules.md);
 see [ADR-0054](../docs/adr/0054-pigeon-tf-scaffold.md) (originally
 `pigeon-do` ADR-0002) for the design decisions behind consuming the
@@ -27,10 +27,9 @@ Releases are tagged on `noisypigeon`'s `main` with per-module, path-scoped seman
 
 ## Consuming
 
-This repo's own [`terraform/infrastructure/`](../terraform/infrastructure/)
-and [`workloads/`](../workloads/) consume these modules directly, in the
-same working tree, via a tagged `git::` source pointing back at this same
-repo — e.g.:
+This repo's own [`workloads/`](../workloads/) consumes these modules
+directly, in the same working tree, via a tagged `git::` source pointing
+back at this same repo — e.g.:
 
 ```hcl
 module "state_bucket" {

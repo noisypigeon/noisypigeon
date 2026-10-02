@@ -14,10 +14,6 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 
 - [`modules/`](modules/) — versioned Scaleway Terraform modules. See
   [`modules/README.md`](modules/README.md) for the module index.
-- [`terraform/infrastructure/`](terraform/infrastructure/) — this repo
-  owner's live Terragrunt/Terraform configuration for personal
-  infrastructure, consuming the modules above. See
-  [`terraform/infrastructure/README.md`](terraform/infrastructure/README.md).
 - [`workloads/`](workloads/) — each workload gets its own
   `workloads/<name>/` (terraform colocated with the resource it's part
   of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
@@ -28,6 +24,13 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
   - [`workloads/email/terraform/fastmail/`](workloads/email/terraform/fastmail/) —
     Fastmail SPF/DKIM/MX Cloudflare DNS records, one leaf per domain
     (`noisypigeon.com`, `pigeon.dev`).
+  - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/) —
+    infrastructure backing the external `pigeon` CLI's jobs
+    (`noisypigeon/pigeon-cli`): import buckets plus a deduplication
+    compute job.
+  - [`workloads/custodian-buckets/terraform/`](workloads/custodian-buckets/terraform/) —
+    a cross-region backup bucket pair (`duck-jellyfish-import` in
+    `fr-par`, `duck-jellyfish` in `nl-ams`).
   - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
     this repo's own Terraform state bucket and deployer IAM
     application/policy/API key.

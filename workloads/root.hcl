@@ -47,6 +47,26 @@ locals {
   # to admit per-domain nested leaves like email/terraform/fastmail/<domain>.
   path_segments = split("/", path_relative_to_include())
   is_valid_leaf = length(local.path_segments) >= 2 && local.path_segments[1] == "terraform"
+
+  # Per-leaf Scaleway region/zone override -- see
+  # docs/adr/0098-decommission-terraform-infrastructure.md. Every leaf is
+  # fr-par by default; a leaf needing a different region (so far, only
+  # custodian-buckets/terraform/duck-jellyfish, nl-ams) drops a
+  # workload_definition.hcl next to its own terragrunt.hcl declaring its
+  # own `scaleway_region`/`scaleway_zone` locals. This root.hcl reads that
+  # file via read_terragrunt_config, which returns the given default
+  # untouched if the file doesn't exist -- no error, no change for every
+  # other leaf. The leaf's absolute directory is computed from two
+  # primitives already proven correct elsewhere in this same file
+  # (find_in_parent_folders for this root.hcl's own location,
+  # path_relative_to_include for the leaf's position under it) rather than
+  # relying on get_terragrunt_dir()'s parent-vs-child-scope semantics,
+  # which weren't worth the risk of getting wrong here.
+  workload_dir             = dirname(find_in_parent_folders("root.hcl"))
+  workload_definition_path = "${local.workload_dir}/${path_relative_to_include()}/workload_definition.hcl"
+  workload_definition      = read_terragrunt_config(local.workload_definition_path, { locals = {} })
+  scaleway_region          = lookup(local.workload_definition.locals, "scaleway_region", "fr-par")
+  scaleway_zone            = lookup(local.workload_definition.locals, "scaleway_zone", "fr-par-1")
 }
 
 exclude {
@@ -91,8 +111,8 @@ provider "scaleway" {
   access_key      = "${local.scaleway_access_key}"
   secret_key      = "${local.scaleway_secret_key}"
   organization_id = "${local.scaleway_organization_id}"
-  zone            = "fr-par-1"
-  region          = "fr-par"
+  zone            = "${local.scaleway_zone}"
+  region          = "${local.scaleway_region}"
 }
 EOF
 }
@@ -106,13 +126,15 @@ locals {
   scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
   ssh_key_alias                   = "${local.ssh_key_alias}"
   ssh_key_public_key              = "${local.ssh_key_public_key}"
+  custodian_dj_name               = "${get_env("ENV_SW_CUSTODIAN_DJ_NAME", lookup(local.secrets, "ENV_SW_CUSTODIAN_DJ_NAME", ""))}"
 }
 EOF
 }
 
-# Reuses the same Scaleway S3-compatible backend as terraform/infrastructure/
-# (see terraform/infrastructure/scaleway/root.hcl), under a "workloads/"
-# state-key prefix instead of "scaleway/"/"cloudflare/".
+# Scaleway S3-compatible state bucket -- see
+# docs/adr/0062-scaleway-remote-state.md. This is the state bucket's own
+# fixed location, always fr-par, regardless of any given leaf's own
+# scaleway_region/scaleway_zone above -- see docs/adr/0098.
 remote_state {
   backend = "s3"
 

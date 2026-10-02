@@ -1,5 +1,5 @@
 module "bucket" {
-  source            = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/object-bucket?ref=terraform/modules/scaleway/object-bucket/v0.2.0"
-  namespace         = local.job_name
-  name              = local.bucket_alias
+  source    = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/object-bucket?ref=modules/scaleway/object-bucket/v1.0.0"
+  namespace = local.job_name
+  name      = local.bucket_alias
 }

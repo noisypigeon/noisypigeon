@@ -12,10 +12,8 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 
 ## Structure
 
-- [`terraform/modules/`](terraform/modules/) — versioned Scaleway
-  Terraform modules. See
-  [`terraform/modules/README.md`](terraform/modules/README.md) for the
-  module index.
+- [`modules/`](modules/) — versioned Scaleway Terraform modules. See
+  [`modules/README.md`](modules/README.md) for the module index.
 - [`terraform/infrastructure/`](terraform/infrastructure/) — this repo
   owner's live Terragrunt/Terraform configuration for personal
   infrastructure, consuming the modules above. See
@@ -46,7 +44,7 @@ mise run blog-serve            # zola serve (workloads/blog/src)
 ```
 
 Terraform module changes follow their own PR discipline — see the
-`release-pr` Claude Code skill and `terraform/modules/README.md`.
+`release-pr` Claude Code skill and `modules/README.md`.
 
 ## License
 

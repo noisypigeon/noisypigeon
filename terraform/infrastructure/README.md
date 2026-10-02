@@ -9,13 +9,13 @@ see [`docs/adr/0053`-`0064`](../../docs/adr/) (each carrying an `Origin:
 pigeon-do ADR-000N` bullet) for the design decisions behind the original
 repo, including how its layout arrived at what's actually on disk today.
 
-This directory consumes [`terraform/modules/`](../modules/) — never a local
+This directory consumes [`modules/`](../../modules/) — never a local
 path, always a tagged `git::` source, the same way any other consumer
-would (see [`terraform/modules/README.md`](../modules/README.md)):
+would (see [`modules/README.md`](../../modules/README.md)):
 
 ```hcl
 module "bucket" {
-  source            = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/object-bucket?ref=scaleway/object-bucket/v0.1.0"
+  source            = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/object-bucket?ref=modules/scaleway/object-bucket/v1.0.0"
   enable_versioning = true
   namespace         = "terraform"
   name              = "state"

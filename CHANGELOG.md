@@ -11,6 +11,16 @@ backfill of prior history.
 
 ## 2026-10-02
 
+- [scaleway/project] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
+
+- [scaleway/object-bucket] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
+
+- [scaleway/iam-policy] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
+
+- [scaleway/compute-instance] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
+
+- [scaleway/block-volume] Move scaleway modules to top-level modules/, major release each ([#120](https://github.com/noisypigeon/noisypigeon/pull/120))
+
 - [terraform/scaleway/compute-instance] Fix missing $HOME in scaleway/compute-instance cloud-init runcmd ([#117](https://github.com/noisypigeon/noisypigeon/pull/117))
 
 - [terraform/scaleway/compute-instance] Auto-mount attached volume and inline pigeon-cli bootstrap on scaleway/compute-instance ([#116](https://github.com/noisypigeon/noisypigeon/pull/116))

@@ -26,7 +26,7 @@ variable "type" {
 
 variable "profile" {
   type        = string
-  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf), \"docker\" (Docker CE), or \"pigeon-cli\" (exports a BOOTSTRAP env var; run as `eval $BOOTSTRAP`)"
+  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf), \"docker\" (Docker CE), or \"pigeon-cli\" (runs the pigeon-cli bootstrap script directly on first boot)"
   default     = "rclone"
 
   validation {

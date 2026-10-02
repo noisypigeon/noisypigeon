@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-02
 
+- [scaleway/compute-instance] Make keyring bucket encryption key optional; add environment_variables ([#127](https://github.com/noisypigeon/noisypigeon/pull/127))
+
 - [scaleway/compute-instance] Add keyring_entries input for pigeon-cli keyring.toml ([#126](https://github.com/noisypigeon/noisypigeon/pull/126))
 
 - [scaleway/compute-instance] Merge rclone cloud-init profile into pigeon-cli ([#125](https://github.com/noisypigeon/noisypigeon/pull/125))

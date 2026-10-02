@@ -67,11 +67,28 @@ locals {
   workload_definition      = read_terragrunt_config(local.workload_definition_path, { locals = {} })
   scaleway_region          = lookup(local.workload_definition.locals, "scaleway_region", "fr-par")
   scaleway_zone            = lookup(local.workload_definition.locals, "scaleway_zone", "fr-par-1")
+
+  # Injected secrets/sensitive values: any .env key prefixed ENV_SW_ is exposed as a
+  # local named. See docs/adr/0006-automatic-bucket-name-locals.md.
+  bucket_name_secrets = {
+    for k, v in local.secrets : "${lower(trimprefix(k, "ENV_SW_"))}" => get_env(k, v)
+    if startswith(k, "ENV_SW_")
+  }
 }
 
 exclude {
   if      = !local.is_valid_leaf
   actions = ["all_except_output"]
+}
+
+generate "bucket_name_secrets" {
+  path      = "bucket_name_secrets_generated.tf"
+  if_exists = "overwrite"
+  contents  = <<EOF
+  locals {
+  ${join("\n", [for k, v in local.bucket_name_secrets : "  ${k} = \"${v}\""])}
+  }
+  EOF
 }
 
 generate "cloudflare_ids" {
@@ -124,9 +141,6 @@ generate "scaleway_ids" {
 locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
   scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
-  ssh_key_alias                   = "${local.ssh_key_alias}"
-  ssh_key_public_key              = "${local.ssh_key_public_key}"
-  custodian_dj_name               = "${get_env("ENV_SW_CUSTODIAN_DJ_NAME", lookup(local.secrets, "ENV_SW_CUSTODIAN_DJ_NAME", ""))}"
 }
 EOF
 }

@@ -8,12 +8,13 @@ A Scaleway compute Instance (`scaleway_instance_server`) with a randomized name 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_additional_volume_ids"></a> [additional\_volume\_ids](#input\_additional\_volume\_ids) | IDs of pre-created block volumes (e.g. scaleway/block-volume's id output) to attach to the instance | `list(string)` | `[]` | no |
-| <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone (rclone/neovim always install regardless) | <pre>list(object({<br/>    bucket_name       = string<br/>    bucket_alias      = string<br/>    bucket_endpoint   = string<br/>    bucket_access_key = string<br/>    bucket_secret_key = string<br/>    bucket_provider   = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_buckets"></a> [buckets](#input\_buckets) | Buckets to configure in rclone; only used when profile = "rclone" | <pre>list(object({<br/>    bucket_name       = string<br/>    bucket_alias      = string<br/>    bucket_endpoint   = string<br/>    bucket_access_key = string<br/>    bucket_secret_key = string<br/>    bucket_provider   = string<br/>  }))</pre> | `[]` | no |
 | <a name="input_enable_ipv4"></a> [enable\_ipv4](#input\_enable\_ipv4) | Create and attach a routed IPv4 address (true/false) | `bool` | `true` | no |
 | <a name="input_enable_ipv6"></a> [enable\_ipv6](#input\_enable\_ipv6) | Create and attach a routed IPv6 address (true/false) | `bool` | `false` | no |
 | <a name="input_image"></a> [image](#input\_image) | Instance image (UUID or marketplace label) | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | Instance name suffix | `string` | n/a | yes |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Instance name prefix | `string` | n/a | yes |
+| <a name="input_profile"></a> [profile](#input\_profile) | Cloud-init provisioning profile: "rclone" (rclone/neovim + rclone.conf) or "docker" (Docker CE) | `string` | `"rclone"` | no |
 | <a name="input_ssh_keys"></a> [ssh\_keys](#input\_ssh\_keys) | SSH public keys granted instance-specific access via Scaleway's AUTHORIZED\_KEY tag convention, in addition to account-wide keys | `list(string)` | `[]` | no |
 | <a name="input_type"></a> [type](#input\_type) | Instance commercial type | `string` | `"STARDUST1-S"` | no |
 

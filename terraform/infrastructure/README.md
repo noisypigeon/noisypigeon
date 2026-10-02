@@ -51,33 +51,50 @@ terraform {
 each provider's leaves automatically resolve that provider's own
 `root.hcl` — no per-leaf provider selection needed.
 
+A second, parallel Terragrunt tree exists at
+[`workloads/`](../../workloads/) — terraform colocated with the resource
+it's part of (`workloads/<name>/terraform/`, sitting next to
+`workloads/<name>/src/`), rather than provider-rooted. Both trees run
+under the same `mise run plan`/`apply` (`terragrunt run --all` from the
+repo root discovers both). See `workloads/README.md` and
+[ADR-0092](../../docs/adr/0092-move-github-pages-leaf-to-workloads-blog-terraform.md).
+
 ## Secrets
 
-A single root `.env` (git-ignored, never committed) and `.env.example`
-(tracked, blank), per
-[ADR-0063](../../docs/adr/0063-shared-root-env-and-cloudflare-migration.md).
-Every provider's `root.hcl` reads it via `find_in_parent_folders(".env",
-"")`, walking up from wherever that `root.hcl` lives to this directory's
-root. A real shell environment variable always overrides the `.env` file
-value for the same key.
+A single `.env` (git-ignored, never committed) and `.env.example`
+(tracked, blank) at the **true repo root** (moved there from
+`terraform/infrastructure/.env` by
+[ADR-0092](../../docs/adr/0092-move-github-pages-leaf-to-workloads-blog-terraform.md),
+finally realizing what
+[ADR-0063](../../docs/adr/0063-shared-root-env-and-cloudflare-migration.md)
+originally intended — `workloads/root.hcl` needs to reach the same file
+too, and it isn't nested under this directory). Every provider's
+`root.hcl` reads it via `find_in_parent_folders(".env", "")`, walking up
+from wherever that `root.hcl` lives to the actual repo root. A real shell
+environment variable always overrides the `.env` file value for the same
+key.
 
 ## Getting started
 
 ```sh
-cp .env.example .env   # then fill in real values — never commit this file
+cp .env.example .env   # at the repo root; then fill in real values — never commit this file
 ```
 
-`terraform`/`terragrunt` aren't yet wired into this repo's root
-`.mise.toml` (a proposed follow-up, not done as of this writing) — run
-Terragrunt directly, per leaf:
+`terraform`/`terragrunt` are wired into this repo's root `.mise.toml` —
+run from the repo root:
+
+```sh
+mise run plan    # terragrunt run --all -- plan, across both terraform/infrastructure/ and workloads/
+mise run apply   # terragrunt run --all -- apply
+```
+
+or per-leaf / per-provider directly with Terragrunt:
 
 ```sh
 cd cloudflare/global/noisypigeon.com/fastmail
 terragrunt plan
 terragrunt apply
 ```
-
-or across every leaf under one provider at once:
 
 ```sh
 cd scaleway

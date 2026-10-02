@@ -58,6 +58,7 @@ locals {
     %{~endif~}
 
     runcmd:
+      - export HOME=/root
     %{~if length(var.additional_volume_ids) > 0~}
       - mkfs.ext4 -L data /dev/sdb
       - mkdir -p /mnt/data
@@ -67,7 +68,7 @@ locals {
       - mount -a
     %{~endif~}
       - curl -fsSL https://mise.run | sh
-      - echo 'eval "$(/root/.local/bin/mise activate bash)"' >> ~/.bashrc
+      - echo 'eval "$(/root/.local/bin/mise activate bash)"' >> /root/.bashrc
     %{~if var.profile == "docker"~}
       - mkdir -p /etc/apt/keyrings
       - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg

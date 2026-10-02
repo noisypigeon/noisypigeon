@@ -20,7 +20,7 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
   owner's live Terragrunt/Terraform configuration for personal
   infrastructure, consuming the modules above. See
   [`terraform/infrastructure/README.md`](terraform/infrastructure/README.md).
-- [`service/blog/`](service/blog/) — the Zola site for
+- [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
   [noisypigeon.com](https://noisypigeon.com).
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
@@ -36,8 +36,8 @@ mise run fmt-terraform         # terragrunt hcl format + terraform fmt
 mise run fmt-check-terraform   # check formatting
 mise run plan                  # terragrunt run --all -- plan
 mise run apply                 # terragrunt run --all -- apply
-mise run blog-build            # zola build (service/blog)
-mise run blog-serve            # zola serve (service/blog)
+mise run blog-build            # zola build (workloads/blog/src)
+mise run blog-serve            # zola serve (workloads/blog/src)
 ```
 
 Terraform module changes follow their own PR discipline — see the

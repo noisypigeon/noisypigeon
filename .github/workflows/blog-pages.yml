@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "service/blog/**"
+      - "workloads/blog/src/**"
   workflow_dispatch:
 
 permissions:
@@ -33,12 +33,12 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
       - name: Build with Zola
-        working-directory: service/blog
+        working-directory: workloads/blog/src
         run: zola build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "service/blog/public"
+          path: "workloads/blog/src/public"
 
   deploy:
     environment:

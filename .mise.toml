@@ -23,9 +23,9 @@ run = "terragrunt run --all -- plan"
 run = "terragrunt run --all -- apply"
 
 [tasks.blog-build]
-dir = "service/blog"
+dir = "workloads/blog/src"
 run = "zola build"
 
 [tasks.blog-serve]
-dir = "service/blog"
+dir = "workloads/blog/src"
 run = "zola serve"

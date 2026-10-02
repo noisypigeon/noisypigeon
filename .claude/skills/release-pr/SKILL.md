@@ -1,9 +1,9 @@
 ---
 name: release-pr
-description: Use this skill when making a change to one of this repo's terraform/modules/ Terraform modules and getting it merged to main. Covers branching off main, committing, opening the pull request, applying the required release:* label, merging, and syncing local main afterward. Trigger on requests like "open a PR for this", "release this module change", "ship this to main", or "merge this terraform module change".
+description: Use this skill when making a change to one of this repo's modules/ Terraform modules and getting it merged to main. Covers branching off main, committing, opening the pull request, applying the required release:* label, merging, and syncing local main afterward. Trigger on requests like "open a PR for this", "release this module change", "ship this to main", or "merge this terraform module change".
 ---
 
-# Releasing a terraform/modules/ change
+# Releasing a modules/ change
 
 This repo's Terraform module release automation has no human reviewer and no
 branch-protection rules — this skill *is* the PR discipline. Follow it in full
@@ -32,7 +32,7 @@ later — get the PR body right the first time.
    - Body: written in full sentences a consumer of the module would want to
      read later, describing what changed and why it matters to someone
      consuming this module — not "fixed bug" or a raw commit list. It is
-     copied verbatim into `terraform/modules/<provider>/<module>/CHANGELOG.md` and into the
+     copied verbatim into `modules/<provider>/<module>/CHANGELOG.md` and into the
      GitHub Release notes by `module-release.yml` on merge, with no editing
      pass in between.
    ```
@@ -48,7 +48,7 @@ later — get the PR body right the first time.
      applying it explicitly isn't strictly required to get a release, but do
      it anyway — an unlabeled PR is a signal something was skipped, not a
      deliberate patch decision.
-   - A PR that doesn't touch any `terraform/modules/<provider>/<module>/`
+   - A PR that doesn't touch any `modules/<provider>/<module>/`
      directory (e.g. workflow or root-doc changes) doesn't need a label at
      all — nothing will be tagged or released regardless.
    ```

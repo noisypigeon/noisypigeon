@@ -1,5 +1,5 @@
 # module "instance" {
-#   source      = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/compute-instance?ref=terraform/modules/scaleway/compute-instance/v0.3.1"
+#   source      = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/compute-instance?ref=modules/scaleway/compute-instance/v1.0.0"
 #   namespace   = "worker"
 #   name        = "${module.bucket.name}"
 #   image       = "ubuntu_jammy"

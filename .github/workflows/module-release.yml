@@ -46,7 +46,7 @@ jobs:
         run: |
           CHANGED_FILES=$(git diff --name-only "${MERGE_SHA}~1" "$MERGE_SHA")
 
-          MODULE_DIRS=$(find terraform/modules/scaleway -mindepth 2 -maxdepth 2 -name versions.tf -printf '%h\n' | sort)
+          MODULE_DIRS=$(find modules/scaleway -mindepth 2 -maxdepth 2 -name versions.tf -printf '%h\n' | sort)
 
           CHANGED_MODULES=""
           for dir in $MODULE_DIRS; do
@@ -126,7 +126,7 @@ jobs:
 
             # Also append a one-liner to the repo-wide root CHANGELOG.md (ADR-0050).
             ROOT_CHANGELOG="CHANGELOG.md"
-            ROOT_ENTRY="- [terraform/${dir#terraform/modules/}] ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))"
+            ROOT_ENTRY="- [${dir#modules/}] ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))"
             if grep -q "^## ${TODAY}\$" "$ROOT_CHANGELOG"; then
               awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
                 { print }

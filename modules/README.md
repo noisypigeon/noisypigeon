@@ -1,12 +1,13 @@
 # Terraform modules
 
 Versioned, reusable Terraform modules, consumed by this repo's own
-[`terraform/infrastructure/`](../infrastructure/) and any future infra
-repos. Originally the standalone `pigeon-tf` repo, merged into this repo by
-[ADR-0037](../../docs/adr/0037-merge-pigeon-tf-terraform-modules.md); see
-[ADR-0054](../../docs/adr/0054-pigeon-tf-scaffold.md) (originally
+[`terraform/infrastructure/`](../terraform/infrastructure/) and any future
+infra repos. Originally the standalone `pigeon-tf` repo, merged into this
+repo by [ADR-0037](../docs/adr/0037-merge-pigeon-tf-terraform-modules.md);
+see [ADR-0054](../docs/adr/0054-pigeon-tf-scaffold.md) (originally
 `pigeon-do` ADR-0002) for the design decisions behind consuming the
-original repo.
+original repo. Moved here from `terraform/modules/` by
+[ADR-0093](../docs/adr/0093-move-scaleway-modules-to-top-level-modules.md).
 
 This directory holds only module source — it has no root provider/backend configuration and is never `terraform`/`terragrunt` run standalone.
 
@@ -22,17 +23,18 @@ This directory holds only module source — it has no root provider/backend conf
 
 ## Versioning
 
-Releases are tagged on `pigeon`'s `main` with per-module, path-scoped semantic versions (`terraform/modules/<provider>/<module>/vX.Y.Z`). Consuming repos pin to a tag by checking out that tag in their local clone of this repo. Tags created before the ADR-0037 merge keep their original, shorter form (`v0.1.0`-`v0.1.3` repo-wide, `<provider>/<module>/vX.Y.Z` per-module) — see ADR-0037 for why they weren't renamed.
+Releases are tagged on `noisypigeon`'s `main` with per-module, path-scoped semantic versions (`modules/<provider>/<module>/vX.Y.Z`). Consuming repos pin to a tag by checking out that tag in their local clone of this repo. Tags created before [ADR-0093](../docs/adr/0093-move-scaleway-modules-to-top-level-modules.md) keep their original `terraform/modules/<provider>/<module>/vX.Y.Z` form (and tags created before the ADR-0037 merge keep an even older, shorter form still) — old tags are never renamed or deleted, see ADR-0037/ADR-0093 for why.
 
 ## Consuming
 
-This repo's own [`terraform/infrastructure/`](../infrastructure/) consumes
-these modules directly, in the same working tree, via a tagged `git::`
-source pointing back at this same repo — e.g.:
+This repo's own [`terraform/infrastructure/`](../terraform/infrastructure/)
+and [`workloads/`](../workloads/) consume these modules directly, in the
+same working tree, via a tagged `git::` source pointing back at this same
+repo — e.g.:
 
 ```hcl
 module "state_bucket" {
-  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/object-bucket?ref=scaleway/object-bucket/v0.1.0"
+  source = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/object-bucket?ref=modules/scaleway/object-bucket/v1.0.0"
   ...
 }
 ```
@@ -44,8 +46,8 @@ in-repo or not. For local iteration against an unreleased module change
 reference it by path:
 
 ```
-git clone git@github.com:noisypigeon/pigeon.git ../pigeon
+git clone git@github.com:noisypigeon/noisypigeon.git ../noisypigeon
 ```
 
-then reference modules under `terraform/modules/`, e.g.
-`../pigeon/terraform/modules/scaleway/object-bucket`.
+then reference modules under `modules/`, e.g.
+`../noisypigeon/modules/scaleway/object-bucket`.

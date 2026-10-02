@@ -1,5 +1,5 @@
 module "iam" {
-  source = "git::https://github.com/noisypigeon/pigeon.git//terraform/modules/scaleway/iam-policy?ref=terraform/modules/scaleway/iam-policy/v0.1.0"
+  source = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/iam-policy?ref=modules/scaleway/iam-policy/v2.0.0"
   name   = "${module.bucket.name}-iam"
 
   project_ids = [

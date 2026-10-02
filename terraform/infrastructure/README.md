@@ -1,8 +1,7 @@
 # Terraform infrastructure
 
-Live Terragrunt/Terraform configuration for personal infrastructure across
-two domains/accounts — `noisypigeon.com` and `pigeon.dev` — spanning
-Cloudflare and Scaleway. Originally the standalone
+Live Terragrunt/Terraform configuration for personal infrastructure on
+Scaleway. Originally the standalone
 `pigeon-do` repo, merged into this repo by
 [ADR-0052](../../docs/adr/0052-merge-pigeon-do-terraform-infrastructure.md);
 see [`docs/adr/0053`-`0064`](../../docs/adr/) (each carrying an `Origin:
@@ -24,12 +23,14 @@ module "bucket" {
 
 ## Structure
 
-Provider-rooted, per [ADR-0061](../../docs/adr/0061-per-provider-root-hcl.md):
+Provider-rooted, per [ADR-0061](../../docs/adr/0061-per-provider-root-hcl.md).
+Cloudflare-managed DNS used to have its own provider root here too, but
+every leaf under it has since moved to (or been deleted in favor of)
+`workloads/<name>/terraform/` — see
+[ADR-0096](../../docs/adr/0096-move-fastmail-leaves-to-workloads-email-terraform.md)
+— leaving this directory Scaleway-only:
 
 ```
-cloudflare/
-  root.hcl                              # secrets, cloudflare_ids, provider, remote_state
-  global/<domain>/<leaf>/               # e.g. global/noisypigeon.com/fastmail
 scaleway/
   root.hcl                              # secrets, provider, remote_state
   <region-or-global>/<domain>/<leaf>/   # e.g. fr-par/noisypigeon/custodian/dhj
@@ -91,7 +92,7 @@ mise run apply   # terragrunt run --all -- apply
 or per-leaf / per-provider directly with Terragrunt:
 
 ```sh
-cd cloudflare/global/noisypigeon.com/fastmail
+cd scaleway/fr-par/noisypigeon/custodian/dhj
 terragrunt plan
 terragrunt apply
 ```

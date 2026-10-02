@@ -25,6 +25,9 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     [noisypigeon.com](https://noisypigeon.com).
   - [`workloads/blog/terraform/`](workloads/blog/terraform/) — the
     Cloudflare DNS records pointing `noisypigeon.com` at GitHub Pages.
+  - [`workloads/email/terraform/fastmail/`](workloads/email/terraform/fastmail/) —
+    Fastmail SPF/DKIM/MX Cloudflare DNS records, one leaf per domain
+    (`noisypigeon.com`, `pigeon.dev`).
   - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
     this repo's own Terraform state bucket and deployer IAM
     application/policy/API key.

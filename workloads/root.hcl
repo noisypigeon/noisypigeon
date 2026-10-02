@@ -12,10 +12,21 @@ locals {
 
   secrets = local.root_secrets
 
-  # workloads/ is inherently noisypigeon.com-scoped -- no pigeon.dev angle
-  # here, unlike cloudflare/root.hcl's per-leaf account branching.
-  cloudflare_api_token  = get_env("CLOUDFLARE_NOISYPIGEON_COM_TOKEN", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_TOKEN", ""))
-  cloudflare_account_id = get_env("CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", ""))
+  # pigeon.dev's zone was moved onto the same Cloudflare account as
+  # noisypigeon.com, but the API token used here remains zone-scoped per
+  # domain regardless -- confirmed live while migrating ADR-0096's fastmail
+  # leaves: CLOUDFLARE_NOISYPIGEON_COM_TOKEN gets a hard "Authentication
+  # error" (code 10000) against the pigeon.dev zone's DNS records, while
+  # CLOUDFLARE_PIGEON_DEV_TOKEN succeeds. So, like the old (now-deleted)
+  # cloudflare/root.hcl (see
+  # docs/adr/0064-merge-pigeon-dev-into-cloudflare-root.md), credentials
+  # still branch per leaf by path -- just keyed off any path segment being
+  # "pigeon.dev" rather than a fixed "global/pigeon.dev/" prefix, since
+  # workloads/ leaves can nest a domain segment at any depth.
+  is_pigeon_dev_leaf = contains(local.path_segments, "pigeon.dev")
+
+  cloudflare_api_token  = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_PIGEON_DEV_TOKEN", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_TOKEN", "")) : get_env("CLOUDFLARE_NOISYPIGEON_COM_TOKEN", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_TOKEN", ""))
+  cloudflare_account_id = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID", "")) : get_env("CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", ""))
 
   scaleway_access_key      = get_env("SCALEWAY_ACCESS_KEY", lookup(local.secrets, "SCALEWAY_ACCESS_KEY", ""))
   scaleway_secret_key      = get_env("SCALEWAY_SECRET_KEY", lookup(local.secrets, "SCALEWAY_SECRET_KEY", ""))
@@ -25,14 +36,17 @@ locals {
   ssh_key_public_key = get_env("ENV_SW_SSH_KEY_PUBLIC_KEY", lookup(local.secrets, "ENV_SW_SSH_KEY_PUBLIC_KEY", ""))
 
   # Enforce the workloads/<name>/terraform convention: exclude any leaf
-  # whose path relative to this root.hcl isn't exactly "<name>/terraform"
-  # from run --all -- see
+  # whose path relative to this root.hcl doesn't start with
+  # "<name>/terraform" from run --all -- see
   # docs/adr/0092-move-github-pages-leaf-to-workloads-blog-terraform.md.
   # (The old top-level `skip` attribute is deprecated in Terragrunt 1.x;
   # `exclude` is its replacement and -- confirmed -- works correctly when
   # set inside a root.hcl included by leaf terragrunt.hcl files.)
+  # Widened from "exactly 2 segments" to "any depth under <name>/terraform/"
+  # by docs/adr/0096-move-fastmail-leaves-to-workloads-email-terraform.md,
+  # to admit per-domain nested leaves like email/terraform/fastmail/<domain>.
   path_segments = split("/", path_relative_to_include())
-  is_valid_leaf = length(local.path_segments) == 2 && local.path_segments[1] == "terraform"
+  is_valid_leaf = length(local.path_segments) >= 2 && local.path_segments[1] == "terraform"
 }
 
 exclude {
@@ -47,6 +61,7 @@ generate "cloudflare_ids" {
 locals {
   cloudflare_account_id              = "${local.cloudflare_account_id}"
   cloudflare_noisypigeon_com_zone_id = "${get_env("CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID", ""))}"
+  cloudflare_pigeon_dev_zone_id      = "${get_env("CLOUDFLARE_PIGEON_DEV_ZONE_ID", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_ZONE_ID", ""))}"
 }
 EOF
 }
@@ -96,8 +111,8 @@ EOF
 }
 
 # Reuses the same Scaleway S3-compatible backend as terraform/infrastructure/
-# (see cloudflare/root.hcl), under a "workloads/" state-key prefix instead
-# of "cloudflare/".
+# (see terraform/infrastructure/scaleway/root.hcl), under a "workloads/"
+# state-key prefix instead of "scaleway/"/"cloudflare/".
 remote_state {
   backend = "s3"
 

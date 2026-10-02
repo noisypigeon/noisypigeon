@@ -12,6 +12,11 @@ manages, not grouped by cloud provider.
 blog/
   src/        # the Zola site (ADR-0091)
   terraform/  # the Cloudflare DNS records that point noisypigeon.com at it (ADR-0092)
+email/
+  terraform/
+    fastmail/
+      noisypigeon.com/  # Fastmail SPF/DKIM/MX records for noisypigeon.com (ADR-0096)
+      pigeon.dev/       # Fastmail SPF/DKIM/MX records for pigeon.dev (ADR-0096)
 scaleway/
   terraform/  # the deployer IAM application and the Terraform state bucket itself (ADR-0094)
 ```
@@ -35,10 +40,16 @@ terraform {
 
 [`workloads/root.hcl`](root.hcl) is the shared root every leaf resolves
 to by walking up. It enforces the convention itself: any leaf whose path
-relative to `root.hcl` isn't exactly `<name>/terraform` gets `exclude`d
-from `terragrunt run --all` — so a workload's `src/` (or any other
-non-terraform subdirectory) is never accidentally swept into a plan/apply,
-even if a `terragrunt.hcl` is mistakenly added there.
+relative to `root.hcl` doesn't start with `<name>/terraform` gets
+`exclude`d from `terragrunt run --all` — so a workload's `src/` (or any
+other non-terraform subdirectory) is never accidentally swept into a
+plan/apply, even if a `terragrunt.hcl` is mistakenly added there. A leaf
+can nest arbitrarily deep under `<name>/terraform/` (e.g.
+`email/terraform/fastmail/noisypigeon.com/`) — widened from "exactly
+`<name>/terraform`" by
+[ADR-0096](../docs/adr/0096-move-fastmail-leaves-to-workloads-email-terraform.md)
+to let a workload split into multiple leaves (one per domain, here)
+without colliding on resource addresses.
 
 Secrets, provider wiring, and the remote-state backend follow the same
 pattern as `terraform/infrastructure/`'s provider roots — see

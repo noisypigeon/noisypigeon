@@ -2,3 +2,5 @@
 *.env
 /workloads/blog/src/public
 .claude/worktrees
+.terraform.lock.hcl
+.terragrunt-cache/

@@ -21,6 +21,7 @@ locals {
     #cloud-config
     package_update: true
     package_upgrade: false
+    %{~if var.profile != "pigeon-cli"~}
     packages:
     %{~if var.profile == "rclone"~}
       - rclone
@@ -32,6 +33,7 @@ locals {
       - curl
       - gnupg
       - lsb-release
+    %{~endif~}
     %{~endif~}
     %{~if var.profile == "rclone"~}
 
@@ -66,6 +68,9 @@ locals {
       - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
       - systemctl enable docker
       - systemctl start docker
+    %{~endif~}
+    %{~if var.profile == "pigeon-cli"~}
+      - echo "export BOOTSTRAP='curl -fsSL https://gist.githubusercontent.com/noisypigeon/1e96e8ef94380f913f6ae02782965149/raw/pigeon.sh | bash'" >> ~/.bashrc
     %{~endif~}
   EOF
 }

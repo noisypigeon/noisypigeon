@@ -13,6 +13,11 @@ output "public_ips" {
   value       = scaleway_instance_server.server.public_ips
 }
 
+output "ipv4_address" {
+  description = "The instance's routed IPv4 address (null if enable_ipv4 = false)"
+  value       = var.enable_ipv4 ? scaleway_instance_ip.ipv4[0].address : null
+}
+
 output "private_ips" {
   description = "Private IPs attached to the instance"
   value       = scaleway_instance_server.server.private_ips

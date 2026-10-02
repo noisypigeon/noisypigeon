@@ -26,12 +26,12 @@ variable "type" {
 
 variable "profile" {
   type        = string
-  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf) or \"docker\" (Docker CE)"
+  description = "Cloud-init provisioning profile: \"rclone\" (rclone/neovim + rclone.conf), \"docker\" (Docker CE), or \"pigeon-cli\" (exports a BOOTSTRAP env var; run as `eval $BOOTSTRAP`)"
   default     = "rclone"
 
   validation {
-    condition     = contains(["rclone", "docker"], var.profile)
-    error_message = "profile must be \"rclone\" or \"docker\"."
+    condition     = contains(["rclone", "docker", "pigeon-cli"], var.profile)
+    error_message = "profile must be \"rclone\", \"docker\", or \"pigeon-cli\"."
   }
 }
 

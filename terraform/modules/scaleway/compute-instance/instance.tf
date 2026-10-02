@@ -58,6 +58,14 @@ locals {
     %{~endif~}
 
     runcmd:
+    %{~if length(var.additional_volume_ids) > 0~}
+      - mkfs.ext4 -L data /dev/sdb
+      - mkdir -p /mnt/data
+      - mount /dev/sdb /mnt/data
+      - UUID=$(blkid -s UUID -o value /dev/sdb)
+      - echo "UUID=$UUID /mnt/data ext4 defaults,nofail 0 2" >> /etc/fstab
+      - mount -a
+    %{~endif~}
       - curl -fsSL https://mise.run | sh
       - echo 'eval "$(/root/.local/bin/mise activate bash)"' >> ~/.bashrc
     %{~if var.profile == "docker"~}
@@ -70,7 +78,7 @@ locals {
       - systemctl start docker
     %{~endif~}
     %{~if var.profile == "pigeon-cli"~}
-      - echo "export BOOTSTRAP='curl -fsSL https://gist.githubusercontent.com/noisypigeon/1e96e8ef94380f913f6ae02782965149/raw/pigeon.sh | bash'" >> ~/.bashrc
+      - curl -fsSL https://gist.githubusercontent.com/noisypigeon/1e96e8ef94380f913f6ae02782965149/raw/pigeon.sh | bash
     %{~endif~}
   EOF
 }

@@ -14,7 +14,7 @@ A Scaleway compute Instance (`scaleway_instance_server`) with a randomized name 
 | <a name="input_image"></a> [image](#input\_image) | Instance image (UUID or marketplace label) | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | Instance name suffix | `string` | n/a | yes |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Instance name prefix | `string` | n/a | yes |
-| <a name="input_profile"></a> [profile](#input\_profile) | Cloud-init provisioning profile: "rclone" (rclone/neovim + rclone.conf) or "docker" (Docker CE) | `string` | `"rclone"` | no |
+| <a name="input_profile"></a> [profile](#input\_profile) | Cloud-init provisioning profile: "rclone" (rclone/neovim + rclone.conf), "docker" (Docker CE), or "pigeon-cli" (exports a BOOTSTRAP env var; run as `eval $BOOTSTRAP`) | `string` | `"rclone"` | no |
 | <a name="input_ssh_keys"></a> [ssh\_keys](#input\_ssh\_keys) | SSH public keys granted instance-specific access via Scaleway's AUTHORIZED\_KEY tag convention, in addition to account-wide keys | `list(string)` | `[]` | no |
 | <a name="input_type"></a> [type](#input\_type) | Instance commercial type | `string` | `"STARDUST1-S"` | no |
 
@@ -23,6 +23,7 @@ A Scaleway compute Instance (`scaleway_instance_server`) with a randomized name 
 | Name | Description |
 |------|-------------|
 | <a name="output_id"></a> [id](#output\_id) | Instance ID |
+| <a name="output_ipv4_address"></a> [ipv4\_address](#output\_ipv4\_address) | The instance's routed IPv4 address (null if enable\_ipv4 = false) |
 | <a name="output_name"></a> [name](#output\_name) | Computed instance name |
 | <a name="output_private_ips"></a> [private\_ips](#output\_private\_ips) | Private IPs attached to the instance |
 | <a name="output_public_ips"></a> [public\_ips](#output\_public\_ips) | Public IPs attached to the instance |

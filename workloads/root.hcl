@@ -21,6 +21,9 @@ locals {
   scaleway_secret_key      = get_env("SCALEWAY_SECRET_KEY", lookup(local.secrets, "SCALEWAY_SECRET_KEY", ""))
   scaleway_organization_id = get_env("SCALEWAY_ORGANIZATION_ID", lookup(local.secrets, "SCALEWAY_ORGANIZATION_ID", ""))
 
+  ssh_key_alias      = get_env("ENV_SW_SSH_KEY_ALIAS", lookup(local.secrets, "ENV_SW_SSH_KEY_ALIAS", ""))
+  ssh_key_public_key = get_env("ENV_SW_SSH_KEY_PUBLIC_KEY", lookup(local.secrets, "ENV_SW_SSH_KEY_PUBLIC_KEY", ""))
+
   # Enforce the workloads/<name>/terraform convention: exclude any leaf
   # whose path relative to this root.hcl isn't exactly "<name>/terraform"
   # from run --all -- see
@@ -86,6 +89,8 @@ generate "scaleway_ids" {
 locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
   scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
+  ssh_key_alias                   = "${local.ssh_key_alias}"
+  ssh_key_public_key              = "${local.ssh_key_public_key}"
 }
 EOF
 }

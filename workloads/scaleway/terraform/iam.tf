@@ -12,7 +12,8 @@ module "iam" {
     "InstancesFullAccess",
     "BlockStorageFullAccess",
     "SSHKeysReadOnly",
-    "SSHKeysFullAccess"
+    "SSHKeysFullAccess",
+    "ObservabilityFullAccess"
   ]
 
   organization_id = local.scaleway_organization_id

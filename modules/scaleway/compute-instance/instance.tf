@@ -45,6 +45,17 @@ locals {
           %{~if var.cockpit != null~}
           export PIGEON_LOG_DIR="/var/log/pigeon"
           %{~endif~}
+      - path: /etc/environment
+        permissions: '0600'
+        defer: true
+        append: true
+        content: |
+          %{~for key, value in var.environment_variables~}
+          ${key}="${value}"
+          %{~endfor~}
+          %{~if var.cockpit != null~}
+          PIGEON_LOG_DIR="/var/log/pigeon"
+          %{~endif~}
     %{~if var.profile == "pigeon-cli"~}
       - path: /root/.config/rclone/rclone.conf
         permissions: '0600'

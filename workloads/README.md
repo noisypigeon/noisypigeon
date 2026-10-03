@@ -29,19 +29,18 @@ pigeon-cli/
       email/             # pigeon-cli's email import bucket (ADR-0097)
     deduplication/
       macbook-scratch/   # pigeon-cli dedup job: compute + volume + bucket (ADR-0097)
-custodian-buckets/
-  terraform/
-    duck-jellyfish-import/  # fr-par source bucket + IAM (ADR-0098)
-    duck-jellyfish/         # nl-ams backup bucket + IAM (ADR-0098) -- see workload_definition.hcl below
 scaleway/
-  terraform/  # the deployer IAM application and the Terraform state bucket itself (ADR-0094)
+  terraform/
+    management/              # the deployer IAM application, Terraform state bucket, and Scaleway project/SSH key (ADR-0094, regrouped here by ADR-0106)
+    custodian/
+      duck-jellyfish/        # nl-ams backup bucket + IAM (ADR-0098, moved here by ADR-0106) -- see workload_definition.hcl below
 ```
 
-Not every workload has a `src/` sibling — `scaleway/`, `pigeon-cli/`, `custodian-buckets/`, and `dns/` are all infrastructure-only: `scaleway/` is this repo's own bootstrap plumbing (the Scaleway deployer identity and remote-state bucket), `pigeon-cli/` is infra backing the externally-repo'd `pigeon` CLI's jobs (`noisypigeon/pigeon-cli`, ADR-0084), `custodian-buckets/` is a pair of cross-region backup buckets, and `dns/` groups every Cloudflare-managed DNS leaf by domain (ADR-0105) — none is a deployable app in this repo, so all four are `terraform/` alone. Conversely, `blog/` is now `src/`-only (ADR-0105 moved its `terraform/` leaf into `dns/`) — the convention doesn't require either sibling, a workload just has whichever ones it actually needs.
+Not every workload has a `src/` sibling — `scaleway/`, `pigeon-cli/`, and `dns/` are all infrastructure-only: `scaleway/` groups every Scaleway-specific leaf — its own bootstrap plumbing (`management/`: the deployer identity and remote-state bucket) and a cross-region backup bucket (`custodian/duck-jellyfish/`), formerly the separate `custodian-buckets/` workload until ADR-0106 folded it in — `pigeon-cli/` is infra backing the externally-repo'd `pigeon` CLI's jobs (`noisypigeon/pigeon-cli`, ADR-0084), and `dns/` groups every Cloudflare-managed DNS leaf by domain (ADR-0105) — none is a deployable app in this repo, so all three are `terraform/` alone. Conversely, `blog/` is now `src/`-only (ADR-0105 moved its `terraform/` leaf into `dns/`) — the convention doesn't require either sibling, a workload just has whichever ones it actually needs.
 
 ### Per-leaf overrides: `workload_definition.hcl`
 
-Every leaf defaults to Scaleway's `fr-par` region/zone. A leaf needing something different — so far, only `custodian-buckets/terraform/duck-jellyfish`, which lives in `nl-ams` — drops a `workload_definition.hcl` file directly in its own directory, next to its `terragrunt.hcl`:
+Every leaf defaults to Scaleway's `fr-par` region/zone. A leaf needing something different — so far, only `scaleway/terraform/custodian/duck-jellyfish`, which lives in `nl-ams` — drops a `workload_definition.hcl` file directly in its own directory, next to its `terragrunt.hcl`:
 
 ```hcl
 locals {

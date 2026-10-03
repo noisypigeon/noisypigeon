@@ -42,6 +42,9 @@ locals {
           %{~for key, value in var.environment_variables~}
           export ${key}="${value}"
           %{~endfor~}
+          %{~if var.cockpit != null~}
+          export PIGEON_LOG_DIR="/var/log/pigeon"
+          %{~endif~}
     %{~if var.profile == "pigeon-cli"~}
       - path: /root/.config/rclone/rclone.conf
         permissions: '0600'
@@ -91,6 +94,48 @@ locals {
 
           %{~endfor~}
     %{~endif~}
+    %{~if var.cockpit != null~}
+      - path: /etc/alloy/config.alloy
+        permissions: '0644'
+        defer: true
+        content: |
+          prometheus.exporter.unix "node" { }
+
+          prometheus.scrape "node" {
+            scrape_interval = "60s"
+            targets         = prometheus.exporter.unix.node.targets
+            forward_to      = [prometheus.remote_write.cockpit.receiver]
+          }
+
+          prometheus.scrape "pigeon_cli" {
+            scrape_interval = "15s"
+            targets         = [{"__address__" = "localhost:${var.cockpit.scrape_port}"}]
+            forward_to      = [prometheus.remote_write.cockpit.receiver]
+          }
+
+          prometheus.remote_write "cockpit" {
+            endpoint {
+              url = "${var.cockpit.metrics_push_url}/api/v1/push"
+              headers = {
+                "X-TOKEN" = "${var.cockpit.token_secret}",
+              }
+            }
+          }
+
+          loki.source.file "pigeon_logs" {
+            targets = [{"__path__" = "/var/log/pigeon/pigeon.jsonl"}]
+            forward_to = [loki.write.cockpit.receiver]
+          }
+
+          loki.write "cockpit" {
+            endpoint {
+              url = "${var.cockpit.logs_push_url}/loki/api/v1/push"
+              headers = {
+                "X-TOKEN" = "${var.cockpit.token_secret}",
+              }
+            }
+          }
+    %{~endif~}
 
     runcmd:
       - export HOME=/root
@@ -116,6 +161,15 @@ locals {
     %{~endif~}
     %{~if var.profile == "pigeon-cli"~}
       - curl -fsSL https://gist.githubusercontent.com/noisypigeon/1e96e8ef94380f913f6ae02782965149/raw/pigeon.sh | bash
+    %{~endif~}
+    %{~if var.cockpit != null~}
+      - mkdir -p /etc/apt/keyrings
+      - wget -q -O /etc/apt/keyrings/grafana.asc https://apt.grafana.com/gpg.key
+      - echo "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list > /dev/null
+      - apt-get update
+      - apt-get install -y alloy
+      - systemctl enable alloy
+      - systemctl restart alloy
     %{~endif~}
   EOF
 }

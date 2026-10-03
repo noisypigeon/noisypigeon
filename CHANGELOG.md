@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-10-03
+
+- [scaleway/compute-instance] Add Scaleway Cockpit wiring to compute-instance via Grafana Alloy ([#128](https://github.com/noisypigeon/noisypigeon/pull/128))
+
 ## 2026-10-02
 
 - [scaleway/compute-instance] Make keyring bucket encryption key optional; add environment_variables ([#127](https://github.com/noisypigeon/noisypigeon/pull/127))

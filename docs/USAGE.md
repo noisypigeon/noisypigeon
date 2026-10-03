@@ -19,11 +19,12 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
   of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
   - [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
     [noisypigeon.com](https://noisypigeon.com).
-  - [`workloads/blog/terraform/`](workloads/blog/terraform/) — the
-    Cloudflare DNS records pointing `noisypigeon.com` at GitHub Pages.
-  - [`workloads/email/terraform/fastmail/`](workloads/email/terraform/fastmail/) —
-    Fastmail SPF/DKIM/MX Cloudflare DNS records, one leaf per domain
-    (`noisypigeon.com`, `pigeon.dev`).
+  - [`workloads/dns/terraform/`](workloads/dns/terraform/) — every
+    Cloudflare-managed DNS leaf, grouped by domain: Fastmail SPF/DKIM/MX
+    records and a Bluesky domain-handle verification TXT record for
+    `noisypigeon.com`, the GitHub Pages CNAME records for
+    `noisypigeon.com` (pointing it at the blog), Fastmail records for
+    `pigeon.dev`, and a `pigeon.dev` → `noisypigeon.com` redirect.
   - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/) —
     infrastructure backing the external `pigeon` CLI's jobs
     (`noisypigeon/pigeon-cli`): import buckets plus a deduplication

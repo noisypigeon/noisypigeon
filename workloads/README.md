@@ -11,13 +11,16 @@ once its last leaves moved here, see
 
 ```
 blog/
-  src/        # the Zola site (ADR-0091)
-  terraform/  # the Cloudflare DNS records that point noisypigeon.com at it (ADR-0092)
-email/
+  src/  # the Zola site (ADR-0091)
+dns/
   terraform/
-    fastmail/
-      noisypigeon.com/  # Fastmail SPF/DKIM/MX records for noisypigeon.com (ADR-0096)
-      pigeon.dev/       # Fastmail SPF/DKIM/MX records for pigeon.dev (ADR-0096)
+    noisypigeon.com/
+      fastmail/  # Fastmail SPF/DKIM/MX records for noisypigeon.com (ADR-0105)
+      bluesky/   # AT Protocol domain-handle verification TXT record (ADR-0105)
+      blog/      # the Cloudflare DNS records that point noisypigeon.com at GitHub Pages (ADR-0092, moved here by ADR-0105)
+    pigeon.dev/
+      fastmail/  # Fastmail SPF/DKIM/MX records for pigeon.dev (ADR-0105)
+      redirect/  # redirects pigeon.dev (apex + www) to noisypigeon.com (ADR-0105)
 pigeon-cli/
   terraform/
     import/
@@ -34,7 +37,7 @@ scaleway/
   terraform/  # the deployer IAM application and the Terraform state bucket itself (ADR-0094)
 ```
 
-Not every workload has a `src/` sibling — `scaleway/`, `pigeon-cli/`, and `custodian-buckets/` are all infrastructure-only: `scaleway/` is this repo's own bootstrap plumbing (the Scaleway deployer identity and remote-state bucket), `pigeon-cli/` is infra backing the externally-repo'd `pigeon` CLI's jobs (`noisypigeon/pigeon-cli`, ADR-0084), and `custodian-buckets/` is a pair of cross-region backup buckets — none is a deployable app in this repo, so all three are `terraform/` alone. The convention doesn't require `src/`; it just happens to exist for `blog/`.
+Not every workload has a `src/` sibling — `scaleway/`, `pigeon-cli/`, `custodian-buckets/`, and `dns/` are all infrastructure-only: `scaleway/` is this repo's own bootstrap plumbing (the Scaleway deployer identity and remote-state bucket), `pigeon-cli/` is infra backing the externally-repo'd `pigeon` CLI's jobs (`noisypigeon/pigeon-cli`, ADR-0084), `custodian-buckets/` is a pair of cross-region backup buckets, and `dns/` groups every Cloudflare-managed DNS leaf by domain (ADR-0105) — none is a deployable app in this repo, so all four are `terraform/` alone. Conversely, `blog/` is now `src/`-only (ADR-0105 moved its `terraform/` leaf into `dns/`) — the convention doesn't require either sibling, a workload just has whichever ones it actually needs.
 
 ### Per-leaf overrides: `workload_definition.hcl`
 
@@ -71,7 +74,7 @@ relative to `root.hcl` doesn't start with `<name>/terraform` gets
 other non-terraform subdirectory) is never accidentally swept into a
 plan/apply, even if a `terragrunt.hcl` is mistakenly added there. A leaf
 can nest arbitrarily deep under `<name>/terraform/` (e.g.
-`email/terraform/fastmail/noisypigeon.com/`) — widened from "exactly
+`dns/terraform/noisypigeon.com/fastmail/`) — widened from "exactly
 `<name>/terraform`" by
 [ADR-0096](../docs/adr/0096-move-fastmail-leaves-to-workloads-email-terraform.md)
 to let a workload split into multiple leaves (one per domain, here)
@@ -82,7 +85,7 @@ true repo root, read via `find_in_parent_folders(".env", "")` — a real
 shell environment variable always overrides the `.env` file value for the
 same key. Copy `.env.example` to `.env` and fill in real values to get
 started. `workloads/root.hcl` only wires what's actually needed (Cloudflare
-for the blog/email DNS leaves, Scaleway for everything else, added by
+for the `dns/` DNS leaves, Scaleway for everything else, added by
 [ADR-0094](../docs/adr/0094-move-scaleway-bootstrap-leaf-to-workloads.md));
 add a provider when a future workload actually needs it, not preemptively.
 

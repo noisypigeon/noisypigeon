@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-03
 
+- [scaleway/compute-instance] Fix doubled Cockpit push path and non-resilient log tailing in compute-instance ([#131](https://github.com/noisypigeon/noisypigeon/pull/131))
+
 - [scaleway/compute-instance] Fix alloy install failing on a dpkg conffile prompt in compute-instance ([#130](https://github.com/noisypigeon/noisypigeon/pull/130))
 
 - [scaleway/compute-instance] Add Scaleway Cockpit wiring to compute-instance via Grafana Alloy ([#128](https://github.com/noisypigeon/noisypigeon/pull/128))

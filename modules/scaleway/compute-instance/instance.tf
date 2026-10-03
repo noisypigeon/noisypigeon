@@ -101,15 +101,36 @@ locals {
         content: |
           prometheus.exporter.unix "node" { }
 
+          // Alloy's default `instance` label is the scraped address
+          // (e.g. "localhost:9091"), identical on every host -- useless
+          // once every instance shares one Cockpit store (ADR-0103).
+          // discovery.relabel overrides it to the real hostname, the
+          // standard Alloy/Prometheus idiom for this.
+          discovery.relabel "node_with_instance" {
+            targets = prometheus.exporter.unix.node.targets
+            rule {
+              target_label = "instance"
+              replacement  = constants.hostname
+            }
+          }
+
           prometheus.scrape "node" {
             scrape_interval = "60s"
-            targets         = prometheus.exporter.unix.node.targets
+            targets         = discovery.relabel.node_with_instance.output
             forward_to      = [prometheus.remote_write.cockpit.receiver]
+          }
+
+          discovery.relabel "pigeon_cli_with_instance" {
+            targets = [{"__address__" = "localhost:${var.cockpit.scrape_port}"}]
+            rule {
+              target_label = "instance"
+              replacement  = constants.hostname
+            }
           }
 
           prometheus.scrape "pigeon_cli" {
             scrape_interval = "15s"
-            targets         = [{"__address__" = "localhost:${var.cockpit.scrape_port}"}]
+            targets         = discovery.relabel.pigeon_cli_with_instance.output
             forward_to      = [prometheus.remote_write.cockpit.receiver]
           }
 
@@ -128,6 +149,45 @@ locals {
 
           loki.source.file "pigeon_logs" {
             targets    = local.file_match.pigeon_logs.targets
+            forward_to = [loki.process.pigeon_logs.receiver]
+          }
+
+          // Two fixes needed once every instance shares one Loki store
+          // (ADR-0103): (1) pigeon-cli's JSONL already carries its own
+          // event timestamp, which was previously shown a second time,
+          // redundantly, next to Loki's own per-entry ingest timestamp --
+          // stage.timestamp makes Loki's real timestamp *be* that field
+          // instead of a second, independently-drifting clock. (2) with
+          // no labels set, every instance's logs land in the same
+          // unlabeled stream -- extract pigeon-cli's `command`/`instance`
+          // span fields (ADR-0093) into real Loki labels so the shared
+          // store stays filterable per-job/per-host. `spans[0]` is always
+          // the outermost ("command") span per pigeon-cli's schema, except
+          // on the one auto-emitted span-close event per run, where
+          // `spans` is empty -- that single line per run won't get these
+          // two labels; exact JMESPath syntax here should be verified
+          // against Alloy's current stage.json docs when first applied.
+          loki.process "pigeon_logs" {
+            stage.json {
+              expressions = {
+                ts       = "timestamp",
+                pigeon_job = "spans[0].command",
+                instance = "spans[0].instance",
+              }
+            }
+
+            stage.timestamp {
+              source = "ts"
+              format = "RFC3339Nano"
+            }
+
+            stage.labels {
+              values = {
+                pigeon_job = "",
+                instance   = "",
+              }
+            }
+
             forward_to = [loki.write.cockpit.receiver]
           }
 

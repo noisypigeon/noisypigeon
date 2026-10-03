@@ -115,21 +115,25 @@ locals {
 
           prometheus.remote_write "cockpit" {
             endpoint {
-              url = "${var.cockpit.metrics_push_url}/api/v1/push"
+              url = "${var.cockpit.metrics_push_url}"
               headers = {
                 "X-TOKEN" = "${var.cockpit.token_secret}",
               }
             }
           }
 
+          local.file_match "pigeon_logs" {
+            path_targets = [{"__path__" = "/var/log/pigeon/pigeon.jsonl"}]
+          }
+
           loki.source.file "pigeon_logs" {
-            targets = [{"__path__" = "/var/log/pigeon/pigeon.jsonl"}]
+            targets    = local.file_match.pigeon_logs.targets
             forward_to = [loki.write.cockpit.receiver]
           }
 
           loki.write "cockpit" {
             endpoint {
-              url = "${var.cockpit.logs_push_url}/loki/api/v1/push"
+              url = "${var.cockpit.logs_push_url}"
               headers = {
                 "X-TOKEN" = "${var.cockpit.token_secret}",
               }

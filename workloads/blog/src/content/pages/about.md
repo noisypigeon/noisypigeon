@@ -2,7 +2,7 @@
 title = "About"
 +++
 
-Willow Finch, known by multiple [previous names](/pages/names), is a 28-year-old queer woman from Vancouver, Canada. She is known canonically online as `noisypigeon`.
+Willow Graysen, known by multiple [previous names](/pages/names), is a 28-year-old queer woman from Vancouver, Canada. She is known canonically online as `noisypigeon`.
 
 She works at [Wealthsimple](https://wealthsimple.com/) in platform engineering, with a focus on Kubernetes and observability. She is an alum of [cLabs](https://clabs.co/), [Bitrise](https://bitrise.io/), [Travis CI](https://travis-ci.com/), and Lighthouse Labs. The rest of her professional experience is documented on her [LinkedIn](https://www.linkedin.com/in/noisypigeon).
 

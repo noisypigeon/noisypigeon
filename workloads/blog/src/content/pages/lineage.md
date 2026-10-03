@@ -3,8 +3,6 @@ title = "Lineage"
 aliases = ["pages/names"]
 +++
 
-# Lineage
-
 I've published under several names over the years, so my work is spread across a number of accounts and identities. This page connects them in one place: who I was, when, and where to find what I made under each name. 
 
 Wherever you found me, it's all the same pigeon.

@@ -143,3 +143,20 @@ variable "additional_volume_ids" {
   description = "IDs of pre-created block volumes (e.g. scaleway/block-volume's id output) to attach to the instance"
   default     = []
 }
+
+variable "cockpit" {
+  type = object({
+    metrics_push_url = string
+    logs_push_url    = string
+    token_secret     = string
+    scrape_port      = optional(number, 9091)
+  })
+  description = "Scaleway Cockpit wiring for an on-host Grafana Alloy agent that tails pigeon-cli's JSONL log and scrapes its Prometheus metrics endpoint (ADR-0102); only used when profile = \"pigeon-cli\". null disables Alloy entirely."
+  default     = null
+  sensitive   = true
+
+  validation {
+    condition     = var.profile == "pigeon-cli" || var.cockpit == null
+    error_message = "cockpit is only used when profile = \"pigeon-cli\"."
+  }
+}

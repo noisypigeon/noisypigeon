@@ -167,7 +167,7 @@ locals {
       - wget -q -O /etc/apt/keyrings/grafana.asc https://apt.grafana.com/gpg.key
       - echo "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main" | tee /etc/apt/sources.list.d/grafana.list > /dev/null
       - apt-get update
-      - apt-get install -y alloy
+      - DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::="--force-confold" alloy
       - systemctl enable alloy
       - systemctl restart alloy
     %{~endif~}

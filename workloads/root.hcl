@@ -141,6 +141,16 @@ generate "scaleway_ids" {
 locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
   scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
+
+  # One shared Cockpit metrics/logs source + push token for every
+  # pigeon-cli compute instance, rather than one private source per leaf
+  # (docs/adr/0103-shared-cockpit-store.md) -- provisioned once by
+  # workloads/pigeon-cli/terraform/observability/, then hand-copied into
+  # this repo's shared root .env the same manual way
+  # SCALEWAY_ACCESS_KEY/SCALEWAY_PROJECT_ID_NOISYPIGEON already are.
+  pigeon_cockpit_metrics_push_url = "${get_env("PIGEON_COCKPIT_METRICS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_METRICS_PUSH_URL", ""))}"
+  pigeon_cockpit_logs_push_url    = "${get_env("PIGEON_COCKPIT_LOGS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_LOGS_PUSH_URL", ""))}"
+  pigeon_cockpit_token_secret     = "${get_env("PIGEON_COCKPIT_TOKEN_SECRET", lookup(local.secrets, "PIGEON_COCKPIT_TOKEN_SECRET", ""))}"
 }
 EOF
 }

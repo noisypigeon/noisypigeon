@@ -5,7 +5,7 @@
 {% block og_url %}{{ section.permalink }}{% endblock og_url %}
 {% block og_title %}{{ section.title }} - {{ config.title }}{% endblock og_title %}
 {% block og_description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock og_description %}
-{% block body_class %}site-page-body site-home-page{% endblock body_class %}
+{% block body_class %}site-page-body site-changelog-page{% endblock body_class %}
 
 {% block content %}
 <div class="site-page zoomable">
@@ -17,7 +17,7 @@
       {% set_global current_year = "" %}
       {% for post in posts_section.pages %}
         {% set is_changelog_post = post.extra.post_type is defined and post.extra.post_type == "changelog" %}
-        {% if not is_changelog_post %}
+        {% if is_changelog_post %}
           {% set post_year = post.date | date(format="%Y") %}
           {% if post_year != current_year %}
             {% set_global current_year = post_year %}

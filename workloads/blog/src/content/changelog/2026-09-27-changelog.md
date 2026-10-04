@@ -1,5 +1,5 @@
 +++
-title = "rewrite the blog from Jekyll to Zola as service/blog (+1 more)"
+title = "Rewrite the blog from Jekyll to Zola"
 date = 2026-09-27T12:00:00-07:00
 slug = "2026-09-27-changelog"
 +++

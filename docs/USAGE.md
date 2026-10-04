@@ -25,15 +25,18 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     `noisypigeon.com`, the GitHub Pages CNAME records for
     `noisypigeon.com` (pointing it at the blog), Fastmail records for
     `pigeon.dev`, and a `pigeon.dev` → `noisypigeon.com` redirect.
-  - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/) —
-    infrastructure backing the external `pigeon` CLI's jobs
-    (`noisypigeon/pigeon-cli`): import buckets plus a deduplication
-    compute job.
+  - [`workloads/bucket/terraform/`](workloads/bucket/terraform/) —
+    storage-bucket infrastructure grouped by dataset, independent of
+    which job/CLI consumes it (ADR-0117): each dataset under
+    `noisypigeon/` collocates its `import/` and/or `deduplication/`
+    leaf, backing the external `pigeon` CLI's jobs
+    (`noisypigeon/pigeon-cli`).
   - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
     every Scaleway-specific leaf: `management/` (this repo's own
-    Terraform state bucket and deployer IAM application/policy/API key)
-    and `custodian/duck-jellyfish/` (an `nl-ams` cross-region backup
-    bucket).
+    Terraform state bucket and deployer IAM application/policy/API key),
+    `custodian/duck-jellyfish/` (an `nl-ams` cross-region backup
+    bucket), and `pigeon-cli/cockpit/` (the shared Cockpit metrics/logs
+    source for `pigeon-cli` compute instances).
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
   ADR (renumbered inline, not archived separately).

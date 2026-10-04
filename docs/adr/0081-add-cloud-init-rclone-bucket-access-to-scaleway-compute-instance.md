@@ -50,8 +50,10 @@ and outputs `access_key`/`secret_key` (sensitive). No changes are needed
 there. `compute-instance` and `iam-policy` stay independent sibling
 modules with independent release cycles — mirroring how droplet itself
 never created its own bucket credentials, and consistent with every other
-module pairing in this repo (no module in `terraform/modules/` invokes
-another local module internally).
+module pairing in this repo (~~no module in `terraform/modules/` invokes
+another local module internally~~ superseded by ADR-0120, narrowly for the
+`block-volume`/`compute-instance` pairing — the principle otherwise still
+holds, including for `iam-policy`/`compute-instance` here).
 
 ## Decision
 
@@ -214,4 +216,6 @@ self-lockout.
 - A wrapper or nested-module composition that creates the `iam-policy`
   application/key automatically from inside `compute-instance` —
   deliberately rejected in favor of external composition (see Context/
-  Decision above).
+  Decision above). Unaffected by ADR-0120, which composes `block-volume`
+  (not `iam-policy`) inside `compute-instance` as a one-off named
+  exception.

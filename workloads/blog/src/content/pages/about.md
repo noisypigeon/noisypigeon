@@ -2,10 +2,10 @@
 title = "About"
 +++
 
-Willow Graysen, known by multiple [previous names](/pages/names), is a 28-year-old queer woman from Vancouver, Canada. She is known canonically online as `noisypigeon`.
+Willow Graysen is a 28-year-old queer woman based in Vancouver, Canada. Online, she goes by `noisypigeon`, and she has published under several [previous names](/pages/lineage).
 
-She works at [Wealthsimple](https://wealthsimple.com/) in platform engineering, with a focus on Kubernetes and observability. She is an alum of [cLabs](https://clabs.co/), [Bitrise](https://bitrise.io/), [Travis CI](https://travis-ci.com/), and Lighthouse Labs. The rest of her professional experience is documented on her [LinkedIn](https://www.linkedin.com/in/noisypigeon).
+She works at [Wealthsimple](https://wealthsimple.com) in platform engineering, focusing on Kubernetes and observability. Before that, she worked at [cLabs](https://clabs.co), [Bitrise](https://bitrise.io), [Travis CI](https://travis-ci.com), and Lighthouse Labs (defunct). The rest of her experience is on [LinkedIn](https://www.linkedin.com/in/noisypigeon).
 
-Willow grew up in the Fraser Valley, in the Lower Mainland of British Columbia, Canada. At 15, she fled home and moved to a suburb of Greater Vancouver to live with relatives. At 16, she was displaced and dropped out of high school, living nomadically across Canada, the US, and Europe through working holidays, freelancing, and competitive hackathons. At 18, she relocated to Montreal, Quebec; at 23, she relocated to Berlin, Germany, with brief stints in New York City and Montreal, before ultimately returning to Vancouver at 25.
+Willow grew up in the Fraser Valley in British Columbia. At 15, she left home to live with relatives in Greater Vancouver, and at 16 she dropped out of high school. She spent the next few years moving between Canada, the US, and Europe, supporting herself through working holidays, freelancing, and competitive hackathons. She settled in Montreal at 18 and moved to Berlin at 23, with stints in New York City and Montreal, before returning to Vancouver at 25.
 
-She is a documentarian and data hoarder at heart. In her personal time, she enjoys working on her car, homelabbing, and reducing her reliance on big tech.
+She's a documentarian and data hoarder at heart. In her spare time, she works on cars, runs a homelab, and tries to rely less on big tech.

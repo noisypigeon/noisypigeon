@@ -11,7 +11,7 @@ Wherever you found me, it's all the same pigeon.
 
 ### Willow Graysen (2026-Present)
 
-I'm now using Willow Graysen as my primary name, pending a legal name change.
+I am converging on Willow Graysen as my primary identity, pending a legal name change.
 
 - **Legal name:** Kara Finch (2024-Present).
 - **Aliases:**
@@ -47,7 +47,8 @@ I'm now using Willow Graysen as my primary name, pending a legal name change.
 - **Profiles:**
   - [https://github.com/karagraysen](https://github.com/karagraysen)
   - [https://github.com/karapigeon](https://github.com/karapigeon)
-  - [https://github.com/pigeondeveloper](https://github.com/pigeondeveloper) 
+  - [https://github.com/pigeondeveloper](https://github.com/pigeondeveloper)
+  - [https://x.com/karagraysen](https://x.com/karagraysen)
 
 ### Luna Graysen (2017-2022)
 

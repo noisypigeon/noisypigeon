@@ -1,6 +1,6 @@
 # ADR-0106: regroup Scaleway-specific leaves under `workloads/scaleway/terraform/`
 
-- **Author**: Willow Finch ([@noisypigeon](https://github.com/noisypigeon)).
+- **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-03.
 - **Status**: Accepted.
 

@@ -1,6 +1,6 @@
 # ADR-0105: consolidate fastmail, bluesky, and blog DNS leaves under `workloads/dns/terraform/`, add a pigeon.dev→noisypigeon.com redirect
 
-- **Author**: Willow Finch ([@noisypigeon](https://github.com/noisypigeon)).
+- **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-03.
 - **Status**: Accepted.
 

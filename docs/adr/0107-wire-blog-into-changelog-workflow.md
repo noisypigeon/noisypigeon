@@ -1,6 +1,6 @@
 # ADR-0107: wire the blog into the changelog workflow, restructure the changelog channel, fix the date timezone
 
-- **Author**: Willow Finch ([@noisypigeon](https://github.com/noisypigeon)).
+- **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-03.
 - **Status**: Accepted.
 

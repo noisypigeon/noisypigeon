@@ -1,7 +1,7 @@
 # ADR-0108: compute brief digest titles from entries, backfill blog changelog history
 
 - **Author**: Willow Finch ([@noisypigeon](https://github.com/noisypigeon)).
-- **Date**: 2026-10-04.
+- **Date**: 2026-10-03.
 - **Status**: Accepted.
 
 ## Context

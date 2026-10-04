@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
+- [scaleway/object-bucket] Rename object-bucket's namespace/name to name_prefix/name_suffix, default storage_class to glacier ([#161](https://github.com/noisypigeon/noisypigeon/pull/161))
+
 - [scaleway/compute-instance] Simplify scaleway/compute-instance's interface (ADR-0118) ([#157](https://github.com/noisypigeon/noisypigeon/pull/157))
 
 - [scaleway/cockpit-observability] Add scaleway/cockpit-observability module ([#149](https://github.com/noisypigeon/noisypigeon/pull/149))

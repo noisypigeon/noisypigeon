@@ -27,9 +27,22 @@ Releases are tagged on `noisypigeon`'s `main` with per-module, path-scoped seman
 
 ## Consuming
 
-This repo's own [`workloads/`](../workloads/) consumes these modules
-directly, in the same working tree, via a tagged `git::` source pointing
-back at this same repo — e.g.:
+The recommended way to consume a tagged module — from this repo's own
+[`workloads/`](../workloads/) or any external infra repo — is the short
+`noisypigeon.com` URL for that module and version:
+
+```hcl
+module "state_bucket" {
+  source = "https://noisypigeon.com/modules/scaleway/object-bucket/v1.0.0"
+  ...
+}
+```
+
+This works via Terraform/go-getter's HTTP module-source discovery protocol:
+`terraform init` requests that URL with `?terraform-get=1` and follows the
+`terraform-get` `<meta>` tag it finds in the response, which resolves to a
+tagged `git::` source pointing back at this repo — the same form you could
+write by hand:
 
 ```hcl
 module "state_bucket" {
@@ -38,11 +51,11 @@ module "state_bucket" {
 }
 ```
 
-An *external* infra repo (no local checkout of this repo) consumes modules
-the same way — a tagged `git::` source works identically for any consumer,
-in-repo or not. For local iteration against an unreleased module change
-(no network fetch), clone this repo as a sibling directory instead and
-reference it by path:
+Both forms are equivalent; the short URL is a redirect page generated for
+every module version tag (see `workloads/blog/generate-module-redirects.sh`
+and [ADR-0109](../docs/adr/0109-short-module-source-urls-via-blog-redirect.md)).
+For local iteration against an unreleased module change (no network fetch),
+clone this repo as a sibling directory instead and reference it by path:
 
 ```
 git clone git@github.com:noisypigeon/noisypigeon.git ../noisypigeon

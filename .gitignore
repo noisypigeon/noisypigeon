@@ -1,6 +1,8 @@
 .DS_Store
 *.env
 /workloads/blog/src/public
+/workloads/blog/src/content/modules/*.md
+!/workloads/blog/src/content/modules/_index.md
 .claude/worktrees
 .terraform.lock.hcl
 .terragrunt-cache/

@@ -27,6 +27,8 @@
 
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="rgb(228, 233, 226)">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="rgb(25, 28, 26)">
+
+  {% block extra_head %}{% endblock extra_head %}
 </head>
 <body class="site-view {% block body_class %}{% endblock body_class %} color-theme-gameboy font-theme-ibm-plex">
   <a class="skip-link" href="#main">Skip to content</a>

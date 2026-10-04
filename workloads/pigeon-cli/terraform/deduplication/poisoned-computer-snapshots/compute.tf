@@ -1,5 +1,5 @@
 module "compute" {
-  source                = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/compute-instance?ref=modules/scaleway/compute-instance/v2.3.2"
+  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v2.3.2"
   namespace             = "job-${local.job_name}"
   name                  = "${local.bucket_alias}-worker"
   image                 = "ubuntu_jammy"
@@ -62,7 +62,7 @@ output "ip_address" {
 }
 
 module "volume" {
-  source     = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/block-volume?ref=modules/scaleway/block-volume/v2.0.0"
+  source     = "https://noisypigeon.com/modules/scaleway/block-volume/v2.0.0"
   namespace  = "job-${local.job_name}"
   name       = "${local.bucket_alias}-worker"
   size       = 1000

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }}{% endblock title %}
+{% block description %}{{ page.description }}{% endblock description %}
+{% block og_url %}{{ page.permalink }}{% endblock og_url %}
+{% block og_title %}{{ page.title }}{% endblock og_title %}
+{% block og_description %}{{ page.description }}{% endblock og_description %}
+
+{% block extra_head %}
+  <meta name="terraform-get" content="{{ page.extra.git_source }}">
+{% endblock extra_head %}
+
+{% block content %}
+<article class="site-page">
+  <header><h1>{{ page.title }}</h1></header>
+  <p>This URL is a Terraform module source, not a page meant for browsing. <code>terraform init</code> resolves it to:</p>
+  <pre><code>{{ page.extra.git_source }}</code></pre>
+  <p>See this version on <a href="{{ page.extra.github_url }}">GitHub</a>.</p>
+</article>
+{% endblock content %}

@@ -2,12 +2,13 @@
 
 One line per PR across this whole repo, sectioned by date, newest first.
 Not versioned — for versioned, package-scoped changelogs see
-[`service/pigeon-cli/CHANGELOG.md`](service/pigeon-cli/CHANGELOG.md) (the
-`pigeon-cli` crate) and `modules/*/*/CHANGELOG.md` (each
-Terraform module). Entry format: `- [<scope>] <summary> ([#N](PR URL))`,
-where `<scope>` is `pigeon-cli`, `blog`, `<provider>/<module>`, or
-`repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
-backfill of prior history.
+`modules/*/*/CHANGELOG.md` (each Terraform module) and
+[`workloads/blog/CHANGELOG.md`](workloads/blog/CHANGELOG.md) (the blog). The
+`pigeon-cli` crate's own changelog now lives in its own repo,
+`noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
+`- [<scope>] <summary> ([#N](PR URL))`, where `<scope>` is `pigeon-cli`,
+`blog`, `<provider>/<module>`, or `repo` for cross-cutting/structural
+changes. Starts fresh at ADR-0050 — no backfill of prior history.
 
 ## 2026-10-04
 

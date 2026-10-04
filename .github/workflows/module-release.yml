@@ -57,8 +57,20 @@ jobs:
 
           echo "changed=${CHANGED_MODULES# }" >> "$GITHUB_OUTPUT"
 
+      - name: Determine blog change
+        id: blog
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          CHANGED_FILES=$(git diff --name-only "${MERGE_SHA}~1" "$MERGE_SHA")
+          if echo "$CHANGED_FILES" | grep -q '^workloads/blog/src/'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure git identity
-        if: steps.modules.outputs.changed != ''
+        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -74,7 +86,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           CHANGED_MODULES: ${{ steps.modules.outputs.changed }}
         run: |
-          TODAY=$(date -u +%Y-%m-%d)
+          TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
           TAGS=""
 
           for dir in $CHANGED_MODULES; do
@@ -146,8 +158,80 @@ jobs:
 
           echo "tags=${TAGS# }" >> "$GITHUB_OUTPUT"
 
+      - name: Update blog changelog and daily digest
+        if: steps.blog.outputs.changed == 'true'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
+          OFFSET=$(TZ="America/Los_Angeles" date +%z | sed -E 's/([+-][0-9]{2})([0-9]{2})/\1:\2/')
+
+          CHANGELOG="workloads/blog/CHANGELOG.md"
+          if [ ! -f "$CHANGELOG" ]; then
+            cat > "$CHANGELOG" <<'HEADER'
+          # Changelog
+
+          All notable changes to the blog are documented in this file.
+
+          The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+          HEADER
+          fi
+
+          ENTRY=$(mktemp)
+          {
+            echo ""
+            echo "## ${TODAY} — ${PR_TITLE}"
+            echo ""
+            echo "${PR_BODY}"
+            echo ""
+            echo "[#${PR_NUMBER}](${PR_URL})"
+          } > "$ENTRY"
+
+          head -n 5 "$CHANGELOG" > "${CHANGELOG}.new"
+          cat "$ENTRY" >> "${CHANGELOG}.new"
+          tail -n +6 "$CHANGELOG" >> "${CHANGELOG}.new"
+          mv "${CHANGELOG}.new" "$CHANGELOG"
+          git add "$CHANGELOG"
+
+          ROOT_CHANGELOG="CHANGELOG.md"
+          ROOT_ENTRY="- [blog] ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))"
+          if grep -q "^## ${TODAY}\$" "$ROOT_CHANGELOG"; then
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              { print }
+              $0 == today { print ""; print entry }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          else
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              BEGIN { inserted = 0 }
+              /^## / && !inserted { print today; print ""; print entry; print ""; inserted = 1 }
+              { print }
+              END { if (!inserted) { print ""; print today; print ""; print entry } }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          fi
+          mv "${ROOT_CHANGELOG}.new" "$ROOT_CHANGELOG"
+          git add "$ROOT_CHANGELOG"
+
+          DIGEST="workloads/blog/src/content/changelog/${TODAY}-changelog.md"
+          if [ ! -f "$DIGEST" ]; then
+            cat > "$DIGEST" <<EOF
+          +++
+          title = "Changelog: ${TODAY}"
+          date = ${TODAY}T12:00:00${OFFSET}
+          slug = "${TODAY}-changelog"
+          +++
+
+          EOF
+          fi
+          if ! grep -q "#${PR_NUMBER}\]" "$DIGEST"; then
+            echo "- ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))" >> "$DIGEST"
+          fi
+          git add "$DIGEST"
+
       - name: Commit changelog updates
-        if: steps.modules.outputs.changed != ''
+        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true'
         run: |
           git commit -m "chore: update changelog(s) for PR #${{ github.event.pull_request.number }}"
           git fetch origin main

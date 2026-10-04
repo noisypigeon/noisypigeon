@@ -125,5 +125,5 @@ All 22 existing `source = "git::...` lines across `workloads/scaleway/terraform/
 ## Out of scope
 
 - Legacy pre-ADR-0093 (`terraform/modules/<provider>/<module>/vX.Y.Z`) and pre-ADR-0037 tags don't get redirect pages — they're frozen and never renamed (see `modules/README.md`'s Versioning section), so there's no real gap to fill; consumers of those tags keep using the full `git::` form. Permanent boundary, not deferred.
-- A bare "latest" alias with no version segment (e.g. `https://noisypigeon.com/modules/scaleway/object-bucket` resolving to that module's newest tag) — genuinely useful, genuinely deferred.
+- A bare "latest" alias with no version segment (e.g. `https://noisypigeon.com/modules/scaleway/object-bucket` resolving to that module's newest tag) — genuinely useful, genuinely deferred. ([#141](https://github.com/noisypigeon/noisypigeon/issues/141))
 - Custom `X-Terraform-Get` response headers instead of the `<meta>`-tag fallback — not possible on GitHub Pages, which has no per-path header control. Permanent boundary, not deferred.

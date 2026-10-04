@@ -229,6 +229,19 @@ jobs:
           if ! grep -q "#${PR_NUMBER}\]" "$DIGEST"; then
             echo "- ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))" >> "$DIGEST"
           fi
+
+          STRIP_RE='^[a-z]+(\([^)]+\))?: '
+          N=$(grep -c '^- ' "$DIGEST")
+          FIRST_RAW=$(grep '^- ' "$DIGEST" | head -n1 | sed -E 's/^- (.*) \(\[#?[^]]*\]\(.*\)\)$/\1/')
+          FIRST_CLEAN=$(printf '%s' "$FIRST_RAW" | sed -E "s/$STRIP_RE//")
+          if [ "$N" -gt 1 ]; then
+            DIGEST_TITLE="${FIRST_CLEAN} (+$((N-1)) more)"
+          else
+            DIGEST_TITLE="$FIRST_CLEAN"
+          fi
+          DIGEST_TITLE_ESCAPED=$(printf '%s' "$DIGEST_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          sed -i "s|^title = .*|title = \"${DIGEST_TITLE_ESCAPED}\"|" "$DIGEST"
+
           git add "$DIGEST"
 
       - name: Commit changelog updates

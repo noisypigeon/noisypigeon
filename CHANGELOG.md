@@ -9,6 +9,10 @@ where `<scope>` is `pigeon-cli`, `blog`, `<provider>/<module>`, or
 `repo` for cross-cutting/structural changes. Starts fresh at ADR-0050 — no
 backfill of prior history.
 
+## 2026-10-04
+
+- [scaleway/iam-policy] Shorten iam-policy generated application name suffix ([#134](https://github.com/noisypigeon/noisypigeon/pull/134))
+
 ## 2026-10-03
 
 - [scaleway/compute-instance] Fix environment_variables/PIGEON_LOG_DIR not reaching non-login SSH invocations ([#133](https://github.com/noisypigeon/noisypigeon/pull/133))

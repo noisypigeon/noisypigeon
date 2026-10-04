@@ -4,6 +4,16 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2.0.1] - 2026-10-04
+
+### Shorten iam-policy generated application name suffix
+
+Changes the generated \`scaleway_iam_application\` name from \`${var.name}-application\` to \`${var.name}-app\`, keeping names shorter and more consistent with other modules' naming conventions.
+
+This updates the application's \`name\` attribute for every existing consumer of this module on next apply — no input or output changes.
+
+[#134](https://github.com/noisypigeon/noisypigeon/pull/134)
+
 ## [2.0.0] - 2026-10-02
 
 ### Move scaleway modules to top-level modules/, major release each

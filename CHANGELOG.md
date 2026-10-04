@@ -21,6 +21,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-03
 
+- [blog] feat(blog): extract reusable templates/zola-site theme (ADR-0112) ([#145](https://github.com/noisypigeon/noisypigeon/pull/145))
+
 - [blog] feat(blog): comprehensive SEO pass (ADR-0111) ([#143](https://github.com/noisypigeon/noisypigeon/pull/143))
 
 - [blog] Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))

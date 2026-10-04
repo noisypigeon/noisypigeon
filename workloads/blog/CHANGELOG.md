@@ -4,6 +4,24 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — feat(blog): extract reusable templates/zola-site theme (ADR-0112)
+
+## Summary
+- Extracts a reusable Zola theme, `templates/zola-site/`, from `workloads/blog/src` — a survey found its `templates/` and `static/assets/css/` were already almost entirely generic/config-driven, aside from a hardcoded footer initial and a hardcoded `Person` JSON-LD `sameAs` list (both now generalized).
+- `workloads/blog/src` now consumes the theme live via a committed relative symlink (`themes/zola-site` → `../../../../templates/zola-site`) plus `theme = "zola-site"` in `config.toml`, and its own `templates/` holds only `module-redirect.html` (ADR-0109), the one genuinely workload-specific template.
+- Widens `blog-pages.yml`'s trigger paths and `module-release.yml`'s blog-change detection to also watch `templates/zola-site/**`.
+- See `docs/adr/0112-extract-reusable-zola-site-template.md` for the full decision record.
+
+## Test plan
+- [x] `mise run blog-build` succeeds with the symlinked theme
+- [x] Generated homepage `Person` JSON-LD `sameAs` array matches the prior hardcoded output (same 3 URLs, same order, no trailing comma)
+- [x] Footer renders `Willow Graysen` in place of `WG`
+- [x] `git ls-files -s workloads/blog/src/themes/zola-site` reports mode `120000` (tracked as a symlink)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#145](https://github.com/noisypigeon/noisypigeon/pull/145)
+
 ## 2026-10-03 — feat(blog): comprehensive SEO pass (ADR-0111)
 
 ## Summary

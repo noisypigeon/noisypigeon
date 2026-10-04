@@ -4,6 +4,12 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — fix(blog): update changelog titles
+
+
+
+[#139](https://github.com/noisypigeon/noisypigeon/pull/139)
+
 ## 2026-10-03 — feat(blog): compute digest titles from entries, backfill changelog history
 
 ## Summary

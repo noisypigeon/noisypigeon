@@ -1,5 +1,5 @@
 +++
-title = "Add agentic workflows"
+title = "deploy profiles page (+11 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
 +++
@@ -15,3 +15,4 @@ slug = "2026-10-03-changelog"
 - fix(blog): changelog css ([8925ece](https://github.com/noisypigeon/noisypigeon/commit/8925ecea7b2965d3b050daa3e33a0ecb070f0594))
 - feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))
 - feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))
+- fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))

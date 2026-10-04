@@ -21,6 +21,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-03
 
+- [blog] fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))
+
 - [blog] feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))
 
 - [blog] feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))

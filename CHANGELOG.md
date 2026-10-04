@@ -11,6 +11,8 @@ backfill of prior history.
 
 ## 2026-10-04
 
+- [scaleway/object-bucket] Fix object-bucket endpoint output to use the regional host, not the bucket vhost ([#135](https://github.com/noisypigeon/noisypigeon/pull/135))
+
 - [scaleway/iam-policy] Shorten iam-policy generated application name suffix ([#134](https://github.com/noisypigeon/noisypigeon/pull/134))
 
 ## 2026-10-03

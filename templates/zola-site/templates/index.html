@@ -29,11 +29,7 @@
   "name": "{{ config.title }}",
   "url": "{{ config.base_url }}/",
   "image": "{{ config.base_url }}{{ config.extra.avatar }}",
-  "sameAs": [
-    "https://github.com/noisypigeon",
-    "https://www.linkedin.com/in/noisypigeon",
-    "https://unsplash.com/@noisypigeon"
-  ]
+  "sameAs": [{% set_global same_as_emitted = false %}{% for item in config.extra.nav %}{% if item.link is starting_with(pat="http") %}{% if same_as_emitted %}, {% endif %}"{{ item.link }}"{% set_global same_as_emitted = true %}{% endif %}{% endfor %}]
 }
 </script>
 {% endblock extra_head %}

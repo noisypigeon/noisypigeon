@@ -1,5 +1,5 @@
 module "iam" {
-  source = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/iam-policy?ref=modules/scaleway/iam-policy/v2.0.0"
+  source = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/iam-policy?ref=modules/scaleway/iam-policy/v2.0.1"
   name   = "${module.bucket.name}-iam"
 
   expires_at = "2027-09-25T22:32:12Z"

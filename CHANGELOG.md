@@ -2,7 +2,7 @@
 
 One line per PR across this whole repo, sectioned by date, newest first.
 Not versioned — for versioned, package-scoped changelogs see
-`modules/*/*/CHANGELOG.md` (each Terraform module) and
+`templates/terraform/*/*/CHANGELOG.md` (each Terraform module) and
 [`workloads/blog/CHANGELOG.md`](workloads/blog/CHANGELOG.md) (the blog). The
 `pigeon-cli` crate's own changelog now lives in its own repo,
 `noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:

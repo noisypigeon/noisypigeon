@@ -3,6 +3,9 @@ title = "Migrating from Pika to Jekyll"
 date = 2026-09-10T07:14:40+00:00
 slug = "hello-jekyll-re-introduction"
 description = "Short note about migrating my blog from Pika to Jekyll"
+
+[extra]
+post_type = "changelog"
 +++
 
 

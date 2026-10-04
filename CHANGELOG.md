@@ -2,13 +2,15 @@
 
 One line per PR across this whole repo, sectioned by date, newest first.
 Not versioned — for versioned, package-scoped changelogs see
-`templates/terraform/*/*/CHANGELOG.md` (each Terraform module) and
-[`workloads/blog/CHANGELOG.md`](workloads/blog/CHANGELOG.md) (the blog). The
-`pigeon-cli` crate's own changelog now lives in its own repo,
-`noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
+`templates/terraform/*/*/CHANGELOG.md` (each Terraform module),
+[`templates/zola-site/CHANGELOG.md`](templates/zola-site/CHANGELOG.md) (the
+theme, versioned since ADR-0113), and
+[`workloads/blog/CHANGELOG.md`](workloads/blog/CHANGELOG.md) (the blog,
+unversioned). The `pigeon-cli` crate's own changelog now lives in its own
+repo, `noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
 `- [<scope>] <summary> ([#N](PR URL))`, where `<scope>` is `pigeon-cli`,
-`blog`, `<provider>/<module>`, or `repo` for cross-cutting/structural
-changes. Starts fresh at ADR-0050 — no backfill of prior history, with one
+`blog`, `zola-site`, `<provider>/<module>`, or `repo` for cross-cutting/
+structural changes. Starts fresh at ADR-0050 — no backfill of prior history, with one
 deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
@@ -20,6 +22,8 @@ blog's existence in this repo and its changelog automation landing.
 - [scaleway/iam-policy] Shorten iam-policy generated application name suffix ([#134](https://github.com/noisypigeon/noisypigeon/pull/134))
 
 ## 2026-10-03
+
+- [zola-site] First versioned release of the templates/zola-site theme ([#146](https://github.com/noisypigeon/noisypigeon/pull/146))
 
 - [blog] feat(blog): extract reusable templates/zola-site theme (ADR-0112) ([#145](https://github.com/noisypigeon/noisypigeon/pull/145))
 

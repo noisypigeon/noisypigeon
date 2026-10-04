@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
+- [scaleway/compute-instance] Simplify scaleway/compute-instance's interface (ADR-0118) ([#157](https://github.com/noisypigeon/noisypigeon/pull/157))
+
 - [scaleway/cockpit-observability] Add scaleway/cockpit-observability module ([#149](https://github.com/noisypigeon/noisypigeon/pull/149))
 
 - [scaleway/object-bucket] Fix object-bucket endpoint output to use the regional host, not the bucket vhost ([#135](https://github.com/noisypigeon/noisypigeon/pull/135))

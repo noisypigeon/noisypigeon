@@ -18,6 +18,8 @@ changes. Starts fresh at ADR-0050 — no backfill of prior history.
 
 ## 2026-10-03
 
+- [blog] feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))
+
 - [scaleway/compute-instance] Fix environment_variables/PIGEON_LOG_DIR not reaching non-login SSH invocations ([#133](https://github.com/noisypigeon/noisypigeon/pull/133))
 
 - [scaleway/compute-instance] Add a shared Cockpit metrics/logs store for pigeon-cli instances ([#132](https://github.com/noisypigeon/noisypigeon/pull/132))

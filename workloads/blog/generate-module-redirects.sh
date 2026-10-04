@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Generates one Zola content page per modules/<provider>/<module>/vX.Y.Z git
-# tag. Each page is a static "redirect" page carrying a
-# <meta name="terraform-get"> tag so `terraform init` can resolve a short
-# noisypigeon.com module source URL to this repo's tagged git:: source.
-# See docs/adr/0109.
+# Generates one Zola content page per <prefix>/<provider>/<module>/vX.Y.Z git
+# tag, where <prefix> is one of the known live tag prefixes (currently
+# "modules" and "templates/terraform" — see ADR-0110). Each page is a static
+# "redirect" page carrying a <meta name="terraform-get"> tag so
+# `terraform init` can resolve a short noisypigeon.com module source URL to
+# this repo's tagged git:: source. The public URL always uses "modules/..."
+# regardless of which prefix the tag actually lives under, so the public
+# namespace stays stable even as the repo's internal layout moves.
+# See docs/adr/0109, docs/adr/0110.
 #
 # Regenerate-all semantics: every run wipes and rewrites every generated
 # page under content/modules/ (except the hand-authored _index.md) from the
@@ -22,19 +26,25 @@ count=0
 while IFS= read -r tag; do
   [ -z "$tag" ] && continue
 
-  if [[ ! "$tag" =~ ^modules/([a-z0-9-]+)/([a-z0-9-]+)/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+  # Explicit allowlist, not a generic catch-all: legacy terraform/modules/...
+  # tags stay unredirected (ADR-0109's permanent boundary).
+  if [[ ! "$tag" =~ ^(modules|templates/terraform)/([a-z0-9-]+)/([a-z0-9-]+)/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
     echo "::warning::Skipping tag with unexpected shape: $tag" >&2
     continue
   fi
 
-  provider="${BASH_REMATCH[1]}"
-  module="${BASH_REMATCH[2]}"
-  version="${BASH_REMATCH[3]}"
+  prefix="${BASH_REMATCH[1]}"
+  provider="${BASH_REMATCH[2]}"
+  module="${BASH_REMATCH[3]}"
+  version="${BASH_REMATCH[4]}"
 
   slug="${provider}-${module}-v${version}"
+  full_tag="${prefix}/${provider}/${module}/v${version}"
+  # The public URL stays "modules/..." forever, independent of which prefix
+  # the tag actually lives under (see ADR-0110) — this is the whole point.
   url_path="modules/${provider}/${module}/v${version}"
-  git_source="git::https://github.com/noisypigeon/noisypigeon.git//modules/${provider}/${module}?ref=modules/${provider}/${module}/v${version}"
-  github_url="https://github.com/noisypigeon/noisypigeon/releases/tag/modules/${provider}/${module}/v${version}"
+  git_source="git::https://github.com/noisypigeon/noisypigeon.git//${prefix}/${provider}/${module}?ref=${full_tag}"
+  github_url="https://github.com/noisypigeon/noisypigeon/releases/tag/${full_tag}"
 
   cat > "$CONTENT_DIR/${slug}.md" <<EOF
 +++
@@ -52,6 +62,6 @@ github_url = "${github_url}"
 EOF
 
   count=$((count + 1))
-done < <(git -C "$REPO_ROOT" tag --list 'modules/*/*/v*' | sort)
+done < <(git -C "$REPO_ROOT" tag --list 'modules/*/*/v*' 'templates/terraform/*/*/v*' | sort)
 
 echo "Generated ${count} module redirect page(s) under ${CONTENT_DIR#"$REPO_ROOT"/}."

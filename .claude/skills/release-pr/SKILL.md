@@ -1,14 +1,14 @@
 ---
 name: release-pr
-description: Use this skill when making a change to one of this repo's templates/terraform/ Terraform modules and getting it merged to main. Covers branching off main, committing, opening the pull request, applying the required release:* label, merging, and syncing local main afterward. Trigger on requests like "open a PR for this", "release this module change", "ship this to main", or "merge this terraform module change".
+description: Use this skill when making a change to one of this repo's templates/terraform/ Terraform modules or the templates/zola-site/ theme and getting it merged to main. Covers branching off main, committing, opening the pull request, applying the required release:* label, merging, and syncing local main afterward. Trigger on requests like "open a PR for this", "release this module change", "ship this to main", or "merge this terraform module or zola-site theme change".
 ---
 
-# Releasing a templates/terraform/ change
+# Releasing a templates/terraform/ or templates/zola-site/ change
 
-This repo's Terraform module release automation has no human reviewer and no
-branch-protection rules — this skill *is* the PR discipline. Follow it in full
-for every change, including trivial ones, because the PR body becomes that
-module's changelog entry and GitHub Release notes verbatim, and the label
+This repo's release automation has no human reviewer and no branch-protection
+rules — this skill *is* the PR discipline. Follow it in full for every
+change, including trivial ones, because the PR body becomes that module's (or
+the theme's) changelog entry and GitHub Release notes verbatim, and the label
 drives the version bump. There is no separate "write good release notes" step
 later — get the PR body right the first time.
 
@@ -29,12 +29,13 @@ later — get the PR body right the first time.
    and release note**, not just for a reviewer:
    - Title: short, imperative, human-readable — it becomes the changelog
      section heading verbatim (e.g. "Add versioning input to object-bucket").
-   - Body: written in full sentences a consumer of the module would want to
-     read later, describing what changed and why it matters to someone
-     consuming this module — not "fixed bug" or a raw commit list. It is
-     copied verbatim into `templates/terraform/<provider>/<module>/CHANGELOG.md` and into the
-     GitHub Release notes by `module-release.yml` on merge, with no editing
-     pass in between.
+   - Body: written in full sentences a consumer of the module (or theme)
+     would want to read later, describing what changed and why it matters to
+     someone consuming it — not "fixed bug" or a raw commit list. It is
+     copied verbatim into that unit's own `CHANGELOG.md`
+     (`templates/terraform/<provider>/<module>/CHANGELOG.md` or
+     `templates/zola-site/CHANGELOG.md`) and into the GitHub Release notes by
+     `module-release.yml` on merge, with no editing pass in between.
    ```
    gh pr create --title "<title>" --body "<body>" --base main
    ```
@@ -49,8 +50,10 @@ later — get the PR body right the first time.
      it anyway — an unlabeled PR is a signal something was skipped, not a
      deliberate patch decision.
    - A PR that doesn't touch any `templates/terraform/<provider>/<module>/`
-     directory (e.g. workflow or root-doc changes) doesn't need a label at
-     all — nothing will be tagged or released regardless.
+     directory or `templates/zola-site/templates/`, `static/`, or
+     `theme.toml` (e.g. workflow, root-doc, or
+     `templates/zola-site/README.md`/`CHANGELOG.md`-only changes) doesn't
+     need a label at all — nothing will be tagged or released regardless.
    ```
    gh pr edit <pr-number> --add-label "release:patch"
    ```

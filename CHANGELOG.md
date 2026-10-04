@@ -23,6 +23,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-03
 
+- [blog] feat: let consumers pin a templates/zola-site version (ADR-0114) ([#147](https://github.com/noisypigeon/noisypigeon/pull/147))
+
 - [zola-site] First versioned release of the templates/zola-site theme ([#146](https://github.com/noisypigeon/noisypigeon/pull/146))
 
 - [blog] feat(blog): extract reusable templates/zola-site theme (ADR-0112) ([#145](https://github.com/noisypigeon/noisypigeon/pull/145))

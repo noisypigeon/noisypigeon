@@ -4,6 +4,26 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — feat: let consumers pin a templates/zola-site version (ADR-0114)
+
+## Summary
+- Adds `[extra].theme_version` to a consuming site's `config.toml` (default `"main"`), resolved by a new `templates/zola-site/resolve-theme.sh` into a gitignored `.theme-resolved/<name>` indirection: a live symlink for `"main"`, or a `git archive`-materialized checkout of a specific tag.
+- Retargets `workloads/blog/src/themes/zola-site` through this indirection (`-> ../.theme-resolved/zola-site`, was `-> ../../../../templates/zola-site` directly) so pinning locally never dirties a tracked path. Wires the resolve script into `.mise.toml`'s blog tasks and `blog-pages.yml`'s build job.
+- Adds short redirect pages at `noisypigeon.com/templates/zola-site/vX.Y.Z`, mirroring the Terraform module pages — reversing ADR-0113's "none planned" stance at the user's explicit request. `generate-module-redirects.sh` gains a second, parallel loop (the tag shape doesn't fit the existing provider/module one); a new workload-specific `theme-redirect.html` does a real `<meta http-equiv="refresh">` to the tag's GitHub Release page, since unlike the Terraform pages there's no fetch-by-URL protocol for Zola themes to hook into — this is a human/documentation redirect only, not a build input.
+- `workloads/blog/src` itself stays on `theme_version = "main"` — the mechanism exists so it (or a future `workloads/<name>/src` consumer) can pin independently when needed, not because anything needs to today.
+- See `docs/adr/0114-pin-templates-zola-site-version.md` for the full decision record.
+
+## Test plan
+- [x] `mise run blog-build` in default (`"main"`) mode: `resolve-theme.sh` creates an absolute symlink, build succeeds
+- [x] Temporarily pinned to `v1.0.0` locally: `resolve-theme.sh` materializes a real directory via `git archive`, build succeeds, output byte-identical to the `"main"` build (expected, since `v1.0.0`'s content currently equals `main`'s) — reverted before committing
+- [x] Built `public/templates/zola-site/v1.0.0/index.html` meta-refreshes to and links the correct GitHub release URL
+- [x] `git status` clean after builds in both modes (`.theme-resolved/` and generated `content/theme-versions/*.md` properly gitignored)
+- [x] This PR's diff doesn't match ADR-0113's content-change glob, so merging won't spuriously fire a new zola-site release (it will however correctly register as a `workloads/blog/src/` change, since several of these files legitimately live there)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#147](https://github.com/noisypigeon/noisypigeon/pull/147)
+
 ## 2026-10-03 — feat(blog): extract reusable templates/zola-site theme (ADR-0112)
 
 ## Summary

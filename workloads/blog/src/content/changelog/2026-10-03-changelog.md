@@ -1,8 +1,8 @@
 +++
-title = "deploy profiles page (+14 more)"
+title = "deploy profiles page (+15 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
-description = "deploy profiles page (+14 more)"
+description = "deploy profiles page (+15 more)"
 +++
 
 - chore(blog): deploy profiles page ([f256c83](https://github.com/noisypigeon/noisypigeon/commit/f256c83bdfb9c64536ae2b8e22fa0fdf7e05b6ab))
@@ -20,3 +20,4 @@ description = "deploy profiles page (+14 more)"
 - Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))
 - feat(blog): comprehensive SEO pass (ADR-0111) ([#143](https://github.com/noisypigeon/noisypigeon/pull/143))
 - feat(blog): extract reusable templates/zola-site theme (ADR-0112) ([#145](https://github.com/noisypigeon/noisypigeon/pull/145))
+- feat: let consumers pin a templates/zola-site version (ADR-0114) ([#147](https://github.com/noisypigeon/noisypigeon/pull/147))

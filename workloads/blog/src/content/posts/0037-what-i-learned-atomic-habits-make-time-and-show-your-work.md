@@ -3,6 +3,12 @@ title = "What I learned: Atomic Habits, Make Time, and Show Your Work"
 date = 2021-05-23T19:00:00+00:00
 slug = "what-i-learned-atomic-habits-make-time-and-show-your-work"
 description = "Essay about personal reflections during the pandemic lockdowns of 2022-2021."
+
+[taxonomies]
+tags = ["personal-essays"]
+
+[extra]
+og_image = "/assets/images/posts/what-i-learned-atomic-habits-make-time-and-show-your-work/hkwq4oh.jpg"
 +++
 
 

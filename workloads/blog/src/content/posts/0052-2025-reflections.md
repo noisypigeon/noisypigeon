@@ -3,6 +3,12 @@ title = "2025 Reflections"
 date = 2025-12-24T23:15:17+00:00
 slug = "2025-reflections"
 description = "Reflections over 2025 and personal growth milestones and goals."
+
+[taxonomies]
+tags = ["personal-essays"]
+
+[extra]
+og_image = "/assets/images/posts/2025-reflections/img_3344.jpg"
 +++
 
 

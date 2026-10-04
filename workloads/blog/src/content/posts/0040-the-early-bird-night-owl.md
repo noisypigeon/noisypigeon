@@ -3,6 +3,9 @@ title = "The Early Bird Night Owl"
 date = 2021-06-14T19:00:00+00:00
 slug = "the-early-bird-night-owl"
 description = "Essay about sleeping patterns."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

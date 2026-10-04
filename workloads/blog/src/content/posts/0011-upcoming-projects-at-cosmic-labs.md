@@ -3,6 +3,9 @@ title = "Upcoming projects at Cosmic Labs"
 date = 2015-04-01T19:00:00+00:00
 slug = "upcoming-projects-at-cosmic-labs"
 description = "Outline of projects at Cosmic Labs."
+
+[taxonomies]
+tags = ["career"]
 +++
 
 

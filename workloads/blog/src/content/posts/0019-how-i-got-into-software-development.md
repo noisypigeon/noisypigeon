@@ -3,6 +3,12 @@ title = "How I got into software development"
 date = 2015-09-20T19:00:00+00:00
 slug = "how-i-got-into-software-development"
 description = "Musings about my origin to software development."
+
+[taxonomies]
+tags = ["software-engineering", "career"]
+
+[extra]
+og_image = "/assets/images/posts/how-i-got-into-software-development/a059e9f6-5d45-11e5-84bb-54f3ddb43ccf.png"
 +++
 
 

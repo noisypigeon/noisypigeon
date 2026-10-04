@@ -2,10 +2,41 @@
 
 {% block title %}{{ section.title }} - {{ config.title }}{% endblock title %}
 {% block description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock description %}
+{% block canonical %}{{ section.permalink }}{% endblock canonical %}
 {% block og_url %}{{ section.permalink }}{% endblock og_url %}
 {% block og_title %}{{ section.title }} - {{ config.title }}{% endblock og_title %}
 {% block og_description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock og_description %}
+{% block twitter_title %}{{ section.title }} - {{ config.title }}{% endblock twitter_title %}
+{% block twitter_description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock twitter_description %}
 {% block body_class %}site-page-body site-home-page{% endblock body_class %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{{ config.title }}",
+  "url": "{{ config.base_url }}/",
+  "description": "{{ config.description }}",
+  "author": { "@id": "{{ config.base_url }}/#person" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "{{ config.base_url }}/#person",
+  "name": "{{ config.title }}",
+  "url": "{{ config.base_url }}/",
+  "image": "{{ config.base_url }}{{ config.extra.avatar }}",
+  "sameAs": [
+    "https://github.com/noisypigeon",
+    "https://www.linkedin.com/in/noisypigeon",
+    "https://unsplash.com/@noisypigeon"
+  ]
+}
+</script>
+{% endblock extra_head %}
 
 {% block content %}
 <div class="site-page zoomable">

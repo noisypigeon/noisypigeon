@@ -54,6 +54,7 @@ path = "${url_path}"
 template = "module-redirect.html"
 in_search_index = false
 include_in_feeds = false
+hidden = true
 
 [extra]
 git_source = "${git_source}"

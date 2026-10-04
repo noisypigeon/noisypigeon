@@ -3,6 +3,9 @@ title = "PSPDFKit for Web 2019.4 Release"
 date = 2019-07-31T07:00:00+00:00
 slug = "pspdfkit-for-web-20194-release"
 description = "Mirror of PSPDFKit for Web 2019.4 Release notes."
+
+[taxonomies]
+tags = ["software-engineering", "career"]
 +++
 
 

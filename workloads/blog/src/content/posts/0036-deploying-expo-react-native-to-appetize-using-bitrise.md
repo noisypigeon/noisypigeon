@@ -3,6 +3,12 @@ title = "Deploying Expo React Native to Appetize using Bitrise"
 date = 2020-06-19T19:00:00+00:00
 slug = "deploying-expo-react-native-to-appetize-using-bitrise"
 description = "Mirror of a guide posted to the Bitrise blog."
+
+[taxonomies]
+tags = ["software-engineering"]
+
+[extra]
+og_image = "/assets/images/posts/deploying-expo-react-native-to-appetize-using-bitrise/60543fa357b2be7026d5850e_o9sqkl11qxo1jkkid57f.png"
 +++
 
 

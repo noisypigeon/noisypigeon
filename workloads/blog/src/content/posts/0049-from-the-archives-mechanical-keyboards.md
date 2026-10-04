@@ -3,6 +3,12 @@ title = "From the Archives: Mechanical Keyboards"
 date = 2024-12-17T20:00:00+00:00
 slug = "from-the-archives-mechanical-keyboards"
 description = "Aggregate blog post with photos of mechanical keyboard builds from over the years."
+
+[taxonomies]
+tags = ["hardware-and-builds", "photography", "data-hoarding"]
+
+[extra]
+og_image = "/assets/images/posts/from-the-archives-mechanical-keyboards/ebjkuriwkaa678d.jpg"
 +++
 
 

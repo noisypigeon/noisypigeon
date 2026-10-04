@@ -3,6 +3,9 @@ title = "Reflecting on dropping out (1 year later)"
 date = 2016-02-08T20:00:00+00:00
 slug = "reflecting-on-dropping-out-1-year-later"
 description = "Essay about dropping out of high school from one year later."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

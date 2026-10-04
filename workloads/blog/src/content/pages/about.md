@@ -1,5 +1,6 @@
 +++
 title = "About"
+description = "Who Willow Graysen is: infra engineer, high school dropout, and digital shoebox curator based in Vancouver, Canada."
 +++
 
 Willow Graysen is a 28-year-old queer woman based in Vancouver, Canada. Online, she goes by `noisypigeon`, and she has published under several [previous names](/pages/lineage).

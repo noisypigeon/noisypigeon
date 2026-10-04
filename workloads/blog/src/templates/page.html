@@ -2,9 +2,12 @@
 
 {% block title %}{{ page.title }} - {{ config.title }}{% endblock title %}
 {% block description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock description %}
+{% block canonical %}{{ page.permalink }}{% endblock canonical %}
 {% block og_url %}{{ page.permalink }}{% endblock og_url %}
 {% block og_title %}{{ page.title }} - {{ config.title }}{% endblock og_title %}
 {% block og_description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock og_description %}
+{% block twitter_title %}{{ page.title }} - {{ config.title }}{% endblock twitter_title %}
+{% block twitter_description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock twitter_description %}
 {% block body_class %}site-page-body{% endblock body_class %}
 
 {% block content %}

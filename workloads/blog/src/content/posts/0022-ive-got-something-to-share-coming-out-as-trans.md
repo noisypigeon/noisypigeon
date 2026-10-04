@@ -3,6 +3,9 @@ title = "I’ve got something to share! (coming out as trans)"
 date = 2016-01-01T20:00:00+00:00
 slug = "ive-got-something-to-share-coming-out-as-trans"
 description = "Essay about coming out as transgender."
+
+[taxonomies]
+tags = ["identity-and-transition", "personal-essays"]
 +++
 
 

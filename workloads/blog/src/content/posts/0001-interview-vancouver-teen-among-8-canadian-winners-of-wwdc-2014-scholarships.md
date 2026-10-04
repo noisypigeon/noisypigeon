@@ -3,6 +3,12 @@ title = "Interview: Vancouver Teen Among 8 Canadian Winners of WWDC 2014 Scholar
 date = 2014-06-02T07:00:00+00:00
 slug = "interview-vancouver-teen-among-8-canadian-winners-of-wwdc-2014-scholarships"
 description = "iPhone In Canada news coverage of my WWDC scholarship."
+
+[taxonomies]
+tags = ["press-and-interviews"]
+
+[extra]
+og_image = "/assets/images/posts/interview-vancouver-teen-among-8-canadian-winners-of-wwdc-2014-scholarships/wwdc2014-students-2.jpg"
 +++
 
 

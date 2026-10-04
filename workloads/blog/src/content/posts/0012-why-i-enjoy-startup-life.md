@@ -3,6 +3,9 @@ title = "Why I enjoy startup life"
 date = 2015-04-03T19:00:00+00:00
 slug = "why-i-enjoy-startup-life"
 description = "Essay about working at and operating a startup."
+
+[taxonomies]
+tags = ["career"]
 +++
 
 

@@ -3,6 +3,12 @@ title = "How to create a Realm instance (having nested objects) from a dictionar
 date = 2017-02-17T20:00:00+00:00
 slug = "how-to-create-a-realm-instance-having-nested-objects-from-a-dictionary"
 description = "Mirror of my answer to a Stack Overflow question about Realm nested objects."
+
+[taxonomies]
+tags = ["software-engineering"]
+
+[extra]
+og_image = "/assets/images/posts/how-to-create-a-realm-instance-having-nested-objects-from-a-dictionary/screenshot-202024-10-06-20at-201-33-39-e2-80-afpm.png"
 +++
 
 

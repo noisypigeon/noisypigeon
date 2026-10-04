@@ -3,6 +3,12 @@ title = "Ryzen 2700X + GeForce GTX 1080"
 date = 2018-07-22T19:00:00+00:00
 slug = "ryzen-2700x-geforce-gtx-1080"
 description = "Mirror of a build list published on PCPartPicker on July 22nd, 2018."
+
+[taxonomies]
+tags = ["hardware-and-builds"]
+
+[extra]
+og_image = "/assets/images/posts/ryzen-2700x-geforce-gtx-1080/230177-19385ad18aaa74140e6a0070171e2d8b.jpg"
 +++
 
 

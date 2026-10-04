@@ -3,6 +3,9 @@ title = "How to Write a Support Ticket"
 date = 2022-08-25T19:00:00+00:00
 slug = "how-to-write-a-support-ticket"
 description = "Satirical essay about writing support tickets."
+
+[taxonomies]
+tags = ["software-engineering", "personal-essays"]
 +++
 
 

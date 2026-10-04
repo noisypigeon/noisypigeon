@@ -3,6 +3,9 @@ title = "Five ways to Convert to Optimism"
 date = 2015-02-23T20:00:00+00:00
 slug = "five-ways-to-convert-to-optimism"
 description = "Essay about forced optimism."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

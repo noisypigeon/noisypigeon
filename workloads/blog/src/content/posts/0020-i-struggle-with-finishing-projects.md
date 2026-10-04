@@ -3,6 +3,9 @@ title = "I struggle with finishing projects"
 date = 2015-10-23T19:00:00+00:00
 slug = "i-struggle-with-finishing-projects"
 description = "Essay about personal struggles with finishing tasks."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

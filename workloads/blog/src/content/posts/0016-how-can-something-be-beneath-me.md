@@ -3,6 +3,9 @@ title = "How can something be beneath me?"
 date = 2015-05-20T19:00:00+00:00
 slug = "how-can-something-be-beneath-me"
 description = "Essay about personal reflection and identity-searching."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

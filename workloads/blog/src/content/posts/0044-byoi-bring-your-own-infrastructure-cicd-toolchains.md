@@ -3,6 +3,12 @@ title = "BYOI “Bring Your Own Infrastructure” CI/CD Toolchains"
 date = 2021-07-16T19:00:00+00:00
 slug = "byoi-bring-your-own-infrastructure-cicd-toolchains"
 description = "Musings about custom infra CI/CD vs managed CI/CD solutions."
+
+[taxonomies]
+tags = ["software-engineering", "career"]
+
+[extra]
+og_image = "/assets/images/posts/byoi-bring-your-own-infrastructure-cicd-toolchains/4rabopgbdj1ezqsfq2zeun0xspap_small.png"
 +++
 
 

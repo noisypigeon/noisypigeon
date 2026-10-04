@@ -3,6 +3,9 @@ title = "Serendipitous San Francisco"
 date = 2015-03-20T19:00:00+00:00
 slug = "serendipitous-san-francisco"
 description = "Musings about San Francisco, California."
+
+[taxonomies]
+tags = ["travel"]
 +++
 
 

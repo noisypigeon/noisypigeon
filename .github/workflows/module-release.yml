@@ -222,6 +222,7 @@ jobs:
           title = "Changelog: ${TODAY}"
           date = ${TODAY}T12:00:00${OFFSET}
           slug = "${TODAY}-changelog"
+          description = "Changelog: ${TODAY}"
           +++
 
           EOF
@@ -241,6 +242,7 @@ jobs:
           fi
           DIGEST_TITLE_ESCAPED=$(printf '%s' "$DIGEST_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
           sed -i "s|^title = .*|title = \"${DIGEST_TITLE_ESCAPED}\"|" "$DIGEST"
+          sed -i "s|^description = .*|description = \"${DIGEST_TITLE_ESCAPED}\"|" "$DIGEST"
 
           git add "$DIGEST"
 

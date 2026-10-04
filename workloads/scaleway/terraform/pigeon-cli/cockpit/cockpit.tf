@@ -1,15 +1,8 @@
-# One shared Cockpit metrics/logs source + push token for every pigeon-cli
-# compute instance (docs/adr/0103-shared-cockpit-store.md) -- disambiguated
-# at query time by the pigeon_job/instance labels pigeon-cli (ADR-0093) and
-# Alloy (compute-instance's cockpit wiring) already attach, rather than by
-# giving each instance its own private Cockpit source the way the original
-# deduplication/macbook-scratch leaf did.
-
 module "cockpit" {
   source = "https://noisypigeon.com/modules/scaleway/cockpit-observability/v0.1.0"
 
   name       = "pigeon-cli"
-  project_id = local.scaleway_project_id_noisypigeon
+  project_id = local.scaleway_project_id
 }
 
 output "metrics_push_url" {

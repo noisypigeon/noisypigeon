@@ -34,7 +34,7 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Build with Zola
         working-directory: workloads/blog/src
-        run: zola build
+        run: SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

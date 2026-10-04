@@ -24,8 +24,8 @@ run = "terragrunt run --all -- apply"
 
 [tasks.blog-build]
 dir = "workloads/blog/src"
-run = "zola build"
+run = "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build"
 
 [tasks.blog-serve]
 dir = "workloads/blog/src"
-run = "zola serve"
+run = "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola serve"

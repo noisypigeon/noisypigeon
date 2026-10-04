@@ -21,6 +21,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-03
 
+- [blog] feat(blog): comprehensive SEO pass (ADR-0111) ([#143](https://github.com/noisypigeon/noisypigeon/pull/143))
+
 - [blog] Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))
 
 - [blog] fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))

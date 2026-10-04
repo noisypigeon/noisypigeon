@@ -4,6 +4,32 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — feat(blog): comprehensive SEO pass (ADR-0111)
+
+## Summary
+- Canonical URLs, Twitter Cards, and JSON-LD structured data (`WebSite`/`Person` on the homepage, `BlogPosting` on every post)
+- `og:type=article` + `article:published_time`, per-post `og:image` wired to the 20 posts that already have their own image directory
+- A real favicon/apple-touch-icon/`manifest.json` icon set generated from the existing avatar via `sips`
+- A `tags` taxonomy covering all 53 posts (9 tags derived from the site's own bio), browsable at `/tags/`
+- Backfilled `description` for the 5 pages/posts that lacked one, and fixed the changelog-digest generator so this can't reopen
+- A real, committed `static/robots.txt`, and excluded Terraform module-redirect pages from the sitemap (they have no `date`, so they were the only pages missing `<lastmod>` for a fixable reason)
+
+See `docs/adr/0111-improve-blog-seo.md` for full details.
+
+## Test plan
+- [x] `mise run blog-build` completes with zero Tera errors
+- [x] Homepage output has `WebSite`/`Person` JSON-LD, canonical link, manifest link, sized favicon links
+- [x] A post with its own image (`cmda-zip-scatter`) gets `og:type=article`, `article:published_time`, `BlogPosting` JSON-LD, and `og:image`/`twitter:image` pointing at its own image
+- [x] A post without one falls back to the generic social preview
+- [x] `/tags/` lists all 9 tags with correct counts; `/tags/personal-essays/` lists its 22 posts grouped by year
+- [x] `robots.txt`, `manifest.json`, and all 5 icon files exist in the build output
+- [x] `sitemap.xml` has no `modules/...` URLs
+- [x] The 5 previously-generic-description pages now render their own description
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#143](https://github.com/noisypigeon/noisypigeon/pull/143)
+
 ## 2026-10-03 — Add short noisypigeon.com module import URLs via blog redirect pages
 
 Terraform module \`source\` lines in this repo are long and easy to mistype (the provider/module name repeats):

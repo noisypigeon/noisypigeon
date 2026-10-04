@@ -1,8 +1,8 @@
 +++
-title = "deploy profiles page (+12 more)"
+title = "deploy profiles page (+13 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
-description = "deploy profiles page (+12 more)."
+description = "deploy profiles page (+13 more)"
 +++
 
 - chore(blog): deploy profiles page ([f256c83](https://github.com/noisypigeon/noisypigeon/commit/f256c83bdfb9c64536ae2b8e22fa0fdf7e05b6ab))
@@ -18,3 +18,4 @@ description = "deploy profiles page (+12 more)."
 - feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))
 - fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))
 - Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))
+- feat(blog): comprehensive SEO pass (ADR-0111) ([#143](https://github.com/noisypigeon/noisypigeon/pull/143))

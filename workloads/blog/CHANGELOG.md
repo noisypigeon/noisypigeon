@@ -4,6 +4,25 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — feat(blog): compute digest titles from entries, backfill changelog history
+
+## Summary
+- `module-release.yml`'s daily digest title generation now derives from the day's actual entries (strips a leading conventional-commit prefix off the chronologically-first entry, collapses extra same-day entries into a `(+N more)` suffix) instead of the hardcoded `"Changelog: <date>"`.
+- Backfills `workloads/blog/CHANGELOG.md` (12 entries), the root `CHANGELOG.md` (10 entries — PR #66 already had a hand-written entry there, left untouched per this repo's no-rewrite-history precedent), and 3 on-site daily digest posts under `content/changelog/`, covering the 12-commit, 3-day window (2026-09-27, 2026-10-01, 2026-10-03) between the blog's existence in this repo and ADR-0107's automation landing. Two incidentally-blog-touching commits (PR #135, PR #119) excluded as out of the automation's own path-filter scope.
+
+See `docs/adr/0108-backfill-blog-changelog-history.md` for the full decision record.
+
+## Test plan
+- [x] `mise run blog-build` succeeds with no Tera errors
+- [x] `/changelog/` shows 8 posts total (4 historical + 3 digests), correct year grouping
+- [x] `2026-10-03-changelog.md` title recomputed to "deploy profiles page (+9 more)" over its merged 10 entries
+- [x] No duplicate entries for PR #136 anywhere
+- [x] `.github/workflows/module-release.yml` parses as valid YAML
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#138](https://github.com/noisypigeon/noisypigeon/pull/138)
+
 ## 2026-10-03 — feat(blog): wire blog into the changelog workflow, restructure changelog channel
 
 ## Summary

@@ -1,5 +1,5 @@
 +++
-title = "deploy profiles page (+9 more)"
+title = "deploy profiles page (+10 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
 +++
@@ -14,3 +14,4 @@ slug = "2026-10-03-changelog"
 - chore(blog): move more blog posts to changelog channel ([d865f82](https://github.com/noisypigeon/noisypigeon/commit/d865f821f98f145e83f84bc4939657e22a4d72df))
 - fix(blog): changelog css ([8925ece](https://github.com/noisypigeon/noisypigeon/commit/8925ecea7b2965d3b050daa3e33a0ecb070f0594))
 - feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))
+- feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))

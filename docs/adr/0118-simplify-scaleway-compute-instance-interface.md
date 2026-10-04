@@ -130,6 +130,6 @@ variable "keyring" {
 
 ## Out of scope
 
-- A generic, non-secret, non-keyring-tied environment-variable passthrough. The old `environment_variables` was documented as usable for any key/value pair, not just keyring-derived secrets; collapsing it into `keyring.secret_key` only covers the secret-aliased-to-a-keyring-entry case the one real caller actually uses. If a future consumer needs an arbitrary env var unrelated to any keyring entry, this ADR doesn't provide a mechanism for it.
+- A generic, non-secret, non-keyring-tied environment-variable passthrough. The old `environment_variables` was documented as usable for any key/value pair, not just keyring-derived secrets; collapsing it into `keyring.secret_key` only covers the secret-aliased-to-a-keyring-entry case the one real caller actually uses. If a future consumer needs an arbitrary env var unrelated to any keyring entry, this ADR doesn't provide a mechanism for it. ([#158](https://github.com/noisypigeon/noisypigeon/issues/158))
 - Per-`kind` required-field validation on `keyring` (e.g. requiring `bucket`/`endpoint`/`access_key_id` when `kind = "bucket"`). Matches today's module, which never validated this either — malformed entries render incomplete config rather than failing `plan`.
 - Supporting more than one SSH key per instance (`user_config.ssh_key` is deliberately singular, not a list) — a permanent design choice for this ADR, not deferred.

@@ -10,5 +10,5 @@ output "name" {
 
 output "endpoint" {
   description = "Bucket endpoint URL"
-  value       = scaleway_object_bucket.bucket.endpoint
+  value       = "https://s3.${scaleway_object_bucket.bucket.region}.scw.cloud"
 }

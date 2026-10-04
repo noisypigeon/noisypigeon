@@ -1,6 +1,7 @@
 title = "Willow Graysen"
 description = "Infra dev, data hoarder, mechanic-ish, photographer."
 base_url = "https://noisypigeon.com"
+theme = "zola-site"
 
 compile_sass = false
 generate_feeds = false

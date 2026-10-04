@@ -8,7 +8,10 @@ Not versioned — for versioned, package-scoped changelogs see
 `noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
 `- [<scope>] <summary> ([#N](PR URL))`, where `<scope>` is `pigeon-cli`,
 `blog`, `<provider>/<module>`, or `repo` for cross-cutting/structural
-changes. Starts fresh at ADR-0050 — no backfill of prior history.
+changes. Starts fresh at ADR-0050 — no backfill of prior history, with one
+deliberate exception: ADR-0108 backfilled `[blog]` entries for
+2026-09-27 through 2026-10-03, the small, concrete window between the
+blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
@@ -19,6 +22,24 @@ changes. Starts fresh at ADR-0050 — no backfill of prior history.
 ## 2026-10-03
 
 - [blog] feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))
+
+- [blog] fix(blog): changelog css ([8925ece](https://github.com/noisypigeon/noisypigeon/commit/8925ecea7b2965d3b050daa3e33a0ecb070f0594))
+
+- [blog] chore(blog): move more blog posts to changelog channel ([d865f82](https://github.com/noisypigeon/noisypigeon/commit/d865f821f98f145e83f84bc4939657e22a4d72df))
+
+- [blog] chore(blog): organize posts ([3dc9e54](https://github.com/noisypigeon/noisypigeon/commit/3dc9e544d43657b5a8cb5ba9b120959a954de9a8))
+
+- [blog] chore(blog): clean-up about and lineage ([eb25e46](https://github.com/noisypigeon/noisypigeon/commit/eb25e46f619d73de7a6f60a1e94e285b2e089d20))
+
+- [blog] chore(blog); a few more renames ([9f14bcd](https://github.com/noisypigeon/noisypigeon/commit/9f14bcd26f92cdb3a92cff5194954a420ac77a0d))
+
+- [blog] chore: remove duplicate title ([bc99d6b](https://github.com/noisypigeon/noisypigeon/commit/bc99d6bd371d45dcd8b34c7e83bbcd885e427786))
+
+- [blog] chore: clean-up dns terraform; update blog names/lineage page ([4da2430](https://github.com/noisypigeon/noisypigeon/commit/4da24307d524720c8b08e6af148ca0bad63dbaaa))
+
+- [blog] chore(blog): make profile links clickable ([9979a98](https://github.com/noisypigeon/noisypigeon/commit/9979a988555eb6da610f6a4b8a3e606beff3ef95))
+
+- [blog] chore(blog): deploy profiles page ([f256c83](https://github.com/noisypigeon/noisypigeon/commit/f256c83bdfb9c64536ae2b8e22fa0fdf7e05b6ab))
 
 - [scaleway/compute-instance] Fix environment_variables/PIGEON_LOG_DIR not reaching non-login SSH invocations ([#133](https://github.com/noisypigeon/noisypigeon/pull/133))
 
@@ -57,6 +78,8 @@ changes. Starts fresh at ADR-0050 — no backfill of prior history.
 - [terraform/scaleway/compute-instance] Add cloud-init profiles (rclone/docker) to scaleway/compute-instance ([#114](https://github.com/noisypigeon/noisypigeon/pull/114))
 
 ## 2026-10-01
+
+- [blog] Rename service/blog to workloads/blog/src ([#118](https://github.com/noisypigeon/noisypigeon/pull/118))
 
 - [terraform/scaleway/compute-instance] Pre-install mise and a build toolchain in compute-instance's cloud-init ([#112](https://github.com/noisypigeon/noisypigeon/pull/112))
 
@@ -105,6 +128,8 @@ changes. Starts fresh at ADR-0050 — no backfill of prior history.
 - [repo] feat(adr-0078): formalize a job-run log analysis procedure and package it as the `analyze-job-run` Claude Code skill ([#85](https://github.com/noisypigeon/noisypigeon/pull/85))
 
 ## 2026-09-27
+
+- [blog] chore(blog): add bix ([#69](https://github.com/noisypigeon/noisypigeon/pull/69))
 
 - [pigeon-cli] feat(adr-0077): add pull-transform file-type selection, adaptable transcoding mapping, and zip pass-through ([#84](https://github.com/noisypigeon/noisypigeon/pull/84))
 

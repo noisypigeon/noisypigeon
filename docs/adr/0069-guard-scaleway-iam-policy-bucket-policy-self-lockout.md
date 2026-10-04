@@ -65,7 +65,7 @@ resource "scaleway_object_bucket_policy" "bucket_access" {
 ## Consequences
 
 - Additive, backward-compatible module change (`release:minor`): existing callers that don't set `admin_project_id` get byte-identical generated policies to before.
-- `noisypigeon/cli/scratch/iam.tf` and `noisypigeon/vault/email/iam.tf` both add `admin_project_id = local.scaleway_project_id_noisypigeon` (already available via Terragrunt-generated `scaleway_ids_generated.tf` at every `fr-par/noisypigeon/*` leaf) and bump their module `ref` to the new release.
+- `noisypigeon/cli/scratch/iam.tf` and `noisypigeon/vault/email/iam.tf` both add `admin_project_id = local.scaleway_project_id` (already available via Terragrunt-generated `scaleway_ids_generated.tf` at every `fr-par/noisypigeon/*` leaf) and bump their module `ref` to the new release.
 - `noisypigeon/cli/scratch`'s bucket, already locked out by the pre-fix policy, needs a one-time manual recovery (owner-credentialed `aws s3api delete-bucket-policy`) independent of this code change — the fix only prevents *future* lockouts, it doesn't undo an already-applied policy.
 - The module README's ADR-0066 `## Usage` example is updated to include `admin_project_id`, so it's not silently omitted by future bucket-scoped callers.
 

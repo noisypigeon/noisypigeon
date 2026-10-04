@@ -17,7 +17,7 @@ That attempt — `terraform/infrastructure/scaleway/fr-par/pigeon.dev/scratch/ia
 #   source = "...iam-policy?ref=terraform/modules/scaleway/iam-policy/v0.1.0"
 #   name   = "${module.bucket.name}-iam"
 #   project_ids = [
-#     local.scaleway_project_id_noisypigeon_com
+#     local.scaleway_project_id
 #   ]
 #   project_permission_sets = [
 #     "ObjectStorageObjectsWrite",

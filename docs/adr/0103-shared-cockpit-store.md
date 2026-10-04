@@ -33,21 +33,21 @@ follows, not a novel cross-leaf state read.
 
 ```hcl
 resource "scaleway_cockpit_source" "pigeon_metrics" {
-  project_id     = local.scaleway_project_id_noisypigeon
+  project_id     = local.scaleway_project_id
   name           = "pigeon-cli-metrics"
   type           = "metrics"
   retention_days = 31
 }
 
 resource "scaleway_cockpit_source" "pigeon_logs" {
-  project_id     = local.scaleway_project_id_noisypigeon
+  project_id     = local.scaleway_project_id
   name           = "pigeon-cli-logs"
   type           = "logs"
   retention_days = 31
 }
 
 resource "scaleway_cockpit_token" "pigeon_push" {
-  project_id = local.scaleway_project_id_noisypigeon
+  project_id = local.scaleway_project_id
   name       = "pigeon-cli-push"
   scopes {
     write_metrics = true

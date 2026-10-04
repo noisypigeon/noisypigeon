@@ -165,7 +165,7 @@ module "iam" {
     "s3:PutObject",
     "s3:DeleteObject",
   ]
-  admin_project_id = local.scaleway_project_id_noisypigeon
+  admin_project_id = local.scaleway_project_id
 }
 
 module "instance" {

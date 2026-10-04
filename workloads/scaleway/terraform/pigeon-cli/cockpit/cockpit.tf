@@ -1,7 +1,7 @@
 module "cockpit" {
   source = "https://noisypigeon.com/modules/scaleway/cockpit-observability/v0.1.0"
 
-  name       = "pigeon-cli"
+  name       = local.name
   project_id = local.scaleway_project_id
 }
 

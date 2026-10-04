@@ -140,7 +140,7 @@ generate "scaleway_ids" {
   contents  = <<EOF
 locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
-  scaleway_project_id_noisypigeon = "${get_env("SCALEWAY_PROJECT_ID_NOISYPIGEON", lookup(local.secrets, "SCALEWAY_PROJECT_ID_NOISYPIGEON", ""))}"
+  scaleway_project_id = "${get_env("SCALEWAY_PROJECT_ID", lookup(local.secrets, "SCALEWAY_PROJECT_ID", ""))}"
 
   # One shared Cockpit metrics/logs source + push token for every
   # pigeon-cli compute instance, rather than one private source per leaf

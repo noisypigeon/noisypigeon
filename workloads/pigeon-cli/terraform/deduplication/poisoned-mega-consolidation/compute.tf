@@ -1,12 +1,12 @@
 module "compute" {
   source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v2.3.2"
-  namespace             = "job-${local.job_name}"
-  name                  = "${local.bucket_alias}-worker"
+  namespace             = "job-${local.namespace}"
+  name                  = "${local.name}-worker"
   image                 = "ubuntu_jammy"
   type                  = "COMPUTE3-X8C-16G"
   profile               = "pigeon-cli"
   ssh_keys              = [local.ssh_key_public_key]
-  # additional_volume_ids = [module.volume.id]
+  additional_volume_ids = [module.volume.id]
 
   cockpit = {
     metrics_push_url = local.cockpit_metrics_url
@@ -21,7 +21,7 @@ module "compute" {
       bucket_endpoint   = module.bucket.endpoint
       bucket_access_key = module.iam.access_key
       bucket_secret_key = module.iam.secret_key
-      bucket_provider   = local.scaleway_s3_provider
+      bucket_provider   = local.scaleway_s3_provider_name
     },
     {
       bucket_name       = module.bucket.name
@@ -29,7 +29,7 @@ module "compute" {
       bucket_endpoint   = module.bucket.endpoint
       bucket_access_key = module.iam.access_key
       bucket_secret_key = module.iam.secret_key
-      bucket_provider   = local.scaleway_s3_provider
+      bucket_provider   = local.scaleway_s3_provider_name
     }
   ]
 
@@ -61,10 +61,10 @@ output "ip_address" {
   value       = module.compute.ipv4_address
 }
 
-# module "volume" {
-#   source     = "https://noisypigeon.com/modules/scaleway/block-volume/v2.0.0"
-#   namespace  = "job-${local.job_name}"
-#   name       = "${local.bucket_alias}-worker"
-#   size       = 50
-#   project_id = local.scaleway_project_id_noisypigeon
-# }
+module "volume" {
+  source     = "https://noisypigeon.com/modules/scaleway/block-volume/v2.0.0"
+  namespace  = "job-${local.namespace}"
+  name       = "${local.name}-worker"
+  size       = 1000
+  project_id = local.scaleway_project_id
+}

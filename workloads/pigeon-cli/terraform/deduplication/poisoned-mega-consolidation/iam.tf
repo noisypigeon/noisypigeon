@@ -5,7 +5,7 @@ module "iam" {
   expires_at = "2027-09-25T22:32:12Z"
 
   project_ids = [
-    local.scaleway_project_id_noisypigeon,
+    local.scaleway_project_id,
   ]
   project_permission_sets = [
     "ObjectStorageFullAccess",

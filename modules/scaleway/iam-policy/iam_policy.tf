@@ -1,5 +1,5 @@
 resource "scaleway_iam_application" "application" {
-  name        = "${var.name}-application"
+  name        = "${var.name}-app"
   description = var.description
 }
 

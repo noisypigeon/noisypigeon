@@ -3,6 +3,12 @@ title = "From the Archives: PC Builds"
 date = 2024-10-13T19:00:00+00:00
 slug = "from-the-archives-pc-builds"
 description = "Aggregate blog post with photos of PC builds from over the years."
+
+[taxonomies]
+tags = ["hardware-and-builds", "photography", "data-hoarding"]
+
+[extra]
+og_image = "/assets/images/posts/from-the-archives-pc-builds/2a7gq7wozge31.jpg"
 +++
 
 

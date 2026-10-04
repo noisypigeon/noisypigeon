@@ -2,6 +2,7 @@
 title = "deploy profiles page (+12 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
+description = "deploy profiles page (+12 more)."
 +++
 
 - chore(blog): deploy profiles page ([f256c83](https://github.com/noisypigeon/noisypigeon/commit/f256c83bdfb9c64536ae2b8e22fa0fdf7e05b6ab))

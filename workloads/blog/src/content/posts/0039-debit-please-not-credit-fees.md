@@ -3,6 +3,9 @@ title = "“Debit, please” not “credit fees”"
 date = 2021-06-03T19:00:00+00:00
 slug = "debit-please-not-credit-fees"
 description = "Essay about navigating financial difficulties."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

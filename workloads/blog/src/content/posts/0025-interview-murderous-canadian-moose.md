@@ -3,6 +3,9 @@ title = "Interview: Murderous Canadian Moose"
 date = 2016-05-15T07:00:00+00:00
 slug = "interview-murderous-canadian-moose"
 description = "Mirror of a podcast interview with Retro Speculative."
+
+[taxonomies]
+tags = ["press-and-interviews"]
 +++
 
 

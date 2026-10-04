@@ -3,6 +3,9 @@ title = "Reconnecting Fragments: The Evolution of My Names through Email account
 date = 2025-07-29T07:00:00+00:00
 slug = "reconnecting-fragments-the-evolution-of-my-names-through-email-accounts"
 description = "Essay about reconnecting fragmented identities."
+
+[taxonomies]
+tags = ["identity-and-transition", "data-hoarding", "personal-essays"]
 +++
 
 

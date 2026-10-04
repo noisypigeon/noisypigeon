@@ -3,6 +3,12 @@ title = "From the Archives: Desk Setups"
 date = 2024-11-09T20:00:00+00:00
 slug = "from-the-archives-desk-setups"
 description = "Aggregate blog post with photos of desk setups from over the years."
+
+[taxonomies]
+tags = ["hardware-and-builds", "photography", "data-hoarding"]
+
+[extra]
+og_image = "/assets/images/posts/from-the-archives-desk-setups/09ix2y3tzew41.jpg"
 +++
 
 

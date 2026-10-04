@@ -1,5 +1,6 @@
 +++
 title = "Lineage"
+description = "A timeline of every name and online identity Willow Graysen has published under, and where to find each one."
 aliases = ["pages/names"]
 +++
 

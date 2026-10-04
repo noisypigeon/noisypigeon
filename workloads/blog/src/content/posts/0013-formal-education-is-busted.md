@@ -3,6 +3,9 @@ title = "Formal education is busted"
 date = 2015-04-07T19:00:00+00:00
 slug = "formal-education-is-busted"
 description = "Essay about formal education."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

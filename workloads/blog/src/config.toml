@@ -7,6 +7,10 @@ generate_feeds = false
 feed_filenames = ["posts_feed.xml"]
 build_search_index = false
 
+taxonomies = [
+  { name = "tags", feed = false },
+]
+
 [extra]
 avatar = "/assets/images/site/avatar.png"
 social_preview = "/assets/images/site/social_preview.png"

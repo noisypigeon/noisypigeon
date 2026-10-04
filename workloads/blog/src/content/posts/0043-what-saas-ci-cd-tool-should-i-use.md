@@ -3,6 +3,9 @@ title = "What SaaS CI/CD tool should I use?"
 date = 2021-06-27T19:00:00+00:00
 slug = "what-saas-ci-cd-tool-should-i-use"
 description = "Musings about continuous integration and delivery tools."
+
+[taxonomies]
+tags = ["software-engineering"]
 +++
 
 

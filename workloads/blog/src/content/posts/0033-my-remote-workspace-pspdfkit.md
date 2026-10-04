@@ -3,6 +3,12 @@ title = "My remote workspace (PSPDFKit)"
 date = 2019-07-22T19:00:00+00:00
 slug = "my-remote-workspace-pspdfkit"
 description = "Mirror of post from the PSPDFKit blog about my remote desk setup."
+
+[taxonomies]
+tags = ["career", "hardware-and-builds"]
+
+[extra]
+og_image = "/assets/images/posts/my-remote-workspace-pspdfkit/899e0843-0272-4f94-8636-08d3f9b0c2a7.jpg"
 +++
 
 

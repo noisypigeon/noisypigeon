@@ -3,6 +3,12 @@ title = "GPG with GitHub on OS X"
 date = 2016-04-17T19:00:00+00:00
 slug = "gpg-with-github-on-os-x"
 description = "Guide to setup GPG keys with GitHub on OS X."
+
+[taxonomies]
+tags = ["software-engineering"]
+
+[extra]
+og_image = "/assets/images/posts/gpg-with-github-on-os-x/dwfjxd9ac8eew_retina.png"
 +++
 
 

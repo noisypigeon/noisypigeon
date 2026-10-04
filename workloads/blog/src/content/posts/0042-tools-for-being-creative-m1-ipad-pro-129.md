@@ -3,6 +3,12 @@ title = "Tools for being creative! (M1 iPad Pro 12.9)"
 date = 2021-06-21T19:00:00+00:00
 slug = "tools-for-being-creative-m1-ipad-pro-129"
 description = "Musings about using an iPad Pro as my main device rather than a Macbook."
+
+[taxonomies]
+tags = ["hardware-and-builds", "personal-essays"]
+
+[extra]
+og_image = "/assets/images/posts/tools-for-being-creative-m1-ipad-pro-129/img_0132.png"
 +++
 
 

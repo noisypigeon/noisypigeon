@@ -3,6 +3,12 @@ title = "cmd+a, zip, scatter"
 date = 2026-02-07T07:14:40+00:00
 slug = "cmda-zip-scatter"
 description = "Essay about my personal capture system and goals to bring insights to data surviving abuse-era preservation tactics."
+
+[taxonomies]
+tags = ["personal-essays", "data-hoarding"]
+
+[extra]
+og_image = "/assets/images/posts/cmda-zip-scatter/img_2722.jpg"
 +++
 
 

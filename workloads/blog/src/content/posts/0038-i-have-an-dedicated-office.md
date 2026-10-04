@@ -3,6 +3,12 @@ title = "I have an dedicated office!"
 date = 2021-05-29T19:00:00+00:00
 slug = "i-have-an-dedicated-office"
 description = "Musings about having a personal office space outside of home."
+
+[taxonomies]
+tags = ["personal-essays", "career"]
+
+[extra]
+og_image = "/assets/images/posts/i-have-an-dedicated-office/img_0869.jpg"
 +++
 
 

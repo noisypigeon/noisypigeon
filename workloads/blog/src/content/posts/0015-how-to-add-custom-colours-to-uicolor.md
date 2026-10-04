@@ -3,6 +3,9 @@ title = "How to add custom colours to UIColor()"
 date = 2015-04-22T19:00:00+00:00
 slug = "how-to-add-custom-colours-to-uicolor"
 description = "Swift UIColor convenience how-to."
+
+[taxonomies]
+tags = ["software-engineering"]
 +++
 
 

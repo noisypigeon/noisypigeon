@@ -3,6 +3,9 @@ title = "How I stay motivated"
 date = 2015-03-05T20:00:00+00:00
 slug = "how-i-stay-motivated"
 description = "Essay about staying motivated through personal challenges."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

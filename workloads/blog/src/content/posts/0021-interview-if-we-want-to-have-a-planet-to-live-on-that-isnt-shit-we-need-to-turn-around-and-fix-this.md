@@ -3,6 +3,12 @@ title = "Interview: “If we want to have a planet to live on that isn’t shit,
 date = 2015-12-10T08:00:00+00:00
 slug = "interview-if-we-want-to-have-a-planet-to-live-on-that-isnt-shit-we-need-to-turn-around-and-fix-this"
 description = "Interview with On Purpose."
+
+[taxonomies]
+tags = ["press-and-interviews"]
+
+[extra]
+og_image = "/assets/images/posts/interview-if-we-want-to-have-a-planet-to-live-on-that-isnt-shit-we-need-to-turn-around-and-fix-this/c__e_dnuiaa1nqg.jpg"
 +++
 
 

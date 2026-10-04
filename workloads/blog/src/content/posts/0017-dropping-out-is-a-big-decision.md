@@ -3,6 +3,9 @@ title = "Dropping out is a big decision"
 date = 2015-07-21T19:00:00+00:00
 slug = "dropping-out-is-a-big-decision"
 description = "Essay about dropping out of high school and unforeseen side effects."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

@@ -3,6 +3,9 @@ title = "Why I dropped out of high school"
 date = 2015-02-14T20:00:00+00:00
 slug = "why-i-dropped-out-of-high-school"
 description = "Musings about when I dropped out of high school."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

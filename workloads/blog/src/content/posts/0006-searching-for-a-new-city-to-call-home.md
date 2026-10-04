@@ -3,6 +3,9 @@ title = "Searching for a new city to call home"
 date = 2015-03-10T19:00:00+00:00
 slug = "searching-for-a-new-city-to-call-home"
 description = "Musings about trying to find a new home."
+
+[taxonomies]
+tags = ["travel", "personal-essays"]
 +++
 
 

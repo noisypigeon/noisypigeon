@@ -3,6 +3,12 @@ title = "Ryzen 2600 / GeForce GTX 1070 Ti"
 date = 2018-12-08T20:00:00+00:00
 slug = "ryzen-2600-geforce-gtx-1070-ti"
 description = "Mirror of a build list published on PCPartPicker on December 8th, 2018."
+
+[taxonomies]
+tags = ["hardware-and-builds"]
+
+[extra]
+og_image = "/assets/images/posts/ryzen-2600-geforce-gtx-1070-ti/240331-06400135047039ca515953fb3b6d70af.jpg"
 +++
 
 

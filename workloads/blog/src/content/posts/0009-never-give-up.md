@@ -3,6 +3,9 @@ title = "Never give up"
 date = 2015-03-25T19:00:00+00:00
 slug = "never-give-up"
 description = "Essay about mental health struggles."
+
+[taxonomies]
+tags = ["personal-essays"]
 +++
 
 

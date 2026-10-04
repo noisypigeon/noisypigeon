@@ -3,6 +3,9 @@ title = "Vancouver Vibes"
 date = 2015-03-14T19:00:00+00:00
 slug = "vancouver-vibes"
 description = "Musings about Vancouver, Canada."
+
+[taxonomies]
+tags = ["travel"]
 +++
 
 

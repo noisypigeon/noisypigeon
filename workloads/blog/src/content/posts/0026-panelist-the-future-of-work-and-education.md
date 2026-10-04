@@ -3,6 +3,9 @@ title = "Panelist: The Future of Work and Education"
 date = 2016-06-16T07:00:00+00:00
 slug = "panelist-the-future-of-work-and-education"
 description = "Mirror of a podcast appearance with Agile and Beyond."
+
+[taxonomies]
+tags = ["press-and-interviews", "career"]
 +++
 
 

@@ -3,6 +3,9 @@ title = "Nuances between distributed and decentralized systems"
 date = 2024-03-07T08:00:00+00:00
 slug = "nuances-between-distributed-and-decentralized-systems"
 description = "Essay about the shortcomings of decentralized systems in the context of DeFi/Web3 systems."
+
+[taxonomies]
+tags = ["software-engineering"]
 +++
 
 

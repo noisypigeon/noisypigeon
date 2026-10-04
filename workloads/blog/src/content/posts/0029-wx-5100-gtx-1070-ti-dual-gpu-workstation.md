@@ -3,6 +3,12 @@ title = "WX 5100 + GTX 1070 Ti (Dual GPU Workstation!)"
 date = 2018-08-04T19:00:00+00:00
 slug = "wx-5100-gtx-1070-ti-dual-gpu-workstation"
 description = "Mirror of a build list published on PCPartPicker on August 4th, 2018."
+
+[taxonomies]
+tags = ["hardware-and-builds"]
+
+[extra]
+og_image = "/assets/images/posts/wx-5100-gtx-1070-ti-dual-gpu-workstation/231087-34b6d333329c97f703a4aa443fe64926.jpg"
 +++
 
 

@@ -3,6 +3,9 @@ title = "How I get work as a high school dropout"
 date = 2015-02-27T20:00:00+00:00
 slug = "how-i-get-work-as-a-high-school-dropout"
 description = "Essay about career challenges as a high school dropout."
+
+[taxonomies]
+tags = ["personal-essays", "career"]
 +++
 
 

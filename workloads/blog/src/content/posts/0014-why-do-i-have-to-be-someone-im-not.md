@@ -3,6 +3,9 @@ title = "Why do I have to be someone I’m not?"
 date = 2015-04-09T19:00:00+00:00
 slug = "why-do-i-have-to-be-someone-im-not"
 description = "Egg posting before the egg knew she was an egg."
+
+[taxonomies]
+tags = ["personal-essays", "identity-and-transition"]
 +++
 
 

@@ -3,6 +3,9 @@ title = "New York Nuances"
 date = 2015-03-30T19:00:00+00:00
 slug = "new-york-nuances"
 description = "Musings about New York."
+
+[taxonomies]
+tags = ["travel"]
 +++
 
 

@@ -3,6 +3,9 @@ title = "4 countries in 91 days"
 date = 2015-09-09T19:00:00+00:00
 slug = "4-countries-in-91-days"
 description = "Musings about trip to Florida, UK, France, and Germany."
+
+[taxonomies]
+tags = ["travel"]
 +++
 
 

@@ -3,6 +3,9 @@ title = "My Career Trajectory"
 date = 2025-06-22T06:01:00+00:00
 slug = "my-career-trajectory"
 description = "Reflections of my career trajectory over the years and open call for consulting work."
+
+[taxonomies]
+tags = ["career"]
 +++
 
 

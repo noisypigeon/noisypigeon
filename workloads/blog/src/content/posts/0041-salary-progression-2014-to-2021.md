@@ -3,6 +3,12 @@ title = "Salary progression (2014 to 2021)"
 date = 2021-06-17T19:00:00+00:00
 slug = "salary-progression-2014-to-2021"
 description = "Musings about my salary progression as a high school dropout to established professional."
+
+[taxonomies]
+tags = ["career"]
+
+[extra]
+og_image = "/assets/images/posts/salary-progression-2014-to-2021/screenshot-202025-02-01-20at-2011-09-26-e2-80-afpm.png"
 +++
 
 

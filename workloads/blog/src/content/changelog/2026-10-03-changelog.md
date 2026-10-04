@@ -1,5 +1,5 @@
 +++
-title = "deploy profiles page (+10 more)"
+title = "Add agentic workflows"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
 +++

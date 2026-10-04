@@ -29,6 +29,9 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+      - name: Resolve zola-site theme
+        working-directory: workloads/blog/src
+        run: ../../../templates/zola-site/resolve-theme.sh
       - name: Generate module redirect pages
         run: workloads/blog/generate-module-redirects.sh
       - name: Install Zola

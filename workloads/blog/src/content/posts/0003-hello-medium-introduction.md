@@ -3,6 +3,9 @@ title = "Hello, Medium! (Introduction)"
 date = 2015-02-15T20:00:00+00:00
 slug = "hello-medium-introduction"
 description = "Medium blog announcement post."
+
+[extra]
+post_type = "changelog"
 +++
 
 

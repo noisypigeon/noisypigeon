@@ -3,6 +3,9 @@ title = "Hihi, Pika! Let’s consolidate (Re-introduction)"
 date = 2024-09-13T19:00:00+00:00
 slug = "hihi-pika-lets-consolidate-re-introduction"
 description = "Blog migration announcement/re-launch on Pika."
+
+[extra]
+post_type = "changelog"
 +++
 
 

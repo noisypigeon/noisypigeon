@@ -3,6 +3,9 @@ title = "Hiya, Svbtle! (Re-introduction)"
 date = 2016-03-16T19:00:00+00:00
 slug = "hiya-svbtle-re-introduction"
 description = "Blog post migration announcement from Medium to Svbtle."
+
+[extra]
+post_type = "changelog"
 +++
 
 

@@ -1,6 +1,5 @@
 module "bucket" {
-  source        = "https://noisypigeon.com/modules/scaleway/object-bucket/v1.0.0"
-  storage_class = "glacier"
-  namespace     = local.namespace
-  name          = local.name
+  source      = "https://noisypigeon.com/modules/scaleway/object-bucket/v4.0.0"
+  name_prefix = local.name_prefix
+  name_suffix = local.name_suffix
 }

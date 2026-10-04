@@ -17,6 +17,10 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
+- [scaleway/compute-instance] Rename block-volume's naming inputs and compose it inside compute-instance ([#163](https://github.com/noisypigeon/noisypigeon/pull/163))
+
+- [scaleway/block-volume] Rename block-volume's naming inputs and compose it inside compute-instance ([#163](https://github.com/noisypigeon/noisypigeon/pull/163))
+
 - [scaleway/iam-policy] Split iam-policy's application/API-key into iam-application and iam-api-key modules ([#162](https://github.com/noisypigeon/noisypigeon/pull/162))
 
 - [scaleway/iam-application] Split iam-policy's application/API-key into iam-application and iam-api-key modules ([#162](https://github.com/noisypigeon/noisypigeon/pull/162))

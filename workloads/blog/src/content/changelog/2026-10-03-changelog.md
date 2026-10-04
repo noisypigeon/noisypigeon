@@ -1,5 +1,5 @@
 +++
-title = "deploy profiles page (+11 more)"
+title = "deploy profiles page (+12 more)"
 date = 2026-10-03T12:00:00-07:00
 slug = "2026-10-03-changelog"
 +++
@@ -16,3 +16,4 @@ slug = "2026-10-03-changelog"
 - feat(blog): wire blog into the changelog workflow, restructure changelog channel ([#136](https://github.com/noisypigeon/noisypigeon/pull/136))
 - feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))
 - fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))
+- Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))

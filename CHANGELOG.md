@@ -21,6 +21,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-03
 
+- [blog] Add short noisypigeon.com module import URLs via blog redirect pages ([#140](https://github.com/noisypigeon/noisypigeon/pull/140))
+
 - [blog] fix(blog): update changelog titles ([#139](https://github.com/noisypigeon/noisypigeon/pull/139))
 
 - [blog] feat(blog): compute digest titles from entries, backfill changelog history ([#138](https://github.com/noisypigeon/noisypigeon/pull/138))

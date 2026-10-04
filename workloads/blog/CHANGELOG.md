@@ -4,6 +4,30 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-03 — Add short noisypigeon.com module import URLs via blog redirect pages
+
+Terraform module \`source\` lines in this repo are long and easy to mistype (the provider/module name repeats):
+
+\`\`\`hcl
+source = "git::https://github.com/noisypigeon/noisypigeon.git//modules/scaleway/object-bucket?ref=modules/scaleway/object-bucket/v1.0.0"
+\`\`\`
+
+This adds a short equivalent, served from the existing Zola blog at \`noisypigeon.com\`:
+
+\`\`\`hcl
+source = "https://noisypigeon.com/modules/scaleway/object-bucket/v1.0.0"
+\`\`\`
+
+It works via Terraform/go-getter's standard HTTP module-source discovery protocol: \`terraform init\` requests the URL with \`?terraform-get=1\` and follows a \`<meta name="terraform-get">\` tag in the response to the real \`git::...?ref=...\` source — no backend required, just a static page per module version tag, generated automatically from \`git tag\` on every blog build. A new step in \`module-release.yml\` also redeploys the blog whenever a module is tagged, so a brand-new version's redirect page goes live immediately.
+
+This repo's own 22 existing \`source = "git::..."\` lines are migrated to the short form as part of this same change (non-breaking — the old form keeps working unchanged).
+
+Full design rationale in [ADR-0109](https://github.com/noisypigeon/noisypigeon/blob/add-short-module-import-urls/docs/adr/0109-short-module-source-urls-via-blog-redirect.md).
+
+Verified locally: \`mise run blog-build\` generates the expected pages with the correct \`terraform-get\` meta tag, and a full \`terraform init\` against a locally-served copy of the built site successfully downloaded the real module — confirming the redirect mechanism works end-to-end before deploy.
+
+[#140](https://github.com/noisypigeon/noisypigeon/pull/140)
+
 ## 2026-10-03 — fix(blog): update changelog titles
 
 

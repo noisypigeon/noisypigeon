@@ -64,14 +64,26 @@ jobs:
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           CHANGED_FILES=$(git diff --name-only "${MERGE_SHA}~1" "$MERGE_SHA")
-          if echo "$CHANGED_FILES" | grep -qE '^(workloads/blog/src/|templates/zola-site/)'; then
+          if echo "$CHANGED_FILES" | grep -qE '^workloads/blog/src/'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine zola-site change
+        id: zola_site
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          CHANGED_FILES=$(git diff --name-only "${MERGE_SHA}~1" "$MERGE_SHA")
+          if echo "$CHANGED_FILES" | grep -qE '^templates/zola-site/(templates/|static/|theme\.toml$)'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Configure git identity
-        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true'
+        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true' || steps.zola_site.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -246,8 +258,85 @@ jobs:
 
           git add "$DIGEST"
 
+      - name: Update zola-site changelog and compute version
+        id: zola_site_version
+        if: steps.zola_site.outputs.changed == 'true'
+        env:
+          BUMP: ${{ steps.bump.outputs.level }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
+          DIR="templates/zola-site"
+
+          LATEST=$(git tag -l "${DIR}/v*" | sed "s#${DIR}/v##" | sort -V | tail -n1)
+
+          if [ -z "$LATEST" ]; then
+            NEXT="1.0.0"
+          else
+            MA=$(echo "$LATEST" | cut -d. -f1)
+            MI=$(echo "$LATEST" | cut -d. -f2)
+            PA=$(echo "$LATEST" | cut -d. -f3)
+            case "$BUMP" in
+              major) NEXT="$((MA+1)).0.0" ;;
+              minor) NEXT="${MA}.$((MI+1)).0" ;;
+              patch) NEXT="${MA}.${MI}.$((PA+1))" ;;
+            esac
+          fi
+
+          CHANGELOG="${DIR}/CHANGELOG.md"
+          if [ ! -f "$CHANGELOG" ]; then
+            cat > "$CHANGELOG" <<'HEADER'
+          # Changelog
+
+          All notable changes to this theme are documented in this file.
+
+          The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+          HEADER
+          fi
+
+          ENTRY=$(mktemp)
+          {
+            echo ""
+            echo "## [${NEXT}] - ${TODAY}"
+            echo ""
+            echo "### ${PR_TITLE}"
+            echo ""
+            echo "${PR_BODY}"
+            echo ""
+            echo "[#${PR_NUMBER}](${PR_URL})"
+          } > "$ENTRY"
+
+          head -n 5 "$CHANGELOG" > "${CHANGELOG}.new"
+          cat "$ENTRY" >> "${CHANGELOG}.new"
+          tail -n +6 "$CHANGELOG" >> "${CHANGELOG}.new"
+          mv "${CHANGELOG}.new" "$CHANGELOG"
+          git add "$CHANGELOG"
+
+          ROOT_CHANGELOG="CHANGELOG.md"
+          ROOT_ENTRY="- [zola-site] ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))"
+          if grep -q "^## ${TODAY}\$" "$ROOT_CHANGELOG"; then
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              { print }
+              $0 == today { print ""; print entry }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          else
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              BEGIN { inserted = 0 }
+              /^## / && !inserted { print today; print ""; print entry; print ""; inserted = 1 }
+              { print }
+              END { if (!inserted) { print ""; print today; print ""; print entry } }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          fi
+          mv "${ROOT_CHANGELOG}.new" "$ROOT_CHANGELOG"
+          git add "$ROOT_CHANGELOG"
+
+          echo "tag=${DIR}/v${NEXT}" >> "$GITHUB_OUTPUT"
+
       - name: Commit changelog updates
-        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true'
+        if: steps.modules.outputs.changed != '' || steps.blog.outputs.changed == 'true' || steps.zola_site.outputs.changed == 'true'
         run: |
           git commit -m "chore: update changelog(s) for PR #${{ github.event.pull_request.number }}"
           git fetch origin main
@@ -255,18 +344,18 @@ jobs:
           git push origin HEAD:main
 
       - name: Trigger blog Pages deploy
-        if: steps.blog.outputs.changed == 'true' || steps.versions.outputs.tags != ''
+        if: steps.blog.outputs.changed == 'true' || steps.versions.outputs.tags != '' || steps.zola_site.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run blog-pages.yml --ref main
 
-      - name: Tag and release each changed module
-        if: steps.modules.outputs.changed != ''
+      - name: Tag and release each changed module/theme
+        if: steps.modules.outputs.changed != '' || steps.zola_site.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          RELEASE_TAGS: ${{ steps.versions.outputs.tags }}
+          RELEASE_TAGS: ${{ steps.versions.outputs.tags }} ${{ steps.zola_site_version.outputs.tag }}
         run: |
           NOTES=$(mktemp)
           printf '%s\n\nPR: %s\n' "$PR_BODY" "$PR_URL" > "$NOTES"

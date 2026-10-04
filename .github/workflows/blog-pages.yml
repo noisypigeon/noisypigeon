@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "workloads/blog/src/**"
+      - "templates/zola-site/**"
   workflow_dispatch:
 
 permissions:

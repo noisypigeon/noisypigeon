@@ -53,7 +53,7 @@
   </main>
 
   <footer class="footer">
-    WG {{ now() | date(format="%Y") }} * {{ get_env(name="SITE_COMMIT_SHA", default="dev") }} * <a href="/changelog">Changelog</a>
+    {{ config.title }} {{ now() | date(format="%Y") }} * {{ get_env(name="SITE_COMMIT_SHA", default="dev") }} * <a href="/changelog">Changelog</a>
   </footer>
 
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>

@@ -9,13 +9,22 @@
 # namespace stays stable even as the repo's internal layout moves.
 # See docs/adr/0109, docs/adr/0110.
 #
+# Also generates one page per templates/zola-site/vX.Y.Z git tag (ADR-0114) —
+# a separate loop since the tag shape doesn't fit the provider/module pattern
+# above (zola-site is one flat unit, not a provider+module pair). Unlike the
+# terraform pages, there is no fetch-by-URL protocol for Zola themes, so
+# these pages are a human-facing redirect to the GitHub release page only,
+# not a build input.
+#
 # Regenerate-all semantics: every run wipes and rewrites every generated
-# page under content/modules/ (except the hand-authored _index.md) from the
-# current set of tags. Safe to run repeatedly; fully idempotent.
+# page under content/modules/ and content/theme-versions/ (except each
+# directory's hand-authored _index.md) from the current set of tags. Safe to
+# run repeatedly; fully idempotent.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 CONTENT_DIR="$REPO_ROOT/workloads/blog/src/content/modules"
+THEME_CONTENT_DIR="$REPO_ROOT/workloads/blog/src/content/theme-versions"
 
 mkdir -p "$CONTENT_DIR"
 
@@ -66,3 +75,42 @@ EOF
 done < <(git -C "$REPO_ROOT" tag --list 'modules/*/*/v*' 'templates/terraform/*/*/v*' | sort)
 
 echo "Generated ${count} module redirect page(s) under ${CONTENT_DIR#"$REPO_ROOT"/}."
+
+mkdir -p "$THEME_CONTENT_DIR"
+find "$THEME_CONTENT_DIR" -maxdepth 1 -name '*.md' ! -name '_index.md' -delete
+
+theme_count=0
+while IFS= read -r tag; do
+  [ -z "$tag" ] && continue
+
+  if [[ ! "$tag" =~ ^templates/(zola-site)/v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+    echo "::warning::Skipping theme tag with unexpected shape: $tag" >&2
+    continue
+  fi
+
+  theme="${BASH_REMATCH[1]}"
+  version="${BASH_REMATCH[2]}"
+
+  slug="${theme}-v${version}"
+  url_path="templates/${theme}/v${version}"
+  github_url="https://github.com/noisypigeon/noisypigeon/releases/tag/${tag}"
+
+  cat > "$THEME_CONTENT_DIR/${slug}.md" <<EOF
++++
+title = "templates/${theme} v${version}"
+description = "templates/${theme} theme, version ${version}."
+path = "${url_path}"
+template = "theme-redirect.html"
+in_search_index = false
+include_in_feeds = false
+hidden = true
+
+[extra]
+github_url = "${github_url}"
++++
+EOF
+
+  theme_count=$((theme_count + 1))
+done < <(git -C "$REPO_ROOT" tag --list 'templates/zola-site/v*' | sort)
+
+echo "Generated ${theme_count} theme-version redirect page(s) under ${THEME_CONTENT_DIR#"$REPO_ROOT"/}."

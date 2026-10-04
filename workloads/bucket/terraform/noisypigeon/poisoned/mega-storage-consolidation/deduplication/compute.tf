@@ -1,45 +1,28 @@
 module "compute" {
-  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v2.3.2"
-  namespace             = "job-${local.namespace}"
-  name                  = "${local.name}-worker"
-  image                 = "ubuntu_jammy"
-  type                  = "COMPUTE3-X8C-16G"
-  profile               = "pigeon-cli"
-  ssh_keys              = [local.ssh_key_public_key]
+  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v4.0.0"
+  name_prefix           = "job-${local.namespace}"
+  name_suffix           = "${local.name}-worker"
   additional_volume_ids = [module.volume.id]
 
-  cockpit = {
-    metrics_push_url = local.cockpit_metrics_url
-    logs_push_url    = local.cockpit_logs_url
-    token_secret     = local.cockpit_token_secret
+  user_config = {
+    ssh_key = local.ssh_key_public_key
   }
 
-  buckets = [
-    {
-      bucket_name       = local.source_bucket_name
-      bucket_alias      = "source"
-      bucket_endpoint   = module.bucket.endpoint
-      bucket_access_key = module.iam.access_key
-      bucket_secret_key = module.iam.secret_key
-      bucket_provider   = local.scaleway_s3_provider_name
-    },
-    {
-      bucket_name       = module.bucket.name
-      bucket_alias      = "destination"
-      bucket_endpoint   = module.bucket.endpoint
-      bucket_access_key = module.iam.access_key
-      bucket_secret_key = module.iam.secret_key
-      bucket_provider   = local.scaleway_s3_provider_name
-    }
-  ]
+  instance_config = {
+    type    = "COMPUTE3-X8C-16G"
+    cockpit = local.cockpit
+    # image omitted -- defaults to "ubuntu_jammy", same value this leaf passed explicitly before
+  }
 
-  keyring_entries = [
+  keyring = [
     {
       kind          = "bucket"
       alias         = "source"
       endpoint      = module.bucket.endpoint
       bucket        = local.source_bucket_name
       access_key_id = module.iam.access_key
+      secret_key    = module.iam.secret_key
+      provider      = local.scaleway_s3_provider_name
     },
     {
       kind          = "bucket"
@@ -47,13 +30,10 @@ module "compute" {
       endpoint      = module.bucket.endpoint
       bucket        = module.bucket.name
       access_key_id = module.iam.access_key
+      secret_key    = module.iam.secret_key
+      provider      = local.scaleway_s3_provider_name
     }
   ]
-
-  environment_variables = {
-    "PIGEON_SECRET_SOURCE"      = module.iam.secret_key
-    "PIGEON_SECRET_DESTINATION" = module.iam.secret_key
-  }
 }
 
 output "ip_address" {

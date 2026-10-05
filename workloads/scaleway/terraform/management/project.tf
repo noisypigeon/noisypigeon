@@ -2,7 +2,8 @@ module "project" {
   source = "https://noisypigeon.com/modules/scaleway/project/v1.0.0"
   name   = "noisypigeon"
   ssh_key = {
-    alias      = local.ssh_key_alias
-    public_key = local.ssh_key_public_key
+    alias      = "noisypigeon"
+    # Not a secret; this is my pub key.
+    public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDKsmUsSyZRo1u8TLkz+kJVbxuYsrs3M3tBXpI3HVHQa" #gitleaks:allow
   }
 }

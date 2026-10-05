@@ -38,14 +38,14 @@ module "iam_api_key" {
   expires_at     = "2027-09-25T22:32:12Z"
 }
 
-output "access_key" {
-  description = "IAM API key access key"
-  value       = module.iam_api_key.access_key
-  sensitive   = true
-}
+# output "access_key" {
+#   description = "IAM API key access key"
+#   value       = module.iam_api_key.access_key
+#   sensitive   = true
+# }
 
-output "secret_key" {
-  description = "IAM API key secret key"
-  value       = module.iam_api_key.secret_key
-  sensitive   = true
-}
+# output "secret_key" {
+#   description = "IAM API key secret key"
+#   value       = module.iam_api_key.secret_key
+#   sensitive   = true
+# }

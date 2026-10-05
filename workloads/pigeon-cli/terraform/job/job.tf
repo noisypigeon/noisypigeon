@@ -1,5 +1,5 @@
 module "compute" {
-  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.0.0"
+  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.0.1"
   name_prefix           = local.name_prefix
   name_suffix           = local.name_suffix
   user_config = {

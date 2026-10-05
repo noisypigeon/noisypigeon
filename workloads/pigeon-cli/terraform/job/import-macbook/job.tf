@@ -1,6 +1,6 @@
 module "job" {
   source      = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.3.0"
-  enabled     = var.job_enabled
+  enabled     = local.job_enabled
   name_prefix = local.job_name_prefix
   name_suffix = local.job_name_suffix
   user_config = {

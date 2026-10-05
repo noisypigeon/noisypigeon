@@ -41,3 +41,17 @@ run = [
   "../generate-module-redirects.sh",
   "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola serve",
 ]
+
+[tasks.pigeon-dev-build]
+dir = "workloads/pigeon.dev/src"
+run = [
+  "../../../templates/zola-site/resolve-theme.sh",
+  "zola build",
+]
+
+[tasks.pigeon-dev-serve]
+dir = "workloads/pigeon.dev/src"
+run = [
+  "../../../templates/zola-site/resolve-theme.sh",
+  "zola serve",
+]

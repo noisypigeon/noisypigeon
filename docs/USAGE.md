@@ -19,12 +19,6 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
   of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
   - [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
     [noisypigeon.com](https://noisypigeon.com).
-  - [`workloads/dns/terraform/`](workloads/dns/terraform/) — every
-    Cloudflare-managed DNS leaf, grouped by domain: Fastmail SPF/DKIM/MX
-    records and a Bluesky domain-handle verification TXT record for
-    `noisypigeon.com`, the GitHub Pages CNAME records for
-    `noisypigeon.com` (pointing it at the blog), Fastmail records for
-    `pigeon.dev`, and a `pigeon.dev` → `noisypigeon.com` redirect.
   - [`workloads/bucket/terraform/`](workloads/bucket/terraform/) —
     storage-bucket infrastructure grouped by dataset, independent of
     which job/CLI consumes it (ADR-0117): each dataset under
@@ -37,7 +31,13 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     backup bucket).
   - [`workloads/management/terraform/`](workloads/management/terraform/)
     — this repo's own Terraform state bucket and deployer IAM
-    application/policy/API key.
+    application/policy/API key (`scaleway/`), and every
+    Cloudflare-managed DNS leaf, grouped by domain (`cloudflare/`):
+    Fastmail SPF/DKIM/MX records, a Bluesky domain-handle verification
+    TXT record, a Google site-verification TXT record, and the GitHub
+    Pages CNAME records (pointing it at the blog) for
+    `noisypigeon.com`; Fastmail records and a `pigeon.dev` →
+    `noisypigeon.com` redirect for `pigeon.dev`.
   - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/)
     — the `pigeon-cli` compute-instance job leaf (`job/`) and the shared
     Cockpit metrics/logs source + IAM application every job policy

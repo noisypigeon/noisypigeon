@@ -1,26 +1,26 @@
 locals {
   # Kill switch
-  job_enabled       = false
+  job_enabled       = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:' --destination 'destination:' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
+    "cd pigeon-cli/ && mise run pigeon-release job run deduplicate --source-bucket source --concurrency 8 --report-bucket reports --yes --local-output /mnt/data/pigeon-job --remote-output destination --upload-concurrency 16",
   ]
 
   # Configuration
-  job_name_prefix   = "import"
+  job_name_prefix   = "deduplicate"
   job_name_suffix   = "macbook"
-  job_block_volume_size = 50
+  job_block_volume_size = 750
 
   source_bucket = {
-    bucket_name     = local.digitalocean_macbook_scratch_bucket_name
-    bucket_endpoint = "https://tor1.digitaloceanspaces.com"
-    access_key_id   = local.digitalocean_macbook_scratch_access_key_id
-    secret_key      = local.digitalocean_macbook_scratch_secret_key
-    provider_name   = "DigitalOcean"
+    bucket_name     = local.import_macbook_bucket_name
+    bucket_endpoint = "https://s3.fr-par.scw.cloud"
+    access_key_id   = module.job.access_key_id
+    secret_key      = module.job.secret_key
+    provider_name   = local.scaleway_s3_provider_name
   }
 
   destination_bucket = {
-    bucket_name     = local.import_macbook_bucket_name
+    bucket_name     = local.deduplicate_macbook_bucket_name
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

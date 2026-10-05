@@ -1,7 +1,7 @@
 # DNS records to point noisypigeon.com (apex + www) to noisypigeon.github.io
 
 resource "cloudflare_dns_record" "root_cname" {
-  zone_id = local.cloudflare_noisypigeon_com_zone_id
+  zone_id = local.zone_id_noisypigeon_com
   name    = "@"
   type    = "CNAME"
   content = "noisypigeon.github.io"
@@ -11,7 +11,7 @@ resource "cloudflare_dns_record" "root_cname" {
 }
 
 resource "cloudflare_dns_record" "www_cname" {
-  zone_id = local.cloudflare_noisypigeon_com_zone_id
+  zone_id = local.zone_id_noisypigeon_com
   name    = "www"
   type    = "CNAME"
   content = "noisypigeon.github.io"

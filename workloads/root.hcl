@@ -43,9 +43,6 @@ locals {
   scaleway_secret_key      = get_env("SCALEWAY_SECRET_KEY", lookup(local.secrets, "SCALEWAY_SECRET_KEY", ""))
   scaleway_organization_id = get_env("SCALEWAY_ORGANIZATION_ID", lookup(local.secrets, "SCALEWAY_ORGANIZATION_ID", ""))
 
-  ssh_key_alias      = get_env("ENV_SW_SSH_KEY_ALIAS", lookup(local.secrets, "ENV_SW_SSH_KEY_ALIAS", ""))
-  ssh_key_public_key = get_env("ENV_SW_SSH_KEY_PUBLIC_KEY", lookup(local.secrets, "ENV_SW_SSH_KEY_PUBLIC_KEY", ""))
-
   # Enforce the workloads/<name>/terraform convention: exclude any leaf
   # whose path relative to this root.hcl doesn't start with
   # "<name>/terraform" from run --all -- see
@@ -81,9 +78,14 @@ locals {
 
   # Injected secrets/sensitive values: any .env key prefixed ENV_SW_ is exposed as a
   # local named. See docs/adr/0006-automatic-bucket-name-locals.md.
-  bucket_name_secrets = {
+  env_scaleway_secrets = {
     for k, v in local.secrets : "${lower(trimprefix(k, "ENV_SW_"))}" => get_env(k, v)
     if startswith(k, "ENV_SW_")
+  }
+
+  env_cloudflare_secrets = {
+    for k, v in local.secrets : "${lower(trimprefix(k, "ENV_CF_"))}" => get_env(k, v)
+    if startswith(k, "ENV_CF_")
   }
 }
 
@@ -92,12 +94,12 @@ exclude {
   actions = ["all_except_output"]
 }
 
-generate "bucket_name_secrets" {
-  path      = "bucket_name_secrets_generated.tf"
+generate "env_scaleway_secrets" {
+  path      = "env_scaleway_secrets_generated.tf"
   if_exists = "overwrite"
   contents  = <<EOF
   locals {
-  ${join("\n", [for k, v in local.bucket_name_secrets : "  ${k} = \"${v}\""])}
+  ${join("\n", [for k, v in local.env_scaleway_secrets : "  ${k} = \"${v}\""])}
   }
   EOF
 }
@@ -108,8 +110,7 @@ generate "cloudflare_ids" {
   contents  = <<EOF
 locals {
   cloudflare_account_id              = "${local.cloudflare_account_id}"
-  cloudflare_noisypigeon_com_zone_id = "${get_env("CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM", lookup(local.secrets, "CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM", ""))}"
-  cloudflare_pigeon_dev_zone_id      = "${get_env("CLOUDFLARE_ZONE_ID_PIGEON_DEV", lookup(local.secrets, "CLOUDFLARE_ZONE_ID_PIGEON_DEV", ""))}"
+  ${join("\n", [for k, v in local.env_cloudflare_secrets : "  ${k} = \"${v}\""])}
 }
 EOF
 }
@@ -153,17 +154,6 @@ locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
   scaleway_project_id = "${get_env("SCALEWAY_PROJECT_ID", lookup(local.secrets, "SCALEWAY_PROJECT_ID", ""))}"
   scaleway_s3_provider_name = "Scaleway"
-
-  # One shared Cockpit metrics/logs source + push token for every
-  # pigeon-cli compute instance, rather than one private source per leaf
-  # (docs/adr/0103-shared-cockpit-store.md) -- provisioned once by
-  # workloads/pigeon-cli/terraform/observability/, then hand-copied into
-  # this repo's shared root .env the same manual way
-  # SCALEWAY_ACCESS_KEY/SCALEWAY_PROJECT_ID_NOISYPIGEON already are.
-  pigeon_cockpit_metrics_push_url = "${get_env("PIGEON_COCKPIT_METRICS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_METRICS_PUSH_URL", ""))}"
-  pigeon_cockpit_logs_push_url    = "${get_env("PIGEON_COCKPIT_LOGS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_LOGS_PUSH_URL", ""))}"
-  pigeon_cockpit_token_secret     = "${get_env("PIGEON_COCKPIT_TOKEN_SECRET", lookup(local.secrets, "PIGEON_COCKPIT_TOKEN_SECRET", ""))}"
-
 }
 EOF
 }

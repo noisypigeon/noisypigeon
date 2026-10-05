@@ -1,5 +1,5 @@
 resource "cloudflare_dns_record" "mx_primary" {
-  zone_id  = local.cloudflare_noisypigeon_com_zone_id
+  zone_id  = local.zone_id_noisypigeon_com
   name     = "@"
   type     = "MX"
   content  = "in1-smtp.messagingengine.com"
@@ -9,7 +9,7 @@ resource "cloudflare_dns_record" "mx_primary" {
 }
 
 resource "cloudflare_dns_record" "mx_secondary" {
-  zone_id  = local.cloudflare_noisypigeon_com_zone_id
+  zone_id  = local.zone_id_noisypigeon_com
   name     = "@"
   type     = "MX"
   content  = "in2-smtp.messagingengine.com"

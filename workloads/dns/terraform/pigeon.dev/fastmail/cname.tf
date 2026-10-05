@@ -1,5 +1,5 @@
 resource "cloudflare_dns_record" "dkim_fm1" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "fm1._domainkey"
   type    = "CNAME"
   content = "fm1.pigeon.dev.dkim.fmhosted.com"
@@ -9,7 +9,7 @@ resource "cloudflare_dns_record" "dkim_fm1" {
 }
 
 resource "cloudflare_dns_record" "dkim_fm2" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "fm2._domainkey"
   type    = "CNAME"
   content = "fm2.pigeon.dev.dkim.fmhosted.com"
@@ -19,7 +19,7 @@ resource "cloudflare_dns_record" "dkim_fm2" {
 }
 
 resource "cloudflare_dns_record" "dkim_fm3" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "fm3._domainkey"
   type    = "CNAME"
   content = "fm3.pigeon.dev.dkim.fmhosted.com"

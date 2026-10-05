@@ -1,4 +1,4 @@
-module "compute" {
+module "job" {
   source      = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.1.0"
   name_prefix = local.name_prefix
   name_suffix = local.name_suffix
@@ -7,10 +7,10 @@ module "compute" {
   }
 
   instance_config = {
-    # type    = "COMPUTE3-X8C-16G"
+    type    = local.instance_type
     cockpit = local.cockpit_config
     block_volume = {
-      size       = 50
+      size       = local.block_volume_size
       project_id = local.scaleway_project_id
     }
   }
@@ -46,32 +46,22 @@ module "compute" {
 
 output "ip_address" {
   description = "Public IPv4 address"
-  value       = module.compute.ipv4_address
+  value       = module.job.ipv4_address
 }
 
 output "access_key_id" {
   description = "IAM API key access key"
-  value       = module.compute.access_key_id
+  value       = module.job.access_key_id
   sensitive   = true
 }
 
 output "secret_key" {
   description = "IAM API key secret key"
-  value       = module.compute.secret_key
+  value       = module.job.secret_key
   sensitive   = true
 }
 
 moved {
-  from = module.iam_policy.scaleway_iam_policy.policy[0]
-  to   = module.compute.module.iam_policy[0].scaleway_iam_policy.policy
-}
-
-moved {
-  from = module.iam_api_key.scaleway_iam_api_key.api_key
-  to   = module.compute.module.iam_api_key[0].scaleway_iam_api_key.api_key
-}
-
-moved {
-  from = module.iam_api_key.time_static.created
-  to   = module.compute.module.iam_api_key[0].time_static.created
+  from = module.compute
+  to   = module.job
 }

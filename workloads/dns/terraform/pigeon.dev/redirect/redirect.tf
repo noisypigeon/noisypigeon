@@ -1,5 +1,5 @@
 resource "cloudflare_ruleset" "to_noisypigeon_com" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "pigeon.dev to noisypigeon.com redirect"
   kind    = "zone"
   phase   = "http_request_dynamic_redirect"

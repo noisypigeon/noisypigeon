@@ -1,6 +1,6 @@
 locals {
   # Kill switch
-  job_enabled       = true
+  job_enabled       = false
 
   job_commands = [
     "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:' --destination 'destination:' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",

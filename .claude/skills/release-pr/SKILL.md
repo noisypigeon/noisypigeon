@@ -35,7 +35,7 @@ later — get the PR body right the first time.
      copied verbatim into that unit's own `CHANGELOG.md`
      (`templates/terraform/<provider>/<module>/CHANGELOG.md` or
      `templates/zola-site/CHANGELOG.md`) and into the GitHub Release notes by
-     `module-release.yml` on merge, with no editing pass in between.
+     `template-release.yml` on merge, with no editing pass in between.
    ```
    gh pr create --title "<title>" --body "<body>" --base main
    ```
@@ -45,7 +45,7 @@ later — get the PR body right the first time.
    - `release:major` — breaking change to a module's inputs/outputs/behavior.
    - `release:minor` — backwards-compatible addition.
    - `release:patch` — fix or internal-only change. This is also what
-     `module-release.yml` defaults to if no `release:*` label is present, so
+     `template-release.yml` defaults to if no `release:*` label is present, so
      applying it explicitly isn't strictly required to get a release, but do
      it anyway — an unlabeled PR is a signal something was skipped, not a
      deliberate patch decision.
@@ -63,7 +63,7 @@ later — get the PR body right the first time.
    ```
    gh pr merge <pr-number> --squash --delete-branch
    ```
-   Merging triggers `module-release.yml` automatically (tags the changed
+   Merging triggers `template-release.yml` automatically (tags the changed
    module(s), updates their `CHANGELOG.md`, cuts a GitHub Release) and, on any
    resulting `.tf` changes, `module-docs.yml` (regenerates the module's
    `README.md` input/output table). Neither needs to be triggered manually.

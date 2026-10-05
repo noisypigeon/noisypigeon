@@ -1,0 +1,129 @@
+name: blog-changelog
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - "workloads/blog/src/**"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: main-writer
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Update blog changelog and daily digest
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
+          OFFSET=$(TZ="America/Los_Angeles" date +%z | sed -E 's/([+-][0-9]{2})([0-9]{2})/\1:\2/')
+
+          CHANGELOG="workloads/blog/CHANGELOG.md"
+          if [ ! -f "$CHANGELOG" ]; then
+            cat > "$CHANGELOG" <<'HEADER'
+          # Changelog
+
+          All notable changes to the blog are documented in this file.
+
+          The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+          HEADER
+          fi
+
+          ENTRY=$(mktemp)
+          {
+            echo ""
+            echo "## ${TODAY} — ${PR_TITLE}"
+            echo ""
+            echo "${PR_BODY}"
+            echo ""
+            echo "[#${PR_NUMBER}](${PR_URL})"
+          } > "$ENTRY"
+
+          head -n 5 "$CHANGELOG" > "${CHANGELOG}.new"
+          cat "$ENTRY" >> "${CHANGELOG}.new"
+          tail -n +6 "$CHANGELOG" >> "${CHANGELOG}.new"
+          mv "${CHANGELOG}.new" "$CHANGELOG"
+          git add "$CHANGELOG"
+
+          ROOT_CHANGELOG="CHANGELOG.md"
+          ROOT_ENTRY="- [blog] ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))"
+          if grep -q "^## ${TODAY}\$" "$ROOT_CHANGELOG"; then
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              { print }
+              $0 == today { print ""; print entry }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          else
+            awk -v today="## ${TODAY}" -v entry="$ROOT_ENTRY" '
+              BEGIN { inserted = 0 }
+              /^## / && !inserted { print today; print ""; print entry; print ""; inserted = 1 }
+              { print }
+              END { if (!inserted) { print ""; print today; print ""; print entry } }
+            ' "$ROOT_CHANGELOG" > "${ROOT_CHANGELOG}.new"
+          fi
+          mv "${ROOT_CHANGELOG}.new" "$ROOT_CHANGELOG"
+          git add "$ROOT_CHANGELOG"
+
+          DIGEST="workloads/blog/src/content/changelog/${TODAY}-changelog.md"
+          if [ ! -f "$DIGEST" ]; then
+            cat > "$DIGEST" <<EOF
+          +++
+          title = "Changelog: ${TODAY}"
+          date = ${TODAY}T12:00:00${OFFSET}
+          slug = "${TODAY}-changelog"
+          description = "Changelog: ${TODAY}"
+          +++
+
+          EOF
+          fi
+          if ! grep -q "#${PR_NUMBER}\]" "$DIGEST"; then
+            echo "- ${PR_TITLE} ([#${PR_NUMBER}](${PR_URL}))" >> "$DIGEST"
+          fi
+
+          STRIP_RE='^[a-z]+(\([^)]+\))?: '
+          N=$(grep -c '^- ' "$DIGEST")
+          FIRST_RAW=$(grep '^- ' "$DIGEST" | head -n1 | sed -E 's/^- (.*) \(\[#?[^]]*\]\(.*\)\)$/\1/')
+          FIRST_CLEAN=$(printf '%s' "$FIRST_RAW" | sed -E "s/$STRIP_RE//")
+          if [ "$N" -gt 1 ]; then
+            DIGEST_TITLE="${FIRST_CLEAN} (+$((N-1)) more)"
+          else
+            DIGEST_TITLE="$FIRST_CLEAN"
+          fi
+          DIGEST_TITLE_ESCAPED=$(printf '%s' "$DIGEST_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          sed -i "s|^title = .*|title = \"${DIGEST_TITLE_ESCAPED}\"|" "$DIGEST"
+          sed -i "s|^description = .*|description = \"${DIGEST_TITLE_ESCAPED}\"|" "$DIGEST"
+
+          git add "$DIGEST"
+
+      - name: Commit changelog updates
+        run: |
+          git commit -m "chore: update changelog(s) for PR #${{ github.event.pull_request.number }}"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+
+      - name: Trigger blog Pages deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run blog-pages.yml --ref main

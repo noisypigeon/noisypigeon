@@ -49,19 +49,14 @@ output "ip_address" {
   value       = module.job.ipv4_address
 }
 
-output "access_key_id" {
-  description = "IAM API key access key"
-  value       = module.job.access_key_id
-  sensitive   = true
-}
+# output "access_key_id" {
+#   description = "IAM API key access key"
+#   value       = module.job.access_key_id
+#   sensitive   = true
+# }
 
-output "secret_key" {
-  description = "IAM API key secret key"
-  value       = module.job.secret_key
-  sensitive   = true
-}
-
-moved {
-  from = module.compute
-  to   = module.job
-}
+# output "secret_key" {
+#   description = "IAM API key secret key"
+#   value       = module.job.secret_key
+#   sensitive   = true
+# }

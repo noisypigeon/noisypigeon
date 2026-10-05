@@ -1,12 +1,23 @@
 locals {
-  # Secrets: read from the shared repo-root ".env" file, found by walking up
-  # from this leaf's directory -- see docs/adr/0063-shared-root-env-and-cloudflare-migration.md.
-  root_env_path = find_in_parent_folders(".env", "")
+  # Secrets: decrypted in-memory from the shared repo-root ".env.enc" file via
+  # sops/age, found by walking up from this leaf's directory -- see
+  # docs/adr/0123-sops-encrypted-root-env.md. No plaintext copy ever touches
+  # disk; find_in_parent_folders' "" default plus the conditional below keep
+  # this a no-op (empty secrets map) if the file is ever missing, same as the
+  # old file()/fileexists() guard it replaces.
+  root_env_enc_path = find_in_parent_folders(".env.enc", "")
+
+  root_env_decrypted = local.root_env_enc_path != "" ? run_cmd(
+    "--terragrunt-quiet", "sops", "--decrypt",
+    "--input-type", "dotenv", "--output-type", "dotenv",
+    local.root_env_enc_path
+  ) : ""
 
   root_secrets = { for pair in [
-    for line in split("\n", fileexists(local.root_env_path) ? file(local.root_env_path) : "") :
+    for line in split("\n", local.root_env_decrypted) :
     regex("^([^=]+)=(.*)$", trimspace(line))
     if trimspace(line) != "" && !startswith(trimspace(line), "#")
+    && !startswith(trimspace(line), "sops_")
     && can(regex("^([^=]+)=(.*)$", trimspace(line)))
   ] : trimspace(pair[0]) => trimspace(pair[1]) }
 
@@ -15,9 +26,9 @@ locals {
   # pigeon.dev's zone was moved onto the same Cloudflare account as
   # noisypigeon.com, but the API token used here remains zone-scoped per
   # domain regardless -- confirmed live while migrating ADR-0096's fastmail
-  # leaves: CLOUDFLARE_NOISYPIGEON_COM_TOKEN gets a hard "Authentication
+  # leaves: CLOUDFLARE_TOKEN gets a hard "Authentication
   # error" (code 10000) against the pigeon.dev zone's DNS records, while
-  # CLOUDFLARE_PIGEON_DEV_TOKEN succeeds. So, like the old (now-deleted)
+  # CLOUDFLARE_TOKEN succeeds. So, like the old (now-deleted)
   # cloudflare/root.hcl (see
   # docs/adr/0064-merge-pigeon-dev-into-cloudflare-root.md), credentials
   # still branch per leaf by path -- just keyed off any path segment being
@@ -25,8 +36,8 @@ locals {
   # workloads/ leaves can nest a domain segment at any depth.
   is_pigeon_dev_leaf = contains(local.path_segments, "pigeon.dev")
 
-  cloudflare_api_token  = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_PIGEON_DEV_TOKEN", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_TOKEN", "")) : get_env("CLOUDFLARE_NOISYPIGEON_COM_TOKEN", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_TOKEN", ""))
-  cloudflare_account_id = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID", "")) : get_env("CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID", ""))
+  cloudflare_api_token  = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_TOKEN", lookup(local.secrets, "CLOUDFLARE_TOKEN", "")) : get_env("CLOUDFLARE_TOKEN", lookup(local.secrets, "CLOUDFLARE_TOKEN", ""))
+  cloudflare_account_id = local.is_pigeon_dev_leaf ? get_env("CLOUDFLARE_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_ACCOUNT_ID", "")) : get_env("CLOUDFLARE_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_ACCOUNT_ID", ""))
 
   scaleway_access_key      = get_env("SCALEWAY_ACCESS_KEY", lookup(local.secrets, "SCALEWAY_ACCESS_KEY", ""))
   scaleway_secret_key      = get_env("SCALEWAY_SECRET_KEY", lookup(local.secrets, "SCALEWAY_SECRET_KEY", ""))
@@ -97,8 +108,8 @@ generate "cloudflare_ids" {
   contents  = <<EOF
 locals {
   cloudflare_account_id              = "${local.cloudflare_account_id}"
-  cloudflare_noisypigeon_com_zone_id = "${get_env("CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID", lookup(local.secrets, "CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID", ""))}"
-  cloudflare_pigeon_dev_zone_id      = "${get_env("CLOUDFLARE_PIGEON_DEV_ZONE_ID", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_ZONE_ID", ""))}"
+  cloudflare_noisypigeon_com_zone_id = "${get_env("CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM", lookup(local.secrets, "CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM", ""))}"
+  cloudflare_pigeon_dev_zone_id      = "${get_env("CLOUDFLARE_ZONE_ID_PIGEON_DEV", lookup(local.secrets, "CLOUDFLARE_ZONE_ID_PIGEON_DEV", ""))}"
 }
 EOF
 }
@@ -141,6 +152,7 @@ generate "scaleway_ids" {
 locals {
   scaleway_organization_id        = "${local.scaleway_organization_id}"
   scaleway_project_id = "${get_env("SCALEWAY_PROJECT_ID", lookup(local.secrets, "SCALEWAY_PROJECT_ID", ""))}"
+  scaleway_s3_provider_name = "Scaleway"
 
   # One shared Cockpit metrics/logs source + push token for every
   # pigeon-cli compute instance, rather than one private source per leaf

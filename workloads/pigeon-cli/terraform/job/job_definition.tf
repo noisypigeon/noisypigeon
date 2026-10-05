@@ -1,21 +1,21 @@
 locals {
-  name_prefix        = "import"
-  name_suffix        = "some-name"
+  name_prefix = "import"
+  name_suffix = "some-name"
 
   source_bucket = {
-    bucket_name      = ""
-    bucket_endpoint  = ""
-    access_key_id    = ""
-    secret_key       = ""
-    provider_name    = ""
+    bucket_name     = ""
+    bucket_endpoint = ""
+    access_key_id   = ""
+    secret_key      = ""
+    provider_name   = ""
   }
 
   destination_bucket = {
-    bucket_name      = ""
-    bucket_endpoint  = ""
-    access_key_id    = ""
-    secret_key       = ""
-    provider_name    = ""
+    bucket_name     = ""
+    bucket_endpoint = ""
+    access_key_id   = ""
+    secret_key      = ""
+    provider_name   = ""
   }
 
   // Non-configurable

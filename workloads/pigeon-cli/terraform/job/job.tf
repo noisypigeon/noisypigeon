@@ -1,7 +1,7 @@
 module "compute" {
-  source                = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.0.1"
-  name_prefix           = local.name_prefix
-  name_suffix           = local.name_suffix
+  source      = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.1.0"
+  name_prefix = local.name_prefix
+  name_suffix = local.name_suffix
   user_config = {
     ssh_key = local.ssh_key_public_key
   }
@@ -10,9 +10,16 @@ module "compute" {
     # type    = "COMPUTE3-X8C-16G"
     cockpit = local.cockpit_config
     block_volume = {
-      size = 50
+      size       = 50
       project_id = local.scaleway_project_id
     }
+  }
+
+  iam_config = {
+    application_id          = local.pigeon_cli_iam_application_id
+    project_ids             = [local.scaleway_project_id]
+    project_permission_sets = ["ObjectStorageFullAccess"]
+    description             = "pigeon-cli API key for ${local.job_name}"
   }
 
   keyring = [
@@ -40,4 +47,31 @@ module "compute" {
 output "ip_address" {
   description = "Public IPv4 address"
   value       = module.compute.ipv4_address
+}
+
+output "access_key_id" {
+  description = "IAM API key access key"
+  value       = module.compute.access_key_id
+  sensitive   = true
+}
+
+output "secret_key" {
+  description = "IAM API key secret key"
+  value       = module.compute.secret_key
+  sensitive   = true
+}
+
+moved {
+  from = module.iam_policy.scaleway_iam_policy.policy[0]
+  to   = module.compute.module.iam_policy[0].scaleway_iam_policy.policy
+}
+
+moved {
+  from = module.iam_api_key.scaleway_iam_api_key.api_key
+  to   = module.compute.module.iam_api_key[0].scaleway_iam_api_key.api_key
+}
+
+moved {
+  from = module.iam_api_key.time_static.created
+  to   = module.compute.module.iam_api_key[0].time_static.created
 }

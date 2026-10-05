@@ -1,6 +1,7 @@
 .DS_Store
 *.env
 /workloads/blog/src/public
+/workloads/pigeon.dev/src/public
 /workloads/blog/src/content/modules/*.md
 !/workloads/blog/src/content/modules/_index.md
 /workloads/blog/src/content/theme-versions/*.md

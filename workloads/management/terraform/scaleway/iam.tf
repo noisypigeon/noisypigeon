@@ -12,6 +12,7 @@ module "iam_policy" {
 
   project_ids = [
     local.scaleway_project_id,
+    local.scaleway_project_id_pigeon_dev
   ]
   project_permission_sets = [
     "InstancesFullAccess",

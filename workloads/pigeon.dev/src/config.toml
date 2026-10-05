@@ -1,0 +1,14 @@
+title = "pigeon.dev wiki"
+description = "Notes and reference pages."
+base_url = "https://pigeon.dev"
+theme = "zola-site"
+
+compile_sass = false
+generate_feeds = false
+build_search_index = false
+
+[extra]
+theme_version = "main"
+avatar = "/assets/images/site/avatar.png"
+social_preview = "/assets/images/site/social_preview.png"
+nav = []

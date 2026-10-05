@@ -10,7 +10,8 @@ module "compute" {
     # type    = "COMPUTE3-X8C-16G"
     cockpit = local.cockpit_config
     block_volume = {
-      size = 1000
+      size = 50
+      project_id = local.scaleway_project_id
     }
   }
 

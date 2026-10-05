@@ -18,7 +18,7 @@ locals {
 }
 ```
 
-Harmless in a private repo; it would leak real account-identifying values if copied as-is into `pigeon-do`, which is public. This ADR defines `CLOUDFLARE_PIGEON_DEV_ZONE_ID` and `CLOUDFLARE_ACCOUNT_ID` in `.env` instead, injected into Terraform so a `data` source can consume them, with the raw values never appearing in any tracked file.
+Harmless in a private repo; it would leak real account-identifying values if copied as-is into `pigeon-do`, which is public. This ADR defines `CLOUDFLARE_ZONE_ID_PIGEON_DEV` and `CLOUDFLARE_ACCOUNT_ID` in `.env` instead, injected into Terraform so a `data` source can consume them, with the raw values never appearing in any tracked file.
 
 Two ways to expose the injected values were considered:
 
@@ -30,7 +30,7 @@ Two ways to expose the injected values were considered:
 ### New `.env`/`.env.example` keys
 
 - `CLOUDFLARE_ACCOUNT_ID` — account-wide, unprefixed, since a Cloudflare account isn't per-domain.
-- `CLOUDFLARE_PIGEON_DEV_ZONE_ID` — per-domain (`CLOUDFLARE_<DOMAIN>_ZONE_ID`), since zones are per-domain. Future domains add their own `CLOUDFLARE_<DOMAIN>_ZONE_ID` key without touching the account key.
+- `CLOUDFLARE_ZONE_ID_PIGEON_DEV` — per-domain (`CLOUDFLARE_<DOMAIN>_ZONE_ID`), since zones are per-domain. Future domains add their own `CLOUDFLARE_<DOMAIN>_ZONE_ID` key without touching the account key.
 - No `.env`-parsing changes needed in `root.hcl` — `local.secrets` already picks up any key generically.
 
 ### `root.hcl` injection
@@ -44,7 +44,7 @@ generate "cloudflare_ids" {
   contents  = <<EOF
 locals {
   cloudflare_account_id         = "${get_env("CLOUDFLARE_ACCOUNT_ID", lookup(local.secrets, "CLOUDFLARE_ACCOUNT_ID", ""))}"
-  cloudflare_pigeon_dev_zone_id = "${get_env("CLOUDFLARE_PIGEON_DEV_ZONE_ID", lookup(local.secrets, "CLOUDFLARE_PIGEON_DEV_ZONE_ID", ""))}"
+  cloudflare_pigeon_dev_zone_id = "${get_env("CLOUDFLARE_ZONE_ID_PIGEON_DEV", lookup(local.secrets, "CLOUDFLARE_ZONE_ID_PIGEON_DEV", ""))}"
 }
 EOF
 }

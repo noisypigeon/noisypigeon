@@ -117,7 +117,7 @@ resource "cloudflare_ruleset" "to_noisypigeon_com" {
 }
 ```
 
-Both `local.cloudflare_pigeon_dev_zone_id` and the `is_pigeon_dev_leaf` credential branch were already available/correct with zero `root.hcl` changes (confirmed above). `terragrunt init` followed by `terraform providers schema -json` against the real v5.27.0 schema confirmed every attribute name above (`kind`, `phase`, `rules` as a list, `action_parameters.from_value.{status_code,target_url.value,preserve_query_string}`) before trusting it. `terragrunt plan` against this leaf succeeded — **3 to add, 0 to change, 0 to destroy** — confirming the configuration is syntactically and semantically valid, though it also surfaced a non-fatal warning: the `cloudflare_ruleset`'s optional server-side dry-run validation call got a `403 request is not authorized` from `CLOUDFLARE_PIGEON_DEV_TOKEN`. The DNS-record portion of the plan resolved fine, so the token has zone/DNS access; it may be missing the Rulesets edit permission scope needed to actually create the ruleset on `apply`. Not fixed here — a token-permission change in the Cloudflare dashboard, left to the user.
+Both `local.cloudflare_pigeon_dev_zone_id` and the `is_pigeon_dev_leaf` credential branch were already available/correct with zero `root.hcl` changes (confirmed above). `terragrunt init` followed by `terraform providers schema -json` against the real v5.27.0 schema confirmed every attribute name above (`kind`, `phase`, `rules` as a list, `action_parameters.from_value.{status_code,target_url.value,preserve_query_string}`) before trusting it. `terragrunt plan` against this leaf succeeded — **3 to add, 0 to change, 0 to destroy** — confirming the configuration is syntactically and semantically valid, though it also surfaced a non-fatal warning: the `cloudflare_ruleset`'s optional server-side dry-run validation call got a `403 request is not authorized` from `CLOUDFLARE_TOKEN`. The DNS-record portion of the plan resolved fine, so the token has zone/DNS access; it may be missing the Rulesets edit permission scope needed to actually create the ruleset on `apply`. Not fixed here — a token-permission change in the Cloudflare dashboard, left to the user.
 
 ### No `workloads/root.hcl` changes, for any of the five leaves
 
@@ -160,7 +160,7 @@ Every moved leaf's old-backend-key state object (`workloads/email/terraform/fast
 ## Consequences
 
 - `workloads/dns/terraform/{noisypigeon.com,pigeon.dev}/fastmail/`, `workloads/dns/terraform/noisypigeon.com/{bluesky,blog}/` are live and runnable immediately — state migrated and verified via `terragrunt plan` showing "No changes" for each, in this session.
-- `workloads/dns/terraform/pigeon.dev/redirect/` exists with valid, schema-checked configuration and a verified `plan` (3 to add), but is not yet live — no `apply` has been run, and the `CLOUDFLARE_PIGEON_DEV_TOKEN`'s Rulesets permission scope should be checked before attempting one.
+- `workloads/dns/terraform/pigeon.dev/redirect/` exists with valid, schema-checked configuration and a verified `plan` (3 to add), but is not yet live — no `apply` has been run, and the `CLOUDFLARE_TOKEN`'s Rulesets permission scope should be checked before attempting one.
 - `workloads/email/` and `workloads/bluesky/` no longer exist in this repo. `workloads/blog/` still exists, now as `src/`-only.
 - `workloads/dns/` now holds five live/ready leaves across both domains, consolidating what used to be three separate workloads (`email`, `bluesky`, and `blog`'s DNS half) plus one brand-new redirect leaf.
 - The old leaves' `terraform.tfstate` objects at their pre-move backend keys are now orphaned (their content was copied, not moved — `state pull` doesn't delete the source). Low-priority cleanup, left for later; S3 versioning on the state bucket remains an independent safety net regardless.
@@ -168,5 +168,5 @@ Every moved leaf's old-backend-key state object (`workloads/email/terraform/fast
 ## Out of scope
 
 - Running `terragrunt apply` for the new `pigeon.dev/redirect` leaf — making it live affects real traffic for a real domain, a bigger blast radius than migrating existing leaves' state, and is left for a deliberate follow-up rather than bundled into this ADR.
-- Widening `CLOUDFLARE_PIGEON_DEV_TOKEN`'s permissions in the Cloudflare dashboard, which the redirect leaf's `plan` output suggests may be needed before that `apply` can succeed.
+- Widening `CLOUDFLARE_TOKEN`'s permissions in the Cloudflare dashboard, which the redirect leaf's `plan` output suggests may be needed before that `apply` can succeed.
 - Deleting the orphaned old-backend-key state objects — optional cleanup, left to the user's discretion and timing, same treatment every prior ADR here has given its own orphaned state object.

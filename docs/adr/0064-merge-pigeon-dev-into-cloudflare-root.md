@@ -21,8 +21,8 @@ State-key continuity is verified: `cloudflare/root.hcl`'s existing key, `"cloudf
 
 `cloudflare/root.hcl` computes a single local, `is_pigeon_dev_leaf = startswith(path_relative_to_include(), "global/pigeon.dev/")`, and uses it to branch:
 
-- `cloudflare_account_id` (the `generate "cloudflare_ids"` block) — `CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID` when true, `CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID` otherwise.
-- The provider's `api_token` (the `generate "provider"` block) — same branching, `CLOUDFLARE_PIGEON_DEV_TOKEN`/`CLOUDFLARE_NOISYPIGEON_COM_TOKEN`.
+- `cloudflare_account_id` (the `generate "cloudflare_ids"` block) — `CLOUDFLARE_ACCOUNT_ID` when true, `CLOUDFLARE_ACCOUNT_ID` otherwise.
+- The provider's `api_token` (the `generate "provider"` block) — same branching, `CLOUDFLARE_TOKEN`/`CLOUDFLARE_TOKEN`.
 
 `cloudflare_noisypigeon_com_zone_id` and `cloudflare_pigeon_dev_zone_id` are both always generated, unconditionally — no branching needed since leaf `.tf` files already reference their own domain-specific name and there's no naming collision.
 

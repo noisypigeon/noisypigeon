@@ -51,17 +51,17 @@ SCALEWAY_TERRAFORM_STATE_BUCKET_NAME=
 
 # Cloudflare — noisypigeon.com and pigeon.dev are different Cloudflare
 # accounts, so each domain gets its own token/account id.
-CLOUDFLARE_NOISYPIGEON_COM_TOKEN=
-CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID=
-CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID=
-CLOUDFLARE_PIGEON_DEV_TOKEN=
-CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID=
-CLOUDFLARE_PIGEON_DEV_ZONE_ID=
+CLOUDFLARE_TOKEN=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM=
+CLOUDFLARE_TOKEN=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_ZONE_ID_PIGEON_DEV=
 ```
 
 ### Split Cloudflare vars into two accounts
 
-Rename `CLOUDFLARE_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` to domain-suffixed vars — `CLOUDFLARE_NOISYPIGEON_COM_TOKEN`/`CLOUDFLARE_NOISYPIGEON_COM_ACCOUNT_ID` (used only by `cloudflare/root.hcl`'s `generate` blocks) and `CLOUDFLARE_PIGEON_DEV_TOKEN`/`CLOUDFLARE_PIGEON_DEV_ACCOUNT_ID` (used only by `pigeon.dev.hcl`'s) — matching the naming precedent already set by `CLOUDFLARE_NOISYPIGEON_COM_ZONE_ID`/`CLOUDFLARE_PIGEON_DEV_ZONE_ID` and by `SCALEWAY_PROJECT_ID_NOISYPIGEON_COM`/`SCALEWAY_PROJECT_ID_PIGEON_DEV`. No provider aliasing needed: each domain's leaves already resolve through a separate root/domain `.hcl` file (ADR-0061), so each file's single `provider "cloudflare"` block just points at its own domain's vars.
+Rename `CLOUDFLARE_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` to domain-suffixed vars — `CLOUDFLARE_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` (used only by `cloudflare/root.hcl`'s `generate` blocks) and `CLOUDFLARE_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` (used only by `pigeon.dev.hcl`'s) — matching the naming precedent already set by `CLOUDFLARE_ZONE_ID_NOISYPIGEON_COM`/`CLOUDFLARE_ZONE_ID_PIGEON_DEV` and by `SCALEWAY_PROJECT_ID_NOISYPIGEON_COM`/`SCALEWAY_PROJECT_ID_PIGEON_DEV`. No provider aliasing needed: each domain's leaves already resolve through a separate root/domain `.hcl` file (ADR-0061), so each file's single `provider "cloudflare"` block just points at its own domain's vars.
 
 ### Migrate Cloudflare state to the Scaleway backend
 

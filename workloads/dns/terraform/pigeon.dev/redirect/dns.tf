@@ -1,5 +1,5 @@
 resource "cloudflare_dns_record" "placeholder_apex" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "@"
   type    = "A"
   content = "192.0.2.1"
@@ -9,7 +9,7 @@ resource "cloudflare_dns_record" "placeholder_apex" {
 }
 
 resource "cloudflare_dns_record" "placeholder_www" {
-  zone_id = local.cloudflare_pigeon_dev_zone_id
+  zone_id = local.zone_id_pigeon_dev
   name    = "www"
   type    = "CNAME"
   content = "pigeon.dev"

@@ -20,7 +20,7 @@ locals {
   }
 
   destination_bucket = {
-    bucket_name     = local.import_backblaze_name
+    bucket_name     = local.import_backblaze_bucket_name
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

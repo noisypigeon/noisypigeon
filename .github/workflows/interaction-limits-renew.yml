@@ -1,0 +1,21 @@
+name: Renew interaction limits
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  administration: write
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-apply contributors_only interaction limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PUT "repos/${{ github.repository }}/interaction-limits" \
+            -f limit=contributors_only -f expiry=six_months

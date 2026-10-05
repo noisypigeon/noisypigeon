@@ -1,0 +1,178 @@
+name: Terragrunt plan/apply
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "workloads/**"
+      - ".env.enc"
+      - ".sops.yaml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: terragrunt-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Mask decrypted secret values
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          while IFS='=' read -r key value; do
+            [[ -z "$key" || "$key" == \#* || "$key" == sops_* ]] && continue
+            echo "::add-mask::$value"
+          done < <(sops --decrypt --input-type dotenv --output-type dotenv .env.enc)
+
+      - name: terragrunt plan
+        id: run
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          set +e
+          terragrunt run --all --non-interactive -- plan > output.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Comment plan output on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- terragrunt-plan -->';
+            const exitCode = '${{ steps.run.outputs.exit_code }}';
+            const success = exitCode === '0';
+            let output = fs.readFileSync('output.txt', 'utf8');
+            const limit = 55000;
+            let truncated = false;
+            if (output.length > limit) {
+              output = output.slice(output.length - limit);
+              truncated = true;
+            }
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              `### ${success ? '✅' : '❌'} Terragrunt plan`,
+              truncated ? `_Output truncated — [full log](${runUrl})._` : '',
+              '<details><summary>Show plan output</summary>',
+              '',
+              '```',
+              output,
+              '```',
+              '</details>',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if plan failed
+        run: exit "${{ steps.run.outputs.exit_code }}"
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Mask decrypted secret values
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          while IFS='=' read -r key value; do
+            [[ -z "$key" || "$key" == \#* || "$key" == sops_* ]] && continue
+            echo "::add-mask::$value"
+          done < <(sops --decrypt --input-type dotenv --output-type dotenv .env.enc)
+
+      - name: terragrunt apply
+        id: run
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: |
+          set +e
+          terragrunt run --all --non-interactive -- apply > output.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Comment apply output on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- terragrunt-apply -->';
+            const exitCode = '${{ steps.run.outputs.exit_code }}';
+            const success = exitCode === '0';
+            let output = fs.readFileSync('output.txt', 'utf8');
+            const limit = 55000;
+            let truncated = false;
+            if (output.length > limit) {
+              output = output.slice(output.length - limit);
+              truncated = true;
+            }
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              `### ${success ? '✅' : '❌'} Terragrunt apply`,
+              truncated ? `_Output truncated — [full log](${runUrl})._` : '',
+              '<details><summary>Show apply output</summary>',
+              '',
+              '```',
+              output,
+              '```',
+              '</details>',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail if apply failed
+        run: exit "${{ steps.run.outputs.exit_code }}"

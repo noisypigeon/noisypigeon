@@ -44,14 +44,20 @@ bucket/
           deduplication/       # dedup job bucket (ADR-0116, regrouped here by ADR-0117)
 scaleway/
   terraform/
-    management/              # the deployer IAM application, Terraform state bucket, and Scaleway project/SSH key (ADR-0094, regrouped here by ADR-0106)
     custodian/
       duck-jellyfish/        # nl-ams backup bucket + IAM (ADR-0098, moved here by ADR-0106) -- see workload_definition.hcl below
-    pigeon-cli/
-      cockpit/               # shared Scaleway Cockpit metrics/logs source + push token for every pigeon-cli compute instance (ADR-0103, moved here by ADR-0115)
+management/
+  terraform/
+    scaleway/                # the deployer IAM application, Terraform state bucket, and Scaleway project/SSH key (ADR-0094, regrouped under scaleway/ by ADR-0106, promoted to its own workload by ADR-0124)
+pigeon-cli/
+  terraform/
+    job/                     # the pigeon-cli compute-instance job leaf (ADR-0097, ADR-0118/0120/0122)
+    shared/
+      cockpit/                # shared Cockpit metrics/logs source + push token for every pigeon-cli compute instance (ADR-0103, regrouped under scaleway/ by ADR-0115, moved here by ADR-0124)
+      iam-application/        # shared IAM application every pigeon-cli job policy attaches to (ADR-0119, moved here by ADR-0124)
 ```
 
-Not every workload has a `src/` sibling — `scaleway/`, `bucket/`, and `dns/` are all infrastructure-only: `scaleway/` groups every Scaleway-specific leaf — its own bootstrap plumbing (`management/`: the deployer identity and remote-state bucket), a cross-region backup bucket (`custodian/duck-jellyfish/`, formerly the separate `custodian-buckets/` workload until ADR-0106 folded it in), and the shared Cockpit observability leaf for `pigeon-cli` compute instances (`pigeon-cli/cockpit/`, ADR-0115) — `bucket/` groups storage-bucket infrastructure by dataset, independent of which job/CLI consumes it: each dataset under `bucket/terraform/noisypigeon/` collocates its `import/` and/or `deduplication/` leaf (originally grouped by consumer under `pigeon-cli/`, ADR-0097, then by purpose under `workloads/bucket/terraform/pigeon-cli/`, ADR-0116, now by dataset here, ADR-0117) — and `dns/` groups every Cloudflare-managed DNS leaf by domain (ADR-0105) — none is a deployable app in this repo, so all three are `terraform/` alone. Conversely, `blog/` is now `src/`-only (ADR-0105 moved its `terraform/` leaf into `dns/`) — the convention doesn't require either sibling, a workload just has whichever ones it actually needs.
+Not every workload has a `src/` sibling — `scaleway/`, `management/`, `bucket/`, and `dns/` are all infrastructure-only: `scaleway/` groups every Scaleway-specific leaf not already owned by a more specific workload — today just a cross-region backup bucket (`custodian/duck-jellyfish/`, formerly the separate `custodian-buckets/` workload until ADR-0106 folded it in); `management/` is this repo's own bootstrap plumbing (the deployer identity and remote-state bucket), promoted out of `scaleway/` to its own top-level workload by ADR-0124 — the `terraform/scaleway/` segment leaves room for a future non-Scaleway management leaf without a second move; `bucket/` groups storage-bucket infrastructure by dataset, independent of which job/CLI consumes it: each dataset under `bucket/terraform/noisypigeon/` collocates its `import/` and/or `deduplication/` leaf (originally grouped by consumer under `pigeon-cli/`, ADR-0097, then by purpose under `workloads/bucket/terraform/pigeon-cli/`, ADR-0116, now by dataset here, ADR-0117) — and `dns/` groups every Cloudflare-managed DNS leaf by domain (ADR-0105) — none is a deployable app in this repo, so all four are `terraform/` alone. `pigeon-cli/` has no `src/` either (the CLI itself split out via ADR-0084) but isn't infrastructure-only in the same provider-rooted sense: its `job/` leaf and `shared/` leaves (the Cockpit source and IAM application every job policy attaches to) are colocated by owning workload rather than grouped under `scaleway/`, following ADR-0124. Conversely, `blog/` is now `src/`-only (ADR-0105 moved its `terraform/` leaf into `dns/`) — the convention doesn't require either sibling, a workload just has whichever ones it actually needs.
 
 ### Per-leaf overrides: `workload_definition.hcl`
 

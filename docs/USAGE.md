@@ -32,11 +32,16 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     leaf, backing the external `pigeon` CLI's jobs
     (`noisypigeon/pigeon-cli`).
   - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
-    every Scaleway-specific leaf: `management/` (this repo's own
-    Terraform state bucket and deployer IAM application/policy/API key),
-    `custodian/duck-jellyfish/` (an `nl-ams` cross-region backup
-    bucket), and `pigeon-cli/cockpit/` (the shared Cockpit metrics/logs
-    source for `pigeon-cli` compute instances).
+    every Scaleway-specific leaf not already owned by a more specific
+    workload: `custodian/duck-jellyfish/` (an `nl-ams` cross-region
+    backup bucket).
+  - [`workloads/management/terraform/`](workloads/management/terraform/)
+    — this repo's own Terraform state bucket and deployer IAM
+    application/policy/API key.
+  - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/)
+    — the `pigeon-cli` compute-instance job leaf (`job/`) and the shared
+    Cockpit metrics/logs source + IAM application every job policy
+    attaches to (`shared/`).
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
   ADR (renumbered inline, not archived separately).

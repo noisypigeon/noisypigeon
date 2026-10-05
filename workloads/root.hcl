@@ -51,8 +51,8 @@ locals {
   # Per-leaf Scaleway region/zone override -- see
   # docs/adr/0098-decommission-terraform-infrastructure.md. Every leaf is
   # fr-par by default; a leaf needing a different region (so far, only
-  # custodian-buckets/terraform/duck-jellyfish, nl-ams) drops a
-  # workload_definition.hcl next to its own terragrunt.hcl declaring its
+  # custodial-storage/terraform/duck-jellyfish, nl-ams) drops a
+  # scaleway_config.hcl next to its own terragrunt.hcl declaring its
   # own `scaleway_region`/`scaleway_zone` locals. This root.hcl reads that
   # file via read_terragrunt_config, which returns the given default
   # untouched if the file doesn't exist -- no error, no change for every
@@ -63,7 +63,7 @@ locals {
   # relying on get_terragrunt_dir()'s parent-vs-child-scope semantics,
   # which weren't worth the risk of getting wrong here.
   workload_dir             = dirname(find_in_parent_folders("root.hcl"))
-  workload_definition_path = "${local.workload_dir}/${path_relative_to_include()}/workload_definition.hcl"
+  workload_definition_path = "${local.workload_dir}/${path_relative_to_include()}/scaleway_config.hcl"
   workload_definition      = read_terragrunt_config(local.workload_definition_path, { locals = {} })
   scaleway_region          = lookup(local.workload_definition.locals, "scaleway_region", "fr-par")
   scaleway_zone            = lookup(local.workload_definition.locals, "scaleway_zone", "fr-par-1")
@@ -151,6 +151,7 @@ locals {
   pigeon_cockpit_metrics_push_url = "${get_env("PIGEON_COCKPIT_METRICS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_METRICS_PUSH_URL", ""))}"
   pigeon_cockpit_logs_push_url    = "${get_env("PIGEON_COCKPIT_LOGS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_LOGS_PUSH_URL", ""))}"
   pigeon_cockpit_token_secret     = "${get_env("PIGEON_COCKPIT_TOKEN_SECRET", lookup(local.secrets, "PIGEON_COCKPIT_TOKEN_SECRET", ""))}"
+
 }
 EOF
 }

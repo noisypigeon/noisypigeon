@@ -24,11 +24,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
 
       - name: Configure git identity
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "istx25"
+          git config user.email "6799989+istx25@users.noreply.github.com"
 
       - name: Update blog changelog and daily digest
         env:
@@ -125,5 +126,5 @@ jobs:
 
       - name: Trigger blog Pages deploy
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: gh workflow run blog-pages.yml --ref main

@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
+- [scaleway/compute-instance] Pin block-volume source in compute-instance ([#165](https://github.com/noisypigeon/noisypigeon/pull/165))
+
 - [scaleway/compute-instance] Rename block-volume's naming inputs and compose it inside compute-instance ([#163](https://github.com/noisypigeon/noisypigeon/pull/163))
 
 - [scaleway/block-volume] Rename block-volume's naming inputs and compose it inside compute-instance ([#163](https://github.com/noisypigeon/noisypigeon/pull/163))

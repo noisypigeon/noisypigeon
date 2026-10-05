@@ -40,7 +40,7 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           set +e
-          terragrunt run --all --non-interactive -- plan > output.txt 2>&1
+          terragrunt --no-color run --all --non-interactive -- plan > output.txt 2>&1
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
 
@@ -120,7 +120,7 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           set +e
-          terragrunt run --all --non-interactive -- apply > output.txt 2>&1
+          terragrunt --no-color run --all --non-interactive -- apply > output.txt 2>&1
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
 

@@ -12,7 +12,7 @@
 
 `iops` stays required on the underlying resource call, but the module gives it a default of `15000` (Scaleway's standard IOPS tier) rather than requiring every caller to specify it — this is the one deliberate exception to "initial interface is required fields only," the same kind of exception ADR-0079 made for `type` defaulting to `STARDUST1-S`.
 
-**Attachment mechanism.** `scaleway_instance_server` already has an `additional_volume_ids` argument: a `list(string)` of pre-created volume IDs, attached to the instance (updates trigger a stop/start of the server). Per ADR-0081's established principle — "no local module ever composes another local module internally" — `compute-instance` does not call `block-volume` as an internal module dependency. It only gains a pass-through `additional_volume_ids` input; callers compose the two at the `terraform/infrastructure/` layer themselves (e.g. `additional_volume_ids = [module.block_volume.id]`), the same way `buckets`/`iam-policy` outputs are wired into `compute-instance` today.
+**Attachment mechanism.** `scaleway_instance_server` already has an `additional_volume_ids` argument: a `list(string)` of pre-created volume IDs, attached to the instance (updates trigger a stop/start of the server). ~~Per ADR-0081's established principle — "no local module ever composes another local module internally" — `compute-instance` does not call `block-volume` as an internal module dependency. It only gains a pass-through `additional_volume_ids` input; callers compose the two at the `terraform/infrastructure/` layer themselves (e.g. `additional_volume_ids = [module.block_volume.id]`), the same way `buckets`/`iam-policy` outputs are wired into `compute-instance` today.~~ Superseded by ADR-0120: with `block-volume` having had exactly one consumer ever, always paired 1:1 with the same `compute-instance` call, external composition bought no real flexibility — ADR-0120 folds volume creation into `compute-instance`'s `instance_config.block_volume`, composing `block-volume` internally as a named exception to this principle. `iam-policy`/`object-bucket` composition stays external.
 
 ## Decision
 
@@ -44,7 +44,7 @@ Provider pin: `scaleway/scaleway ~> 2.0`, `hashicorp/random ~> 3.0` — identica
 
 ### Extend `scaleway/compute-instance`
 
-Adds one new input, `additional_volume_ids` (`list(string)`, default `[]`), wired straight through:
+~~Adds one new input, `additional_volume_ids` (`list(string)`, default `[]`), wired straight through:~~ Superseded by ADR-0120 — see that ADR for the current `instance_config.block_volume`-based interface.
 
 ```hcl
 resource "scaleway_instance_server" "server" {

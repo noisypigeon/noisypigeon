@@ -152,12 +152,6 @@ locals {
   pigeon_cockpit_logs_push_url    = "${get_env("PIGEON_COCKPIT_LOGS_PUSH_URL", lookup(local.secrets, "PIGEON_COCKPIT_LOGS_PUSH_URL", ""))}"
   pigeon_cockpit_token_secret     = "${get_env("PIGEON_COCKPIT_TOKEN_SECRET", lookup(local.secrets, "PIGEON_COCKPIT_TOKEN_SECRET", ""))}"
 
-  # One shared IAM application for every pigeon-cli job policy, rather than
-  # each job minting its own (docs/adr/0119-decouple-scaleway-iam-application-api-key-rename-object-bucket.md)
-  # -- provisioned once by workloads/scaleway/terraform/pigeon-cli/iam-application/,
-  # then hand-copied into this repo's shared root .env the same manual way
-  # the pigeon_cockpit_* values above already are.
-  pigeon_cli_iam_application_id = "${get_env("PIGEON_CLI_IAM_APPLICATION_ID", lookup(local.secrets, "PIGEON_CLI_IAM_APPLICATION_ID", ""))}"
 }
 EOF
 }

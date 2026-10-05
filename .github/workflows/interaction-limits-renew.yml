@@ -5,9 +5,7 @@ on:
     - cron: "0 0 1 * *"
   workflow_dispatch: {}
 
-permissions:
-  contents: read
-  administration: write
+permissions: {}
 
 jobs:
   renew:
@@ -15,7 +13,7 @@ jobs:
     steps:
       - name: Re-apply contributors_only interaction limit
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: |
           gh api -X PUT "repos/${{ github.repository }}/interaction-limits" \
             -f limit=contributors_only -f expiry=six_months

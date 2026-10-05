@@ -28,11 +28,16 @@ link = "https://github.com/noisypigeon"
 order = 2
 
 [[extra.nav]]
+title = "Bluesky"
+link = "https://bsky.app/profile/noisypigeon.com"
+order = 3
+
+[[extra.nav]]
 title = "LinkedIn"
 link = "https://www.linkedin.com/in/noisypigeon"
-order = 3
+order = 4
 
 [[extra.nav]]
 title = "Unsplash"
 link = "https://unsplash.com/@noisypigeon"
-order = 4
+order = 5

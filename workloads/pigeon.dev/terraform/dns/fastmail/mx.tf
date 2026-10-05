@@ -14,6 +14,6 @@ resource "cloudflare_dns_record" "mx_secondary" {
   type     = "MX"
   content  = "in2-smtp.messagingengine.com"
   priority = 20
-  ttl      = 1 # Auto
+  ttl      = 1 #  Auto
   comment  = "fastmail secondary mx"
 }

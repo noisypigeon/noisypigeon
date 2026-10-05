@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-04
 
+- [scaleway/compute-instance] Add enabled kill switch to compute-instance ([#173](https://github.com/noisypigeon/noisypigeon/pull/173))
+
 - [scaleway/compute-instance] Add post_provision_commands to compute-instance ([#172](https://github.com/noisypigeon/noisypigeon/pull/172))
 
 - [scaleway/compute-instance] Compose iam-policy and iam-api-key inside compute-instance ([#167](https://github.com/noisypigeon/noisypigeon/pull/167))

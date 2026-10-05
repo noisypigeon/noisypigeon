@@ -28,7 +28,7 @@ locals {
   }
 
   // Non-configurable
-  job_name      = "${local.name_prefix}-${local.name_suffix}"
+  job_name      = "${local.job_name_prefix}-${local.job_name_suffix}"
   ssh_key_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDKsmUsSyZRo1u8TLkz+kJVbxuYsrs3M3tBXpI3HVHQa" #gitleaks:allow
   instance_type = "COMPUTE3-X8C-16G"
   cockpit_config = {

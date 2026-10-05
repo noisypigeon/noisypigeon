@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-05
 
+- [zola-site] Fix homepage h1 styling to match plain site-title link ([#191](https://github.com/noisypigeon/noisypigeon/pull/191))
+
 - [zola-site] Strengthen name-entity SEO signals on homepage and posts ([#189](https://github.com/noisypigeon/noisypigeon/pull/189))
 
 - [blog] Strengthen name-entity SEO signals on homepage and posts ([#189](https://github.com/noisypigeon/noisypigeon/pull/189))

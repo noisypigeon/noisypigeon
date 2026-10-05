@@ -36,6 +36,9 @@ jobs:
           ref: refs/pull/${{ github.event.issue.number }}/head
           fetch-depth: 0
 
+      - name: Ensure a local main ref exists
+        run: git fetch origin main:refs/heads/main
+
       - uses: jdx/mise-action@v2
 
       - name: Mask decrypted secret values

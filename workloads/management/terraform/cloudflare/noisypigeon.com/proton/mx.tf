@@ -2,18 +2,18 @@ resource "cloudflare_dns_record" "mx_primary" {
   zone_id  = local.zone_id_noisypigeon_com
   name     = "@"
   type     = "MX"
-  content  = "in1-smtp.messagingengine.com"
+  content  = "mx1.alias.proton.me"
   priority = 10
   ttl      = 1 # Auto
-  comment  = "fastmail primary mx"
+  comment  = "protonmail primary mx"
 }
 
 resource "cloudflare_dns_record" "mx_secondary" {
   zone_id  = local.zone_id_noisypigeon_com
   name     = "@"
   type     = "MX"
-  content  = "in2-smtp.messagingengine.com"
+  content  = "mx2.alias.proton.me"
   priority = 20
   ttl      = 1 # Auto
-  comment  = "fastmail secondary mx"
+  comment  = "protonmail secondary mx"
 }

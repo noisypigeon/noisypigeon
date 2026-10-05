@@ -15,6 +15,12 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-05
+
+- [zola-site] Strengthen name-entity SEO signals on homepage and posts ([#189](https://github.com/noisypigeon/noisypigeon/pull/189))
+
+- [blog] Strengthen name-entity SEO signals on homepage and posts ([#189](https://github.com/noisypigeon/noisypigeon/pull/189))
+
 ## 2026-10-04
 
 - [scaleway/compute-instance] Add enabled kill switch to compute-instance ([#173](https://github.com/noisypigeon/noisypigeon/pull/173))

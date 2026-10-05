@@ -26,6 +26,7 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
 
       - name: Determine bump level from PR labels
         id: bump
@@ -76,8 +77,8 @@ jobs:
       - name: Configure git identity
         if: steps.modules.outputs.changed != '' || steps.zola_site.outputs.changed == 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "istx25"
+          git config user.email "6799989+istx25@users.noreply.github.com"
 
       - name: Update changelogs and compute versions
         id: versions
@@ -250,13 +251,13 @@ jobs:
       - name: Trigger blog Pages deploy
         if: steps.versions.outputs.tags != '' || steps.zola_site.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: gh workflow run blog-pages.yml --ref main
 
       - name: Tag and release each changed module/theme
         if: steps.modules.outputs.changed != '' || steps.zola_site.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           RELEASE_TAGS: ${{ steps.versions.outputs.tags }} ${{ steps.zola_site_version.outputs.tag }}

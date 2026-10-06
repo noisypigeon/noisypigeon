@@ -3,7 +3,7 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && pigeon job run deduplicate --source-bucket source --remote-output destination --report-bucket reports --local-output /mnt/data/dedupe-run --yes"
+    "cd pigeon-cli/ && mise run pigeon-release job run deduplicate --source-bucket source --remote-output destination --report-bucket reports --local-output /mnt/data --concurrency 8 --upload-concurrency 16 --yes"
   ]
 
   # Configuration

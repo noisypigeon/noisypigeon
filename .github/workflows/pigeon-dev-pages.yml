@@ -46,4 +46,5 @@ jobs:
         run: |
           aws s3 sync public s3://pigeon.dev \
             --endpoint-url https://s3.fr-par.scw.cloud \
+            --acl public-read \
             --delete

@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-05
 
+- [scaleway/iam-api-key] Add default_project_id input to iam-api-key ([#201](https://github.com/noisypigeon/noisypigeon/pull/201))
+
 - [scaleway/object-bucket] Add exact_name, website hosting, and public-read ACL to object-bucket ([#194](https://github.com/noisypigeon/noisypigeon/pull/194))
 
 - [zola-site] Fix homepage h1 styling to match plain site-title link ([#191](https://github.com/noisypigeon/noisypigeon/pull/191))

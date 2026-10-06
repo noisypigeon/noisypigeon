@@ -44,54 +44,38 @@ pigeon.dev/
       dns/                   # Cloudflare apex/www CNAMEs + www redirect ruleset (ADR-0130)
     fastmail/
       dns/                   # Fastmail SPF/DKIM/MX records
-bucket/
+willowgraysen.com/
+  root.hcl                 # per-workload Terragrunt root (ADR-0133)
+  secrets.enc              # per-workload sops/age-encrypted secrets (ADR-0131)
   terraform/
-    noisypigeon/
-      backblaze/
-        import/              # Backblaze import bucket (ADR-0097, regrouped here by ADR-0116/0117)
-      email/
-        import/               # email import bucket (ADR-0097, regrouped here by ADR-0116/0117)
-      macbook-scratch/
-        deduplication/        # dedup job: compute + volume + bucket (ADR-0097, regrouped here by ADR-0116/0117)
-      media/
-        deduplication/        # dedup job bucket (ADR-0116, regrouped here by ADR-0117)
-      poisoned/
-        computer-snapshots/
-          import/              # import bucket (ADR-0116, regrouped here by ADR-0117)
-          deduplication/       # dedup job bucket (ADR-0116, regrouped here by ADR-0117)
-        mega-storage-consolidation/
-          import/              # import bucket (ADR-0116, regrouped here by ADR-0117)
-          deduplication/       # dedup job: compute + volume + bucket + IAM -- the only leaf in this tree with real compute (ADR-0116, regrouped here by ADR-0117)
-        t7-backup/
-          import/              # import bucket (ADR-0116, regrouped here by ADR-0117)
-          deduplication/       # dedup job bucket (ADR-0116, regrouped here by ADR-0117)
-scaleway/
-  terraform/
-    custodian/
-      duck-jellyfish/        # nl-ams backup bucket + IAM (ADR-0098, moved here by ADR-0106) -- see workload_definition.hcl below
-management/
-  terraform/
-    scaleway/                # the deployer IAM application, Terraform state bucket, and Scaleway project/SSH key (ADR-0094, regrouped under scaleway/ by ADR-0106, promoted to its own workload by ADR-0124)
-    cloudflare/              # every Cloudflare-managed DNS leaf not owned by a self-sufficient workload, grouped by domain (ADR-0105, moved here by ADR-0127)
-      willowgraysen.com/
-        redirect/  # redirects willowgraysen.com (apex + www) to noisypigeon.com
-pigeon-cli/
-  terraform/
-    job/                     # the pigeon-cli compute-instance job leaf (ADR-0097, ADR-0118/0120/0122)
-    shared/
-      cockpit/                # shared Cockpit metrics/logs source + push token for every pigeon-cli compute instance (ADR-0103, regrouped under scaleway/ by ADR-0115, moved here by ADR-0124)
-      iam-application/        # shared IAM application every pigeon-cli job policy attaches to (ADR-0119, moved here by ADR-0124)
+    project/               # Scaleway project (relocated from the former shared bootstrap, ADR-0133)
+    state/
+      bucket/                # dedicated Terraform state bucket (self-governing, ADR-0133)
+      iam/                   # dedicated deployer IAM application/policy/API key (resolves to the shared root)
+    redirect/
+      dns/                   # Cloudflare ruleset redirecting willowgraysen.com (apex + www) to noisypigeon.com
+    custodial-storage/
+      duck-jellyfish/        # nl-ams backup bucket + IAM -- see scaleway_config.hcl below
+    pigeon-cli/
+      bucket/                # 11 leaves: per-dataset import/deduplication buckets (ADR-0097/0116/0117)
+      shared/
+        cockpit/               # shared Cockpit metrics/logs source + push token for every pigeon-cli compute instance (ADR-0103)
+        iam-application/       # shared IAM application every pigeon-cli job policy attaches to (ADR-0119)
+        reports/               # shared job-report bucket
+      job/
+        import-backblaze/     # compute instance + block volume + scoped IAM key (ADR-0097, ADR-0118/0120/0122)
+        import-macbook/       # empty placeholder -- its job content was retired before this move
 ```
 
-Not every workload has a `src/` sibling — `scaleway/`, `management/`, and `bucket/` are all infrastructure-only: `scaleway/` groups every Scaleway-specific leaf not already owned by a more specific workload — today just a cross-region backup bucket (`custodian/duck-jellyfish/`, formerly the separate `custodian-buckets/` workload until ADR-0106 folded it in); `management/` is this repo's own bootstrap plumbing, promoted out of `scaleway/` to its own top-level workload by ADR-0124 — the `terraform/scaleway/` segment deliberately left room for a future non-Scaleway management leaf without a second move, exercised by ADR-0127's `terraform/cloudflare/` sibling (every Cloudflare-managed DNS leaf, grouped by domain — formerly the separate `dns/` workload, ADR-0105, until ADR-0127 folded it in here and decommissioned `dns/` entirely); `bucket/` groups storage-bucket infrastructure by dataset, independent of which job/CLI consumes it: each dataset under `bucket/terraform/noisypigeon/` collocates its `import/` and/or `deduplication/` leaf (originally grouped by consumer under `pigeon-cli/`, ADR-0097, then by purpose under `workloads/bucket/terraform/pigeon-cli/`, ADR-0116, now by dataset here, ADR-0117) — none is a deployable app in this repo, so all three are `terraform/` alone. `pigeon-cli/` has no `src/` either (the CLI itself split out via ADR-0084) but isn't infrastructure-only in the same provider-rooted sense: its `job/` leaf and `shared/` leaves (the Cockpit source and IAM application every job policy attaches to) are colocated by owning workload rather than grouped under `scaleway/`, following ADR-0124. `pigeon.dev/` and `noisypigeon.com/` are the two exceptions to the shared `management/`/`scaleway/` bootstrap: each has its own dedicated Terraform state bucket, deployer IAM, Scaleway project, `root.hcl`, and `secrets.enc` — see "Self-sufficient workloads" below — the convention doesn't require any particular sibling, a workload just has whichever ones it actually needs.
+Not every workload has a `src/` sibling — `willowgraysen.com/` is infrastructure-only, and not just the former shared bootstrap's own `project`/`state` leaves: it's also where every other Scaleway/Cloudflare leaf that was never claimed by a more specific self-sufficient workload ended up, by ADR-0133 — a cross-region backup bucket (`custodial-storage/duck-jellyfish/`, formerly the separate `custodial-storage/` workload), a Cloudflare redirect leaf, and all of `pigeon-cli/`'s bucket/shared/job leaves (`pigeon-cli/` itself has no `src/` either, the CLI having split out via ADR-0084). `pigeon.dev/` and `noisypigeon.com/` are the other two self-sufficient workloads: each has its own dedicated Terraform state bucket, deployer IAM, Scaleway project, `root.hcl`, and `secrets.enc` — see "Self-sufficient workloads" below — the convention doesn't require any particular sibling, a workload just has whichever ones it actually needs. With all three self-sufficient, the shared `workloads/root.hcl` no longer governs any leaf of its own — it's only still read by each workload's own `state/iam` leaf (and, for `pigeon.dev`'s still-unfixed `state/bucket`, that leaf too), via the explicit shared-root pin described below.
 
 ### Self-sufficient workloads: `root.hcl` + `secrets.enc`
 
-`pigeon.dev` (ADR-0130/0131) and `noisypigeon.com` (ADR-0132) each opt out of the shared bootstrap entirely: a `workloads/<name>/root.hcl` (same shape as the shared `workloads/root.hcl`, just scoped to that workload's own `secrets.enc`) and a `workloads/<name>/secrets.enc` (sops/age-encrypted, same age recipient as the shared root `.env.enc`, decrypted independently — never merged with it). Once `root.hcl` exists, every leaf under `terraform/**` resolves to it instead of the shared root via plain `find_in_parent_folders("root.hcl")` — except `terraform/state/iam`, which deliberately keeps an **explicit** `include { path = "${get_repo_root()}/workloads/root.hcl" }` (not `find_in_parent_folders`) so it stays pinned to the shared bootstrap forever: it only ever manages IAM resources, authorized via ordinary org-level policy grants the shared deployer already has, so there's no reason to move it. `terraform/state/bucket` starts on the same explicit pin (needed only to avoid a circular backend dependency *before* its own dedicated bucket exists) but migrates to resolving via `find_in_parent_folders` like every other leaf, with a one-time state migration, once that bucket exists — storing its own state inside the bucket it manages from then on, the same self-referential pattern the shared, repo-wide bootstrap leaf already uses for itself. (`pigeon.dev`'s own `state/bucket` still has the old, unmigrated shared pin — a known, documented gap, ADR-0132.) Any other workload can adopt this same pattern by following either one as a template.
+`pigeon.dev` (ADR-0130/0131), `noisypigeon.com` (ADR-0132), and `willowgraysen.com` (ADR-0133) each opt out of the shared bootstrap entirely: a `workloads/<name>/root.hcl` (same shape as the shared `workloads/root.hcl`, just scoped to that workload's own `secrets.enc`) and a `workloads/<name>/secrets.enc` (sops/age-encrypted, same age recipient as the shared root `.env.enc`, decrypted independently — never merged with it). Once `root.hcl` exists, every leaf under `terraform/**` resolves to it instead of the shared root via plain `find_in_parent_folders("root.hcl")` — except `terraform/state/iam`, which deliberately keeps an **explicit** `include { path = "${get_repo_root()}/workloads/root.hcl" }` (not `find_in_parent_folders`) so it stays pinned to the shared bootstrap forever: it only ever manages IAM resources, authorized via ordinary org-level policy grants the shared deployer already has, so there's no reason to move it. `terraform/state/bucket` starts on the same explicit pin (needed only to avoid a circular backend dependency *before* its own dedicated bucket exists) but migrates to resolving via `find_in_parent_folders` like every other leaf, with a one-time state migration, once that bucket exists — storing its own state inside the bucket it manages from then on, the same self-referential pattern the shared, repo-wide bootstrap leaf already uses for itself. (`pigeon.dev`'s own `state/bucket` still has the old, unmigrated shared pin — a known, documented gap, ADR-0132.) Any other workload can adopt this same pattern by following either one as a template.
 
 ### Per-leaf overrides: `scaleway_config.hcl`
 
-Every leaf defaults to Scaleway's `fr-par` region/zone. A leaf needing something different — so far, only `scaleway/terraform/custodian/duck-jellyfish`, which lives in `nl-ams` — drops a `scaleway_config.hcl` file directly in its own directory, next to its `terragrunt.hcl`:
+Every leaf defaults to Scaleway's `fr-par` region/zone. A leaf needing something different — so far, only `willowgraysen.com/terraform/custodial-storage/duck-jellyfish`, which lives in `nl-ams` — drops a `scaleway_config.hcl` file directly in its own directory, next to its `terragrunt.hcl`:
 
 ```hcl
 locals {
@@ -139,11 +123,14 @@ Run `mise run secrets-edit` to edit it. See
 workload (see above) instead reads its own `secrets.enc`, same mechanism,
 never falling back to the shared file
 ([ADR-0131](../docs/adr/0131-workload-specific-secrets.md)).
-`workloads/root.hcl` only wires what's actually needed (Cloudflare for
-the `management/terraform/cloudflare/` DNS leaves, Scaleway for
-everything else, added by
-[ADR-0094](../docs/adr/0094-move-scaleway-bootstrap-leaf-to-workloads.md));
-add a provider when a future workload actually needs it, not preemptively.
+`workloads/root.hcl` wires Cloudflare and Scaleway (Scaleway added by
+[ADR-0094](../docs/adr/0094-move-scaleway-bootstrap-leaf-to-workloads.md))
+even though no leaf still resolves to it directly now that every workload
+is self-sufficient (ADR-0133) — each workload's own `state/iam` leaf (and,
+for `pigeon.dev`, its still-unfixed `state/bucket`) keeps the explicit
+shared-root pin described above, so both providers stay live here; add
+another provider when a future workload actually needs it, not
+preemptively.
 
 ## Adding a new workload
 

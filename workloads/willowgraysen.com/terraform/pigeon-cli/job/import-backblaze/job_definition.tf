@@ -1,14 +1,14 @@
 locals {
   # Kill switch
-  job_enabled       = true
+  job_enabled = true
 
   job_commands = [
     "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:' --destination 'destination:' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
   ]
 
   # Configuration
-  job_name_prefix   = "import"
-  job_name_suffix   = "backblaze"
+  job_name_prefix       = "import"
+  job_name_suffix       = "backblaze"
   job_block_volume_size = 50
 
   source_bucket = {
@@ -28,9 +28,9 @@ locals {
   }
 
   // Non-configurable
-  job_name      = "${local.job_name_prefix}-${local.job_name_suffix}"
+  job_name           = "${local.job_name_prefix}-${local.job_name_suffix}"
   ssh_key_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDKsmUsSyZRo1u8TLkz+kJVbxuYsrs3M3tBXpI3HVHQa" #gitleaks:allow
-  instance_type = "COMPUTE3-X8C-16G"
+  instance_type      = "COMPUTE3-X8C-16G"
   cockpit_config = {
     metrics_push_url = local.cockpit_metrics_url
     logs_push_url    = local.cockpit_logs_url

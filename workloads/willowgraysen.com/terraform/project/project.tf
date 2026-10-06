@@ -1,6 +1,6 @@
 module "project" {
   source = "https://noisypigeon.com/modules/scaleway/project/v1.0.0"
-  name   = "noisypigeon"
+  name   = "willowgraysen"
   ssh_key = {
     alias = "noisypigeon"
     # Not a secret; this is my pub key.

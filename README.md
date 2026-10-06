@@ -1,4 +1,6 @@
- ## Hi, I'm Willow 👋
+ ## Willow Graysen
+
+Infra dev, data hoarder, mechanic-ish, photographer.
 
 - 🌻 I am a 28-year-old queer woman.
 - 👩‍💻 I work at [Wealthsimple](https://wealthsimple.com) in platform engineering, with a focus on Kubernetes and observability.

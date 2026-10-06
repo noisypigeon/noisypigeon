@@ -17,31 +17,24 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 - [`workloads/`](workloads/) — each workload gets its own
   `workloads/<name>/` (terraform colocated with the resource it's part
   of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
-  - [`workloads/blog/src/`](workloads/blog/src/) — the Zola site for
-    [noisypigeon.com](https://noisypigeon.com).
-  - [`workloads/bucket/terraform/`](workloads/bucket/terraform/) —
-    storage-bucket infrastructure grouped by dataset, independent of
-    which job/CLI consumes it (ADR-0117): each dataset under
-    `noisypigeon/` collocates its `import/` and/or `deduplication/`
-    leaf, backing the external `pigeon` CLI's jobs
-    (`noisypigeon/pigeon-cli`).
-  - [`workloads/scaleway/terraform/`](workloads/scaleway/terraform/) —
-    every Scaleway-specific leaf not already owned by a more specific
-    workload: `custodian/duck-jellyfish/` (an `nl-ams` cross-region
-    backup bucket).
-  - [`workloads/management/terraform/`](workloads/management/terraform/)
-    — this repo's own Terraform state bucket and deployer IAM
-    application/policy/API key (`scaleway/`), and every
-    Cloudflare-managed DNS leaf, grouped by domain (`cloudflare/`):
-    Fastmail SPF/DKIM/MX records, a Bluesky domain-handle verification
-    TXT record, a Google site-verification TXT record, and the GitHub
-    Pages CNAME records (pointing it at the blog) for
-    `noisypigeon.com`; Fastmail records and a `pigeon.dev` →
-    `noisypigeon.com` redirect for `pigeon.dev`.
-  - [`workloads/pigeon-cli/terraform/`](workloads/pigeon-cli/terraform/)
-    — the `pigeon-cli` compute-instance job leaf (`job/`) and the shared
-    Cockpit metrics/logs source + IAM application every job policy
-    attaches to (`shared/`).
+  - [`workloads/noisypigeon.com/`](workloads/noisypigeon.com/) — the
+    Zola site for [noisypigeon.com](https://noisypigeon.com) (`src/`),
+    served from a Scaleway Object Storage bucket behind Cloudflare, plus
+    its own dedicated Scaleway project, state bucket, deployer IAM, and
+    Cloudflare DNS leaves (ADR-0132).
+  - [`workloads/pigeon.dev/`](workloads/pigeon.dev/) — the Zola wiki for
+    `pigeon.dev`, with the same dedicated self-sufficiency pattern
+    (ADR-0130/0131).
+  - [`workloads/willowgraysen.com/`](workloads/willowgraysen.com/) — the
+    third self-sufficient workload (ADR-0133); infrastructure-only, and
+    the home for everything not claimed by a more specific workload: the
+    repo's own Terraform state bucket, deployer IAM, and Scaleway project
+    (`state/`, `project/`), a Cloudflare redirect from `willowgraysen.com`
+    to `noisypigeon.com` (`redirect/`), an `nl-ams` cross-region backup
+    bucket (`custodial-storage/duck-jellyfish/`), and the external
+    `pigeon` CLI's (`noisypigeon/pigeon-cli`) storage buckets, shared
+    Cockpit/IAM-application resources, and compute-instance job leaves
+    (`pigeon-cli/{bucket,shared,job}/`).
 - [`docs/adr/`](docs/adr/) — architecture decision records governing
   terraform/blog changes in this repo, including every surviving pre-split
   ADR (renumbered inline, not archived separately).

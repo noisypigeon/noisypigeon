@@ -4,6 +4,33 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-05 — Make workloads/noisypigeon.com Terraform-self-sufficient
+
+## Summary
+
+- Gives `noisypigeon.com` its own dedicated Scaleway project, Terraform state bucket, and deployer IAM — decoupling it from the shared repo-wide bootstrap, the same pattern ADR-0130/0131 established for `pigeon.dev`.
+- Cuts the blog over from GitHub Pages to a Scaleway Object Storage bucket (website-hosting, public-read) fronted by Cloudflare, in the same move.
+- Decommissions `workloads/blog/` entirely — `src/`, `CHANGELOG.md`, and `generate-module-redirects.sh` all move into `workloads/noisypigeon.com/`.
+- Migrates the `bluesky`/`proton`/`google-search` (renamed from `google`) Cloudflare DNS leaves out of the shared `workloads/management/terraform/cloudflare/` into `workloads/noisypigeon.com/terraform/`.
+- All state migrations performed live, old backend paths emptied before deletion (per ADR-0130's documented safety procedure) — verified clean at every step.
+- See `docs/adr/0132-noisypigeon-com-terraform-self-sufficiency.md` for the full decision record, including a pre-existing bug found and worked around (not fixed) during the bootstrap: the shared deployer's IAM key can't do S3 operations against other projects' buckets, regardless of IAM policy grants — `pigeon.dev`'s own `state/bucket` leaf has the identical gap today.
+
+## Verified live
+
+- `noisypigeon.com` and `www.noisypigeon.com` both resolve correctly through Cloudflare to the new bucket (confirmed via `curl`/`dig` post-cutover).
+- Every migrated DNS leaf's state confirmed clean at its new path (identical resource IDs, no destroy/recreate) and empty at its old path (0 resources to destroy) before the old directories were deleted.
+- `terragrunt hcl format --check` and `terraform fmt -recursive -check` both pass on every new/moved file.
+
+## Test plan
+
+- [ ] CI (`terragrunt-plan.yml`) shows no unexpected diffs against the new leaves
+- [ ] Confirm `www.noisypigeon.com` and `noisypigeon.com` continue resolving correctly post-merge
+- [ ] Disable the GitHub Pages custom domain setting for this repo (tracked separately, not part of this PR)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#208](https://github.com/noisypigeon/noisypigeon/pull/208)
+
 ## 2026-10-05 — Strengthen name-entity SEO signals on homepage and posts
 
 Fixes a few on-page SEO gaps left after the ADR-0111 pass, aimed at helping

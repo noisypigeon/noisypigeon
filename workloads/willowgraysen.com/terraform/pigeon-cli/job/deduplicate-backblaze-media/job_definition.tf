@@ -3,16 +3,16 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:poisoned/photo-library-stitching/' --destination 'destination:photo-library-stitching/' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
+    "cd pigeon-cli/ && pigeon job run deduplicate --source-bucket source --remote-output destination --report-bucket reports --local-output /mnt/data/dedupe-run --yes"
   ]
 
   # Configuration
-  job_name_prefix       = "import"
-  job_name_suffix       = "media-photo-library-stitching"
-  job_block_volume_size = 50
+  job_name_prefix       = "deduplicate"
+  job_name_suffix       = "media"
+  job_block_volume_size = 2500
 
   source_bucket = {
-    bucket_name     = "import-ikbld8-backblaze"
+    bucket_name     = "import-jfo5la-backblaze-media"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key
@@ -20,7 +20,7 @@ locals {
   }
 
   destination_bucket = {
-    bucket_name     = "import-jfo5la-backblaze-media"
+    bucket_name     = "deduplicate-oteubx-backblaze-media"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

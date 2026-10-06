@@ -20,7 +20,7 @@ locals {
   }
 
   destination_bucket = {
-    bucket_name     = "deduplicate-oteubx-backblaze-media"
+    bucket_name     = "deduplicate-fx7k2k-backblaze-media"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

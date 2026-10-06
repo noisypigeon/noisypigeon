@@ -3,24 +3,24 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:' --destination 'destination:' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
+    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:media/' --destination 'destination:media/' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
   ]
 
   # Configuration
   job_name_prefix       = "import"
-  job_name_suffix       = "backblaze"
-  job_block_volume_size = 50
+  job_name_suffix       = "media"
+  job_block_volume_size = 1500
 
   source_bucket = {
-    bucket_name     = local.digitalocean_backblaze_bucket_name
-    bucket_endpoint = "https://tor1.digitaloceanspaces.com"
-    access_key_id   = local.digitalocean_backblaze_access_key_id
-    secret_key      = local.digitalocean_backblaze_secret_key
-    provider_name   = "DigitalOcean"
+    bucket_name     = "import-ikbld8-backblaze"
+    bucket_endpoint = "https://s3.fr-par.scw.cloud"
+    access_key_id   = module.job.access_key_id
+    secret_key      = module.job.secret_key
+    provider_name   = local.scaleway_s3_provider_name
   }
 
   destination_bucket = {
-    bucket_name     = local.import_backblaze_bucket_name
+    bucket_name     = "import-jfo5la-backblaze-media"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

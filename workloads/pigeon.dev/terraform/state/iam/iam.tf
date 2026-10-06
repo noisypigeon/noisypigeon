@@ -11,6 +11,13 @@ module "iam_policy" {
 
   project_ids             = [local.scaleway_project_id_pigeon_dev]
   project_permission_sets = ["ObjectStorageFullAccess"]
+
+  organization_id = local.scaleway_organization_id
+  organization_permission_sets = [
+    "ProjectManager",
+    "IAMManager",
+    "IAMApplicationManager"
+  ]
 }
 
 module "iam_api_key" {

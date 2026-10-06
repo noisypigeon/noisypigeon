@@ -23,8 +23,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-CONTENT_DIR="$REPO_ROOT/workloads/blog/src/content/modules"
-THEME_CONTENT_DIR="$REPO_ROOT/workloads/blog/src/content/theme-versions"
+CONTENT_DIR="$REPO_ROOT/workloads/noisypigeon.com/src/content/modules"
+THEME_CONTENT_DIR="$REPO_ROOT/workloads/noisypigeon.com/src/content/theme-versions"
 
 mkdir -p "$CONTENT_DIR"
 

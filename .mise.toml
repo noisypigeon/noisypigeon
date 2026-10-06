@@ -27,7 +27,7 @@ run = "terragrunt run --all -- plan"
 run = "terragrunt run --all -- apply"
 
 [tasks.blog-build]
-dir = "workloads/blog/src"
+dir = "workloads/noisypigeon.com/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
   "../generate-module-redirects.sh",
@@ -35,7 +35,7 @@ run = [
 ]
 
 [tasks.blog-serve]
-dir = "workloads/blog/src"
+dir = "workloads/noisypigeon.com/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
   "../generate-module-redirects.sh",

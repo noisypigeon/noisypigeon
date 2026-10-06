@@ -248,11 +248,11 @@ jobs:
           git rebase origin/main
           git push origin HEAD:main
 
-      - name: Trigger blog Pages deploy
+      - name: Trigger blog deploy
         if: steps.versions.outputs.tags != '' || steps.zola_site.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-        run: gh workflow run blog-pages.yml --ref main
+        run: gh workflow run noisypigeon-com-deploy.yml --ref main
 
       - name: Tag and release each changed module/theme
         if: steps.modules.outputs.changed != '' || steps.zola_site.outputs.changed == 'true'

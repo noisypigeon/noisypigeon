@@ -5,7 +5,7 @@ Not versioned — for versioned, package-scoped changelogs see
 `templates/terraform/*/*/CHANGELOG.md` (each Terraform module),
 [`templates/zola-site/CHANGELOG.md`](templates/zola-site/CHANGELOG.md) (the
 theme, versioned since ADR-0113), and
-[`workloads/blog/CHANGELOG.md`](workloads/blog/CHANGELOG.md) (the blog,
+[`workloads/noisypigeon.com/CHANGELOG.md`](workloads/noisypigeon.com/CHANGELOG.md) (the blog,
 unversioned). The `pigeon-cli` crate's own changelog now lives in its own
 repo, `noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
 `- [<scope>] <summary> ([#N](PR URL))`, where `<scope>` is `pigeon-cli`,

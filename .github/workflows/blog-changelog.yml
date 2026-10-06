@@ -5,7 +5,7 @@ on:
     types: [closed]
     branches: [main]
     paths:
-      - "workloads/blog/src/**"
+      - "workloads/noisypigeon.com/src/**"
 
 permissions:
   contents: write
@@ -41,7 +41,7 @@ jobs:
           TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
           OFFSET=$(TZ="America/Los_Angeles" date +%z | sed -E 's/([+-][0-9]{2})([0-9]{2})/\1:\2/')
 
-          CHANGELOG="workloads/blog/CHANGELOG.md"
+          CHANGELOG="workloads/noisypigeon.com/CHANGELOG.md"
           if [ ! -f "$CHANGELOG" ]; then
             cat > "$CHANGELOG" <<'HEADER'
           # Changelog
@@ -86,7 +86,7 @@ jobs:
           mv "${ROOT_CHANGELOG}.new" "$ROOT_CHANGELOG"
           git add "$ROOT_CHANGELOG"
 
-          DIGEST="workloads/blog/src/content/changelog/${TODAY}-changelog.md"
+          DIGEST="workloads/noisypigeon.com/src/content/changelog/${TODAY}-changelog.md"
           if [ ! -f "$DIGEST" ]; then
             cat > "$DIGEST" <<EOF
           +++
@@ -127,4 +127,4 @@ jobs:
       - name: Trigger blog Pages deploy
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-        run: gh workflow run blog-pages.yml --ref main
+        run: gh workflow run noisypigeon-com-deploy.yml --ref main

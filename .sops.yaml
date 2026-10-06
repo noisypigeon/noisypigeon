@@ -3,3 +3,6 @@
 creation_rules:
   - path_regex: \.env\.enc$
     age: age1cx0hla738df54dk9kjnecv987uwvlh6f8wjy08ps5rxh68w9zgas90l5jh
+  # Per-workload secrets files (ADR-0131), e.g. workloads/pigeon.dev/secrets.enc.
+  - path_regex: workloads/[^/]+/secrets\.enc$
+    age: age1cx0hla738df54dk9kjnecv987uwvlh6f8wjy08ps5rxh68w9zgas90l5jh

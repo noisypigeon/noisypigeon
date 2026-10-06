@@ -3,13 +3,13 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:media/' --destination 'destination:media/' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
+    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:poisoned/photo-library-stitching/' --destination 'destination:photo-library-stitching/' --report-bucket reports --yes --local-output /mnt/data/pigeon-job-import",
   ]
 
   # Configuration
   job_name_prefix       = "import"
-  job_name_suffix       = "media"
-  job_block_volume_size = 1500
+  job_name_suffix       = "media-photo-library-stitching"
+  job_block_volume_size = 50
 
   source_bucket = {
     bucket_name     = "import-ikbld8-backblaze"

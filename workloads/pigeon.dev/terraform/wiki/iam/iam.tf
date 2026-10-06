@@ -9,7 +9,7 @@ module "iam_policy" {
 
   application_id = module.iam_application.id
 
-  project_ids             = [local.scaleway_project_id_pigeon_dev]
+  project_ids             = [local.scaleway_project_id]
   project_permission_sets = ["ObjectStorageFullAccess"]
 }
 
@@ -17,5 +17,5 @@ module "iam_api_key" {
   source = "https://noisypigeon.com/modules/scaleway/iam-api-key/v0.2.0"
 
   application_id     = module.iam_application.id
-  default_project_id = local.scaleway_project_id_pigeon_dev
+  default_project_id = local.scaleway_project_id
 }

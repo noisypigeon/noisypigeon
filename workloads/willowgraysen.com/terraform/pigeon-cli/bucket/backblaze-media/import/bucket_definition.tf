@@ -1,4 +1,4 @@
 locals {
   name_prefix = "import"
-  name_suffix = "backblaze"
+  name_suffix = "backblaze-media"
 }

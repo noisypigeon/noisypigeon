@@ -4,7 +4,7 @@ locals {
   # the shared workloads/root.hcl's own ".env.enc" decryption exactly
   # (docs/adr/0123-sops-encrypted-root-env.md), just scoped to this workload
   # and never merged with or falling back to the repo-root file. No
-  # plaintext copy ever touches disk.
+  # plaintext copy ever touches disk
   secrets_enc_path = find_in_parent_folders("secrets.enc", "")
 
   secrets_decrypted = local.secrets_enc_path != "" ? run_cmd(

@@ -14,7 +14,8 @@ module "iam_policy" {
 }
 
 module "iam_api_key" {
-  source = "https://noisypigeon.com/modules/scaleway/iam-api-key/v0.1.0"
+  source = "https://noisypigeon.com/modules/scaleway/iam-api-key/v0.2.0"
 
-  application_id = module.iam_application.id
+  application_id     = module.iam_application.id
+  default_project_id = local.scaleway_project_id_pigeon_dev
 }

@@ -30,33 +30,5 @@ module "job" {
     description             = "pigeon-cli API key for ${local.job_name}"
   }
 
-  keyring = [
-    {
-      kind          = "bucket"
-      alias         = "source"
-      endpoint      = local.scaleway_s3_endpoint
-      bucket        = local.source_bucket_name
-      access_key_id = module.job.access_key_id
-      secret_key    = module.job.secret_key
-      provider      = local.scaleway_s3_provider_name
-    },
-    {
-      kind          = "bucket"
-      alias         = "destination"
-      endpoint      = local.scaleway_s3_endpoint
-      bucket        = local.destination_bucket_name
-      access_key_id = module.job.access_key_id
-      secret_key    = module.job.secret_key
-      provider      = local.scaleway_s3_provider_name
-    },
-    {
-      kind          = "bucket"
-      alias         = "reports"
-      endpoint      = local.scaleway_s3_endpoint
-      bucket        = "pigeon-cli-vmqjtz-reports"
-      access_key_id = module.job.access_key_id
-      secret_key    = module.job.secret_key
-      provider      = local.scaleway_s3_provider_name
-    }
-  ]
+  keyring = local.keyring
 }

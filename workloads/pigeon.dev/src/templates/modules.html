@@ -24,8 +24,8 @@
             <li class="post-list-year-h2">{{ current_provider }}</li>
           {% endif %}
           <li>
-            <a href="{{ page.permalink }}">{{ page.title }}</a>
-            <span class="site-module-latest-version">v{{ page.extra.latest_version }}</span>
+            <span class="site-module-version">v{{ page.extra.latest_version }}</span>
+            <span class="post-link"><a href="{{ page.permalink }}">{{ page.title }}</a></span>
           </li>
         {% endif %}
       {% endfor %}

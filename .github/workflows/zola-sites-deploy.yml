@@ -1,0 +1,150 @@
+name: Deploy Zola sites
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "workloads/noisypigeon.com/src/**"
+      - "workloads/pigeon.dev/src/**"
+      - "templates/zola-site/**"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Which site to deploy"
+        type: choice
+        options: ["all", "noisypigeon.com", "pigeon.dev"]
+        default: "all"
+
+permissions:
+  contents: read
+
+env:
+  ZOLA_VERSION: "0.23.6"
+
+jobs:
+  # on.push.paths above gates the whole workflow, not individual matrix legs
+  # -- this job tells `deploy` which site(s) actually need redeploying, so a
+  # pigeon.dev-only push doesn't also redeploy noisypigeon.com and vice
+  # versa. Mirrors the `detect` job pattern in terragrunt-plan.yml
+  # (docs/adr/0129). A change under templates/zola-site/ affects both sites.
+  # A workflow_dispatch with an explicit `site` input (used by
+  # blog-changelog.yml and template-release.yml's automated post-merge
+  # dispatches, docs/adr/0140) targets just that site; the default "all"
+  # (a genuinely manual dispatch) redeploys both.
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      noisypigeon: ${{ steps.check.outputs.noisypigeon }}
+      pigeondev: ${{ steps.check.outputs.pigeondev }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check which sites changed
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SITE_INPUT="${{ github.event.inputs.site }}"
+            THEME_CHANGED=false
+            NOISYPIGEON_FILES_CHANGED=false
+            PIGEONDEV_FILES_CHANGED=false
+            case "$SITE_INPUT" in
+              noisypigeon.com) NOISYPIGEON_FILES_CHANGED=true ;;
+              pigeon.dev) PIGEONDEV_FILES_CHANGED=true ;;
+              *) THEME_CHANGED=true ;;
+            esac
+          else
+            CHANGED_FILES=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
+            THEME_CHANGED=false
+            echo "$CHANGED_FILES" | grep -q '^templates/zola-site/' && THEME_CHANGED=true
+            NOISYPIGEON_FILES_CHANGED=false
+            echo "$CHANGED_FILES" | grep -q '^workloads/noisypigeon.com/src/' && NOISYPIGEON_FILES_CHANGED=true
+            PIGEONDEV_FILES_CHANGED=false
+            echo "$CHANGED_FILES" | grep -q '^workloads/pigeon.dev/src/' && PIGEONDEV_FILES_CHANGED=true
+          fi
+
+          if [ "$THEME_CHANGED" = true ] || [ "$NOISYPIGEON_FILES_CHANGED" = true ]; then
+            echo "noisypigeon=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "noisypigeon=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$THEME_CHANGED" = true ] || [ "$PIGEONDEV_FILES_CHANGED" = true ]; then
+            echo "pigeondev=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pigeondev=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: detect
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - site: noisypigeon.com
+            changed_key: noisypigeon
+            src_dir: workloads/noisypigeon.com/src
+            bucket: noisypigeon.com
+            access_key_secret: NOISYPIGEON_COM_SCW_ACCESS_KEY
+            secret_key_secret: NOISYPIGEON_COM_SCW_SECRET_KEY
+            build_cmd: "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build"
+            extra_step: ""
+          - site: pigeon.dev
+            changed_key: pigeondev
+            src_dir: workloads/pigeon.dev/src
+            bucket: pigeon.dev
+            access_key_secret: PIGEON_DEV_SCW_ACCESS_KEY
+            secret_key_secret: PIGEON_DEV_SCW_SECRET_KEY
+            build_cmd: "zola build"
+            extra_step: "workloads/pigeon.dev/generate-module-redirects.sh"
+    runs-on: ubuntu-latest
+    concurrency:
+      group: "zola-deploy-${{ matrix.site }}"
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      # Job-level `if:` has no access to the matrix context (only step-level
+      # does), so per-site gating happens here instead: every step below
+      # checks this output rather than the job as a whole being skipped.
+      - name: Determine whether this site needs deploying
+        id: gate
+        run: echo "run=${{ needs.detect.outputs[matrix.changed_key] }}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve zola-site theme
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.src_dir }}
+        run: ../../../templates/zola-site/resolve-theme.sh
+
+      - name: Run site-specific pre-build step
+        if: steps.gate.outputs.run == 'true' && matrix.extra_step != ''
+        run: ${{ matrix.extra_step }}
+
+      - name: Install Zola
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          curl -sSL "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C /usr/local/bin zola
+
+      - name: Build with Zola
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.src_dir }}
+        run: ${{ matrix.build_cmd }}
+
+      - name: Sync to Scaleway Object Storage
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.src_dir }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets[matrix.access_key_secret] }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets[matrix.secret_key_secret] }}
+          AWS_DEFAULT_REGION: fr-par
+        run: |
+          aws s3 sync public s3://${{ matrix.bucket }} \
+            --endpoint-url https://s3.fr-par.scw.cloud \
+            --acl public-read \
+            --delete

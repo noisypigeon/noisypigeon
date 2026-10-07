@@ -6,7 +6,7 @@
 !/workloads/pigeon.dev/src/content/modules/_index.md
 /workloads/pigeon.dev/src/content/theme-versions/*.md
 !/workloads/pigeon.dev/src/content/theme-versions/_index.md
-/workloads/*/src/.theme-resolved/
+/workloads/*/src/themes/zola-site
 .claude/worktrees
 .terraform.lock.hcl
 .terragrunt-cache/

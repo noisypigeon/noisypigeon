@@ -15,6 +15,10 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-07
+
+- [zola-site] Generalize changelog.html to reuse the section it's rendering ([#232](https://github.com/noisypigeon/noisypigeon/pull/232))
+
 ## 2026-10-06
 
 - [blog] Remove zola-site symlink requirement; merge Zola deploy workflows ([#230](https://github.com/noisypigeon/noisypigeon/pull/230))

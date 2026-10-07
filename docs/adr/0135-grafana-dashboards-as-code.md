@@ -98,6 +98,6 @@ A separate `grafana_folder` is required because Scaleway's own preconfigured das
 
 ## Out of scope
 
-- Alerts-as-code via Scaleway's Cockpit Alertmanager (`scaleway_cockpit_alert_manager` + `scaleway_cockpit_preconfigured_alert`) or datasource-managed ruler rules — genuinely deferred, not a permanent boundary; file via `mise run adr-issue`.
+- Alerts-as-code via Scaleway's Cockpit Alertmanager (`scaleway_cockpit_alert_manager` + `scaleway_cockpit_preconfigured_alert`) or datasource-managed ruler rules — genuinely deferred, not a permanent boundary. ([#218](https://github.com/noisypigeon/noisypigeon/issues/218))
 - Replacing the `local-exec` first-access bootstrap with a native Terraform resource once (if) the upstream `scaleway_cockpit_activate_grafana` action merges.
 - Wiring `scaleway_cockpit_grafana_sync_data_sources` (the action that forces Cockpit to push/refresh its data sources into Grafana, since that sync is otherwise asynchronous and can silently lag) onto the existing `shared/cockpit` leaf's sources — left for implementation time to confirm whether the repo's pinned Terraform `1.16.3` (`.mise.toml`) actually supports the HCL `action` block this requires; if not, file as a follow-up rather than blocking this ADR.

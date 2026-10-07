@@ -46,7 +46,7 @@ provider "grafana" {
 }
 ```
 
-This is the repo's first use of the `grafana` provider. It is declared leaf-local rather than added to `workloads/willowgraysen.com/root.hcl`'s `generate "provider"` block, unlike `scaleway`/`cloudflare` — those two are needed by nearly every leaf in this workload, while `grafana` has exactly one consumer so far. Forcing every other leaf under this workload to also carry a `grafana` provider configuration (and the IAM-proxied credential it needs) for no reason would cut against `workloads/README.md`'s own stated principle of keeping `root.hcl`'s wired providers minimal until a leaf actually needs one.
+This is the repo's first use of the `grafana` provider. The `provider "grafana" { ... }` *configuration* block above is leaf-local — unlike `scaleway`/`cloudflare`, `grafana` has exactly one consumer so far, and nothing else in this workload needs its IAM-proxied credential wired in. Its `required_providers` *declaration*, however, could not stay leaf-local: Terraform allows only one `required_providers` block per module, and `workloads/willowgraysen.com/root.hcl`'s `generate "provider"` block already generates one (for `cloudflare`/`scaleway`) into every leaf under this workload — a second one in the leaf's own `.tf` files fails `terraform init` with "Duplicate required providers configuration" (confirmed live, via this leaf's first real CI plan run). So `grafana`'s entry joins that same generated block instead, inert for every other leaf that doesn't configure it.
 
 ### First-access bootstrap via `local-exec`
 

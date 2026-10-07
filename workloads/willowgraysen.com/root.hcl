@@ -100,6 +100,10 @@ terraform {
       source  = "scaleway/scaleway"
       version = "~> 2.0"
     }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 4.0"
+    }
   }
 }
 

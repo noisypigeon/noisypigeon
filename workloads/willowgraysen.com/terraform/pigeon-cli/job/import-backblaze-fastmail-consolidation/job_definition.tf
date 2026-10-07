@@ -1,6 +1,6 @@
 locals {
   job_name_prefix         = "import"
-  job_name_suffix         = "backblaze-google-consolidation"
+  job_name_suffix         = "backblaze-fastmail-consolidation"
   job_block_volume_size   = 50
 
   job_commands = [
@@ -8,8 +8,8 @@ locals {
   ]
 
   source_bucket_name      = "import-ikbld8-backblaze"
-  destination_bucket_name = "import-dpdhsk-backblaze-google-consolidation"
-  subpath_name            = "google-drive-consolidation-2025-12-17"
+  destination_bucket_name = "import-d91tpu-backblaze-fastmail-consolidation"
+  subpath_name            = "fastmail_export_karafinch_fastmail_com_2025_12_17"
   source_subpath          = "poisoned/${local.subpath_name}"
   destination_subpath     = local.subpath_name
 

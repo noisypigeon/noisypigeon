@@ -4,30 +4,30 @@
 #   job_block_volume_size   = 50
 
 #   job_commands = [
-#     "mkdir /mnt/data/segment_b && cd pigeon-cli/ && mise run pigeon-release job run import --source '${local.b_segment_alias}:' --destination 'destination:${local.b_segment_bucket_name}/' --report-bucket reports --yes --local-output /mnt/data/segment_b",
+#     "cd pigeon-cli/",
+#     "mkdir /mnt/data/segment_a && mise run pigeon-release job run import --source '${local.a_segment_alias}:' --destination 'destination:${local.a_segment_bucket_name}/' --report-bucket reports --yes --local-output /mnt/data/segment_a",
+#     "mkdir /mnt/data/segment_b && mise run pigeon-release job run import --source '${local.b_segment_alias}:' --destination 'destination:${local.b_segment_bucket_name}/' --report-bucket reports --yes --local-output /mnt/data/segment_b",
 #     "mkdir /mnt/data/segment_c && mise run pigeon-release job run import --source '${local.c_segment_alias}:' --destination 'destination:${local.c_segment_bucket_name}/' --report-bucket reports --yes --local-output /mnt/data/segment_c"
 #   ]
 
-#   # a_segment_bucket_name = "deduplicate-uqpdu7-backblaze-fastmail-consolidation"
-#   # a_segment_alias = "fastmail"
-#   b_segment_bucket_name = "deduplicate-0msi9l-backblaze-google-consolidation"
-#   b_segment_alias = "google"
-#   c_segment_bucket_name = "deduplicate-fx7k2k-backblaze-media"
-#   c_segment_alias = "media"
-#   # d_segment_bucket_name = "deduplicate-h4w903-backblaze-computer-snapshots"
-#   # d_segment_alias = "snapshots"
+#   a_segment_bucket_name = "deduplicate-0msi9l-backblaze-google-consolidation"
+#   a_segment_alias = "google"
+#   b_segment_bucket_name = "deduplicate-fx7k2k-backblaze-media"
+#   b_segment_alias = "media"
+#   c_segment_bucket_name = "deduplicate-gzoc4o-backblaze-t7-email-consolidation"
+#   c_segment_alias = "t7"
 
 #   # Segments
 #   keyring = [
-#     # {
-#     #   kind          = "bucket"
-#     #   alias         = local.a_segment_alias
-#     #   endpoint      = local.scaleway_s3_endpoint
-#     #   bucket        = local.a_segment_bucket_name
-#     #   access_key_id = module.job.access_key_id
-#     #   secret_key    = module.job.secret_key
-#     #   provider      = local.scaleway_s3_provider_name
-#     # },
+#     {
+#       kind          = "bucket"
+#       alias         = local.a_segment_alias
+#       endpoint      = local.scaleway_s3_endpoint
+#       bucket        = local.a_segment_bucket_name
+#       access_key_id = module.job.access_key_id
+#       secret_key    = module.job.secret_key
+#       provider      = local.scaleway_s3_provider_name
+#     },
 #     {
 #       kind          = "bucket"
 #       alias         = local.b_segment_alias
@@ -46,15 +46,6 @@
 #       secret_key    = module.job.secret_key
 #       provider      = local.scaleway_s3_provider_name
 #     },
-#     # {
-#     #   kind          = "bucket"
-#     #   alias         = local.d_segment_alias
-#     #   endpoint      = local.scaleway_s3_endpoint
-#     #   bucket        = local.d_segment_bucket_name
-#     #   access_key_id = module.job.access_key_id
-#     #   secret_key    = module.job.secret_key
-#     #   provider      = local.scaleway_s3_provider_name
-#     # },
 #     {
 #       kind          = "bucket"
 #       alias         = "destination"

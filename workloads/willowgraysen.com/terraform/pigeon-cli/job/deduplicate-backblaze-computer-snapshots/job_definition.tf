@@ -3,16 +3,16 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:poisoned/macbook-backup-2026-may-23/' --destination 'destination:computer-snapshots/' --report-bucket reports --yes --local-output /mnt/data"
+    "cd pigeon-cli/ && mise run pigeon-release job run deduplicate --source-bucket source --remote-output destination --report-bucket reports --local-output /mnt/data --concurrency 8 --upload-concurrency 16 --yes"
   ]
 
   # Configuration
-  job_name_prefix       = "import"
-  job_name_suffix       = "backblaze-computer-snapshots"
-  job_block_volume_size = 50
+  job_name_prefix       = "deduplicate"
+  job_name_suffix       = "computer-snapshots"
+  job_block_volume_size = 2200
 
   source_bucket = {
-    bucket_name     = "import-ikbld8-backblaze"
+    bucket_name     = "import-avdk93-backblaze-computer-snapshots"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key
@@ -20,7 +20,7 @@ locals {
   }
 
   destination_bucket = {
-    bucket_name     = "import-avdk93-backblaze-computer-snapshots"
+    bucket_name     = "deduplicate-h4w903-backblaze-computer-snapshots"
     bucket_endpoint = "https://s3.fr-par.scw.cloud"
     access_key_id   = module.job.access_key_id
     secret_key      = module.job.secret_key

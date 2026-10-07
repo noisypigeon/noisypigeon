@@ -57,12 +57,12 @@
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${prometheus}" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
-      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\", instance=~\"$instance\"}[5m]))",
+          "expr": "avg by (instance) (pigeon_resource_cpu_percent{instance=~\"$instance\"})",
           "legendFormat": "{{instance}}"
         }
       ]
@@ -73,12 +73,12 @@
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${prometheus}" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
-      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "1 - (node_memory_MemAvailable_bytes{instance=~\"$instance\"} / node_memory_MemTotal_bytes{instance=~\"$instance\"})",
+          "expr": "pigeon_resource_mem_bytes{instance=~\"$instance\"}",
           "legendFormat": "{{instance}}"
         }
       ]
@@ -94,8 +94,8 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "1 - (node_filesystem_avail_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"} / node_filesystem_size_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"})",
-          "legendFormat": "{{instance}} {{mountpoint}}"
+          "expr": "max by (instance) (1 - (node_filesystem_avail_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"} / node_filesystem_size_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"}))",
+          "legendFormat": "{{instance}}"
         }
       ]
     },
@@ -110,20 +110,20 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "sum by (instance) (rate(node_disk_read_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum by (instance) (rate(pigeon_resource_disk_read_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "{{instance}} read"
         },
         {
           "refId": "B",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "sum by (instance) (rate(node_disk_written_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "expr": "sum by (instance) (rate(pigeon_resource_disk_written_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
           "legendFormat": "{{instance}} write"
         }
       ]
     },
     {
       "id": 6,
-      "title": "Network usage",
+      "title": "Upload throughput",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${prometheus}" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
@@ -132,14 +132,8 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "sum by (instance) (rate(node_network_receive_bytes_total{instance=~\"$instance\", device!=\"lo\"}[$__rate_interval]))",
-          "legendFormat": "{{instance}} rx"
-        },
-        {
-          "refId": "B",
-          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-          "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{instance=~\"$instance\", device!=\"lo\"}[$__rate_interval]))",
-          "legendFormat": "{{instance}} tx"
+          "expr": "sum by (instance) (rate(pigeon_upload_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}}"
         }
       ]
     },

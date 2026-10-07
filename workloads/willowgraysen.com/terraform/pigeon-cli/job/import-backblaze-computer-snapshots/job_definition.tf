@@ -3,7 +3,7 @@ locals {
   job_enabled = true
 
   job_commands = [
-    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:poisoned/computer-snapshots/' --destination 'destination:computer-snapshots/' --report-bucket reports --yes --local-output /mnt/data"
+    "cd pigeon-cli/ && mise run pigeon-release job run import --source 'source:poisoned/macbook-backup-2026-may-23/' --destination 'destination:computer-snapshots/' --report-bucket reports --yes --local-output /mnt/data"
   ]
 
   # Configuration

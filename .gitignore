@@ -2,10 +2,10 @@
 *.env
 /workloads/noisypigeon.com/src/public
 /workloads/pigeon.dev/src/public
-/workloads/noisypigeon.com/src/content/modules/*.md
-!/workloads/noisypigeon.com/src/content/modules/_index.md
-/workloads/noisypigeon.com/src/content/theme-versions/*.md
-!/workloads/noisypigeon.com/src/content/theme-versions/_index.md
+/workloads/pigeon.dev/src/content/modules/*.md
+!/workloads/pigeon.dev/src/content/modules/_index.md
+/workloads/pigeon.dev/src/content/theme-versions/*.md
+!/workloads/pigeon.dev/src/content/theme-versions/_index.md
 /workloads/*/src/.theme-resolved/
 .claude/worktrees
 .terraform.lock.hcl

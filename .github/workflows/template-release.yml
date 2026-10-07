@@ -92,9 +92,12 @@ jobs:
           CHANGED_MODULES: ${{ steps.modules.outputs.changed }}
         run: |
           TODAY=$(TZ="America/Los_Angeles" date +%Y-%m-%d)
+          OFFSET=$(TZ="America/Los_Angeles" date +%z | sed -E 's/([+-][0-9]{2})([0-9]{2})/\1:\2/')
           TAGS=""
 
           for dir in $CHANGED_MODULES; do
+            PROVIDER=$(basename "$(dirname "$dir")")
+            MODULE=$(basename "$dir")
             LATEST=$(git tag -l "${dir}/v*" | sed "s#${dir}/v##" | sort -V | tail -n1)
 
             if [ -z "$LATEST" ]; then
@@ -140,6 +143,26 @@ jobs:
 
             git add "$CHANGELOG"
             TAGS="$TAGS ${dir}/v${NEXT}"
+
+            # Mirror this release into a pigeon.dev release post (ADR-0141):
+            # same PR title/body/link as the changelog entry above, reshaped
+            # into front matter instead of a "## [x] - date" / "### title"
+            # heading pair.
+            RELEASE_POST="workloads/pigeon.dev/src/content/releases/${PROVIDER}-${MODULE}-v${NEXT}.md"
+            ESCAPED_TITLE=$(printf '%s' "$PR_TITLE" | sed 's/\\/\\\\/g; s/"/\\"/g')
+            {
+              echo "+++"
+              echo "title = \"${PROVIDER}/${MODULE} v${NEXT}\""
+              echo "date = ${TODAY}T12:00:00${OFFSET}"
+              echo "slug = \"${PROVIDER}-${MODULE}-v${NEXT}\""
+              echo "description = \"${ESCAPED_TITLE}\""
+              echo "+++"
+              echo ""
+              echo "${PR_BODY}"
+              echo ""
+              echo "[#${PR_NUMBER}](${PR_URL})"
+            } > "$RELEASE_POST"
+            git add "$RELEASE_POST"
 
             # Also append a one-liner to the repo-wide root CHANGELOG.md (ADR-0050).
             ROOT_CHANGELOG="CHANGELOG.md"

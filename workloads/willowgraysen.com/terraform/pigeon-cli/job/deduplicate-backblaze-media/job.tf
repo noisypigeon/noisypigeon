@@ -1,5 +1,5 @@
 # module "job" {
-#   source      = "https://noisypigeon.com/modules/scaleway/compute-instance/v5.3.0"
+#   source      = "https://pigeon.dev/modules/scaleway/compute-instance/v5.3.0"
 #   enabled     = local.job_enabled
 #   name_prefix = local.job_name_prefix
 #   name_suffix = local.job_name_suffix

@@ -1,0 +1,18 @@
++++
+title = "scaleway/project v0.1.0"
+date = 2026-09-26T12:00:00-07:00
+slug = "scaleway-project-v0.1.0"
+description = "Consolidate as terraform/modules/scaleway/project 0.1.0"
++++
+
+A thin wrapper around `scaleway_account_project`, mirroring
+`terraform/modules/digitalocean/project`'s layout and passthrough style —
+this was `pigeon-tf`'s first module under the `scaleway/` provider root
+(documented in
+[ADR-0043](../../../../docs/adr/0043-add-scaleway-provider.md)), which also
+generalized the release automation beyond a single hardcoded provider root.
+
+Consolidates this module's prior `pigeon-tf` version history (`v0.1.0`) into
+a single 0.1.0 release as part of merging `pigeon-tf` into this repo — see
+[ADR-0037](../../../../docs/adr/0037-merge-pigeon-tf-terraform-modules.md)
+for the merge.

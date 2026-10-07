@@ -3,7 +3,7 @@
 # tag, where <prefix> is one of the known live tag prefixes (currently
 # "modules" and "templates/terraform" — see ADR-0110). Each page is a static
 # "redirect" page carrying a <meta name="terraform-get"> tag so
-# `terraform init` can resolve a short noisypigeon.com module source URL to
+# `terraform init` can resolve a short pigeon.dev module source URL to
 # this repo's tagged git:: source. The public URL always uses "modules/..."
 # regardless of which prefix the tag actually lives under, so the public
 # namespace stays stable even as the repo's internal layout moves.
@@ -23,8 +23,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-CONTENT_DIR="$REPO_ROOT/workloads/noisypigeon.com/src/content/modules"
-THEME_CONTENT_DIR="$REPO_ROOT/workloads/noisypigeon.com/src/content/theme-versions"
+CONTENT_DIR="$REPO_ROOT/workloads/pigeon.dev/src/content/modules"
+THEME_CONTENT_DIR="$REPO_ROOT/workloads/pigeon.dev/src/content/theme-versions"
 
 mkdir -p "$CONTENT_DIR"
 

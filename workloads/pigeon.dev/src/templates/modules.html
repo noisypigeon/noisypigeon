@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section.title }} - {{ config.title }}{% endblock title %}
+{% block description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock description %}
+{% block canonical %}{{ section.permalink }}{% endblock canonical %}
+{% block og_url %}{{ section.permalink }}{% endblock og_url %}
+{% block og_title %}{{ section.title }} - {{ config.title }}{% endblock og_title %}
+{% block og_description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock og_description %}
+{% block twitter_title %}{{ section.title }} - {{ config.title }}{% endblock twitter_title %}
+{% block twitter_description %}{% if section.description %}{{ section.description }}{% else %}{{ config.description }}{% endif %}{% endblock twitter_description %}
+{% block body_class %}site-page-body site-modules-page{% endblock body_class %}
+
+{% block content %}
+<div class="site-page zoomable">
+  <div class="trix-content e-content">
+    {{ section.content | safe }}
+
+    <ul class="t-list-of-posts site-list-of-posts">
+      {% set_global current_provider = "" %}
+      {% for page in section.pages %}
+        {% if page.extra.kind == "module" %}
+          {% if page.extra.provider != current_provider %}
+            {% set_global current_provider = page.extra.provider %}
+            <li class="post-list-year-h2">{{ current_provider }}</li>
+          {% endif %}
+          <li>
+            <a href="{{ page.permalink }}">{{ page.title }}</a>
+            <span class="site-module-latest-version">v{{ page.extra.latest_version }}</span>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock content %}

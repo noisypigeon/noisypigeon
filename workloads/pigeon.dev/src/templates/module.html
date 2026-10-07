@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }} - {{ config.title }}{% endblock title %}
+{% block description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock description %}
+{% block canonical %}{{ page.permalink }}{% endblock canonical %}
+{% block og_url %}{{ page.permalink }}{% endblock og_url %}
+{% block og_title %}{{ page.title }} - {{ config.title }}{% endblock og_title %}
+{% block og_description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock og_description %}
+{% block twitter_title %}{{ page.title }} - {{ config.title }}{% endblock twitter_title %}
+{% block twitter_description %}{% if page.description %}{{ page.description }}{% else %}{{ config.description }}{% endif %}{% endblock twitter_description %}
+{% block body_class %}site-page-body site-module-page{% endblock body_class %}
+
+{% block content %}
+<article class="site-page zoomable">
+  <header class="site-page-header">
+    <h1>{{ page.title }}</h1>
+  </header>
+
+  <div class="trix-content e-content">
+    {% if page.description %}<p>{{ page.description }}</p>{% endif %}
+
+    {% if page.extra.usage_example %}
+    <h2>Usage</h2>
+    <pre><code class="language-hcl">{{ page.extra.usage_example }}</code></pre>
+    {% endif %}
+
+    <p>Full inputs/outputs documentation is in the module's
+      <a href="{{ page.extra.github_url }}">README on GitHub</a>.</p>
+
+    {% if page.extra.versions %}
+    <h2>Versions</h2>
+    <ul>
+      {% for v in page.extra.versions %}
+      <li>
+        <a href="/{{ v.path }}">v{{ v.version }}</a>
+        {% if v.version == page.extra.latest_version %} (latest){% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <footer class="site-meta">
+    <div class="mt-3XS site-link-back-to-blog-posts">
+      <a href="/modules/">Back to all modules</a>
+    </div>
+  </footer>
+</article>
+{% endblock content %}

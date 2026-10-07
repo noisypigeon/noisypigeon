@@ -76,6 +76,92 @@ done < <(git -C "$REPO_ROOT" tag --list 'modules/*/*/v*' 'templates/terraform/*/
 
 echo "Generated ${count} module redirect page(s) under ${CONTENT_DIR#"$REPO_ROOT"/}."
 
+# Also generate one *visible* overview page per module (not per version),
+# alongside the hidden per-version redirect pages above — same directory, no
+# naming collision since these are named "<provider>-<module>.md" with no
+# "-vX.Y.Z" suffix. Each overview page carries a usage example extracted from
+# the module's own README.md ("## Usage" fenced ```hcl block, verbatim — not
+# rewritten to the latest version) when the README has one, and omits it
+# otherwise (ADR-0141: shows what the README has today, no backfilling and
+# no synthesized fallback).
+toml_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+module_pairs="$(git -C "$REPO_ROOT" tag --list 'modules/*/*/v*' 'templates/terraform/*/*/v*' \
+  | grep -E '^(modules|templates/terraform)/[a-z0-9-]+/[a-z0-9-]+/v[0-9]+\.[0-9]+\.[0-9]+$' \
+  | sed -E 's#^(modules|templates/terraform)/([a-z0-9-]+)/([a-z0-9-]+)/v.*#\2/\3#' \
+  | sort -u)"
+
+overview_count=0
+while IFS= read -r pair; do
+  [ -z "$pair" ] && continue
+  provider="${pair%%/*}"
+  module="${pair##*/}"
+
+  versions="$(git -C "$REPO_ROOT" tag --list "modules/${provider}/${module}/v*" "templates/terraform/${provider}/${module}/v*" \
+    | sed -E 's#.*/v([0-9]+\.[0-9]+\.[0-9]+)$#\1#' \
+    | sort -t. -k1,1n -k2,2n -k3,3n -u)"
+  latest_version="$(echo "$versions" | tail -1)"
+
+  readme="$REPO_ROOT/templates/terraform/${provider}/${module}/README.md"
+  description=""
+  usage_example=""
+  if [ -f "$readme" ]; then
+    description="$(awk '
+      /^# / && !started { started = 1; next }
+      started && /^## / { exit }
+      started && /^<!-- BEGIN_TF_DOCS/ { exit }
+      started { print }
+    ' "$readme" | sed '/^$/d' | tr '\n' ' ' | sed -E 's/ +/ /g; s/^ //; s/ $//')"
+
+    usage_example="$(awk '
+      /^## Usage/ { in_usage = 1; next }
+      in_usage && /^<!-- BEGIN_TF_DOCS/ { exit }
+      in_usage && /^```hcl/ { in_block = 1; next }
+      in_usage && in_block && /^```/ { exit }
+      in_usage && in_block { print }
+    ' "$readme")"
+  fi
+
+  slug="${provider}-${module}"
+  github_url="https://github.com/noisypigeon/noisypigeon/tree/main/templates/terraform/${provider}/${module}"
+
+  {
+    echo "+++"
+    echo "title = \"${provider}/${module}\""
+    echo "description = \"$(toml_escape "$description")\""
+    echo "template = \"module.html\""
+    echo "in_search_index = true"
+    echo
+    echo "[extra]"
+    echo "kind = \"module\""
+    echo "provider = \"${provider}\""
+    echo "module = \"${module}\""
+    echo "latest_version = \"${latest_version}\""
+    echo "github_url = \"${github_url}\""
+    if [ -n "$usage_example" ]; then
+      printf 'usage_example = """\n%s\n"""\n' "$usage_example"
+    else
+      echo 'usage_example = ""'
+    fi
+    printf 'versions = ['
+    first=1
+    while IFS= read -r v; do
+      [ -z "$v" ] && continue
+      [ "$first" -eq 0 ] && printf ', '
+      printf '{ version = "%s", path = "modules/%s/%s/v%s" }' "$v" "$provider" "$module" "$v"
+      first=0
+    done <<<"$versions"
+    printf ']\n'
+    echo "+++"
+  } >"$CONTENT_DIR/${slug}.md"
+
+  overview_count=$((overview_count + 1))
+done <<<"$module_pairs"
+
+echo "Generated ${overview_count} module overview page(s) under ${CONTENT_DIR#"$REPO_ROOT"/}."
+
 mkdir -p "$THEME_CONTENT_DIR"
 find "$THEME_CONTENT_DIR" -maxdepth 1 -name '*.md' ! -name '_index.md' -delete
 

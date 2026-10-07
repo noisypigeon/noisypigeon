@@ -17,6 +17,10 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-07
 
+- [scaleway/pigeon-cluster] Add self-deletion to compute-instance and new pigeon-cluster module ([#237](https://github.com/noisypigeon/noisypigeon/pull/237))
+
+- [scaleway/compute-instance] Add self-deletion to compute-instance and new pigeon-cluster module ([#237](https://github.com/noisypigeon/noisypigeon/pull/237))
+
 - [zola-site] Generalize changelog.html to reuse the section it's rendering ([#232](https://github.com/noisypigeon/noisypigeon/pull/232))
 
 ## 2026-10-06

@@ -37,7 +37,7 @@ locals {
 }
 
 module "grafana_dashboard" {
-  source     = "https://noisypigeon.com/modules/scaleway/grafana-dashboard/v0.1.0"
+  source     = "https://pigeon.dev/modules/scaleway/grafana-dashboard/v0.1.0"
   depends_on = [terraform_data.grafana_first_access]
 
   folder_title = "pigeon-cli"

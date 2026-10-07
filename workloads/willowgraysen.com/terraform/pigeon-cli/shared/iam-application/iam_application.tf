@@ -1,5 +1,5 @@
 module "iam_application" {
-  source      = "https://noisypigeon.com/modules/scaleway/iam-application/v0.1.0"
+  source      = "https://pigeon.dev/modules/scaleway/iam-application/v0.1.0"
   name        = "pigeon-cli"
   description = "Shared IAM application for every pigeon-cli job policy"
 }

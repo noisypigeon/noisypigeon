@@ -51,7 +51,7 @@ variable "self_delete_on_exit" {
   - The IAM permission set: `InstancesFullAccess` is a real, documented Scaleway permission set, already in live use today for an unrelated purpose at `workloads/willowgraysen.com/terraform/state/iam/iam.tf` (the willowgraysen.com Terraform deployer's own policy). The module folds it into the composed `iam_policy` automatically whenever `self_delete_on_exit = true`.
 - **Still unverified, needs hands-on confirmation before this ships for real** — exactly why this ADR is `Exploration` rather than `Accepted`:
   - The exact Scaleway instance metadata-service (`169.254.42.42`, already relied on by cloud-init itself as a datasource) JSON field path for the instance's own **zone** — `curl http://169.254.42.42/conf?format=json` is confirmed to return the server's own `id`, but the exact key for zone wasn't confirmed from docs alone. The implementation currently guesses `.location.zone_id`, with an inline comment flagging it as unverified — a wrong guess means `SELF_ZONE` is empty and the instance never actually self-deletes. First real validation step: boot one throwaway instance with `self_delete_on_exit = true`, curl the endpoint by hand, and correct the `jq` filter if needed.
-- Versioning: purely additive (`self_delete_on_exit` defaults `false`, unchanged behavior for every existing caller) — `release:minor`, `v5.3.0` → `v5.4.0`.
+- Versioning: purely additive (`self_delete_on_exit` defaults `false`, unchanged behavior for every existing caller) — `release:minor`, `v5.3.1` → `v5.4.0`.
 
 ### 2. New module: `templates/terraform/scaleway/pigeon-cluster/`
 
@@ -115,7 +115,7 @@ module "job" {
 }
 ```
 
-New module, standard file set (`README.md`, `CHANGELOG.md`, `versions.tf`, `inputs.tf`, `outputs.tf`, `cluster.tf`), starts at `v0.1.0` — matching `iam-application`/`iam-api-key`'s precedent for brand-new modules. Both this module and `compute-instance`'s `self_delete_on_exit` are implemented as of this ADR revision — see `templates/terraform/scaleway/pigeon-cluster/` and the `compute-instance` CHANGELOG's `[5.4.0]` entry.
+New module, standard file set (`README.md`, `versions.tf`, `inputs.tf`, `outputs.tf`, `cluster.tf`), starts at `v0.1.0` — matching `iam-application`/`iam-api-key`'s precedent for brand-new modules. Per ADR-0079's own precedent, `CHANGELOG.md` is not hand-written here -- `template-release.yml` creates it (and compute-instance's new `[5.4.0]` entry) from this PR's title/body on merge. Both this module and `compute-instance`'s `self_delete_on_exit` are implemented as of this ADR revision -- see `templates/terraform/scaleway/pigeon-cluster/`.
 
 A batch of 5 pending jobs means `var.jobs` has 5 entries and one `apply` provisions 5 instances; as each job's instance self-terminates, the fleet's *actual* size shrinks without another `apply` — but Terraform's own view of desired state doesn't shrink until someone removes that entry and re-applies (see Consequences). This stays **variable-driven and re-applied per batch**, not a live-polled queue.
 

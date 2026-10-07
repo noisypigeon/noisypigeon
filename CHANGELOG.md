@@ -15,6 +15,10 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-06
+
+- [scaleway/grafana-dashboard] Add grafana-dashboard module ([#217](https://github.com/noisypigeon/noisypigeon/pull/217))
+
 ## 2026-10-05
 
 - [blog] Make workloads/noisypigeon.com Terraform-self-sufficient ([#208](https://github.com/noisypigeon/noisypigeon/pull/208))

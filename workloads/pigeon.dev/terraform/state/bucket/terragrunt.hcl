@@ -1,5 +1,5 @@
 include "root" {
-  path = "${get_repo_root()}/workloads/root.hcl"
+  path = find_in_parent_folders("root.hcl")
 }
 
 terraform {

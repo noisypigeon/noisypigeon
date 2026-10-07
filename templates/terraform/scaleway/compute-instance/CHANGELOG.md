@@ -4,6 +4,16 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [5.4.0] - 2026-10-07
+
+### Add self_delete_on_exit to compute-instance
+
+`compute-instance` gains an optional `self_delete_on_exit` boolean (default `false`). When `true`, the instance deletes itself — server, IP(s), block volume — the moment `post_provision_commands` finishes, whether it succeeds or fails, using its own internally-composed IAM API key. Requires `iam_config` to be set; the module automatically folds `InstancesFullAccess` into the composed policy's `project_permission_sets` so callers don't need to request that permission themselves.
+
+Implemented as a `trap ... EXIT` prepended to the generated post-provision script (ahead of any caller-supplied commands), so it fires regardless of the script's own `set -e` exit path — the same ordering gotcha ADR-0125 already documented for this module's cloud-init rendering. The instance resolves its own server ID/zone via Scaleway's instance metadata service (`169.254.42.42`, the same datasource cloud-init itself already relies on) and calls `scw instance server delete` using credentials written to `/etc/environment` alongside the module's other secrets.
+
+Purely additive — defaults to `false`, unchanged behavior for every existing caller. See ADR-0138 (`Status: Exploration` — the exact metadata-service JSON field path for the instance's own zone is flagged as unverified pending a real-instance round-trip).
+
 ## [5.3.1] - 2026-10-06
 
 ### Move module-redirect short URLs from noisypigeon.com to pigeon.dev

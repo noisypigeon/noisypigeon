@@ -37,10 +37,26 @@
   "panels": [
     {
       "id": 1,
+      "title": "Job phases by phase & instance",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "sum by (phase, instance) (increase(pigeon_job_phase_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{phase}} - {{instance}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
       "title": "CPU usage",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
       "targets": [
         {
@@ -52,11 +68,11 @@
       ]
     },
     {
-      "id": 2,
+      "id": 3,
       "title": "Memory usage",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${prometheus}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
       "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
       "targets": [
         {
@@ -68,11 +84,71 @@
       ]
     },
     {
-      "id": 3,
+      "id": 4,
+      "title": "Disk space utilization",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "1 - (node_filesystem_avail_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"} / node_filesystem_size_bytes{instance=~\"$instance\", fstype!~\"tmpfs|overlay|devtmpfs|squashfs\"})",
+          "legendFormat": "{{instance}} {{mountpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Disk I/O throughput",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "sum by (instance) (rate(node_disk_read_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} read"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "sum by (instance) (rate(node_disk_written_bytes_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} write"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Network usage",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "sum by (instance) (rate(node_network_receive_bytes_total{instance=~\"$instance\", device!=\"lo\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} rx"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "${prometheus}" },
+          "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{instance=~\"$instance\", device!=\"lo\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} tx"
+        }
+      ]
+    },
+    {
+      "id": 7,
       "title": "pigeon-cli job logs",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${loki}" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 33 },
       "targets": [
         {
           "refId": "A",

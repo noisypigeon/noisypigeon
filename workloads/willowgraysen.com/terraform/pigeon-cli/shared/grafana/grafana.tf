@@ -1,11 +1,7 @@
-terraform {
-  required_providers {
-    grafana = {
-      source  = "grafana/grafana"
-      version = "~> 4.0"
-    }
-  }
-}
+# grafana's required_providers entry lives in workloads/willowgraysen.com/root.hcl's
+# generate "provider" block alongside cloudflare/scaleway -- Terraform allows only one
+# required_providers block per module, and that one is already generated into every
+# leaf here (ADR-0135).
 
 data "scaleway_cockpit_grafana" "this" {
   project_id = local.scaleway_project_id

@@ -1,6 +1,6 @@
 locals {
   job_name_prefix         = "import"
-  job_name_suffix         = "backblaze-fastmail-consolidation"
+  job_name_suffix         = "backblaze-t7-email-consolidation"
   job_block_volume_size   = 50
 
   job_commands = [
@@ -8,8 +8,8 @@ locals {
   ]
 
   source_bucket_name      = "import-ikbld8-backblaze"
-  destination_bucket_name = "import-d91tpu-backblaze-fastmail-consolidation"
-  subpath_name            = "fastmail_export_karafinch_fastmail_com_2025_12_17"
+  destination_bucket_name = "import-ttr25n-backblaze-t7-email-consolidation"
+  subpath_name            = "t7-backup-2026-05-25"
   source_subpath          = "poisoned/${local.subpath_name}"
   destination_subpath     = local.subpath_name
 

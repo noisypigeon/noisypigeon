@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-06
 
+- [scaleway/compute-instance] Move module-redirect short URLs from noisypigeon.com to pigeon.dev ([#223](https://github.com/noisypigeon/noisypigeon/pull/223))
+
 - [scaleway/grafana-dashboard] Add grafana-dashboard module ([#217](https://github.com/noisypigeon/noisypigeon/pull/217))
 
 ## 2026-10-05

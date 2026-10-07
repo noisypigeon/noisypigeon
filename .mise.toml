@@ -30,7 +30,6 @@ run = "terragrunt run --all -- apply"
 dir = "workloads/noisypigeon.com/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
-  "../generate-module-redirects.sh",
   "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build",
 ]
 
@@ -38,7 +37,6 @@ run = [
 dir = "workloads/noisypigeon.com/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
-  "../generate-module-redirects.sh",
   "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola serve",
 ]
 
@@ -46,6 +44,7 @@ run = [
 dir = "workloads/pigeon.dev/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
+  "../generate-module-redirects.sh",
   "zola build",
 ]
 
@@ -53,5 +52,6 @@ run = [
 dir = "workloads/pigeon.dev/src"
 run = [
   "../../../templates/zola-site/resolve-theme.sh",
+  "../generate-module-redirects.sh",
   "zola serve",
 ]

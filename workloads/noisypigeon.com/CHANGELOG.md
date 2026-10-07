@@ -4,6 +4,28 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-06 — Remove zola-site symlink requirement; merge Zola deploy workflows
+
+## Summary
+
+Two related cleanups to how the two Zola sites (`workloads/noisypigeon.com/src`, `workloads/pigeon.dev/src`) consume the shared `templates/zola-site/` theme and get deployed:
+
+- **ADR-0139**: removes the committed-symlink requirement from `templates/zola-site` consumption. `resolve-theme.sh` now materializes `themes/<name>` directly (a live symlink for `theme_version = "main"`, or a `git archive`-materialized checkout for a pinned tag) instead of through the previous two-layer `committed symlink → gitignored .theme-resolved/<name>` indirection. Nothing under `themes/<name>` is tracked by git anymore — this mirrors how `templates/terraform/` consumers need nothing checked in either, just a version named directly and resolved fresh by the build tool. Deletes both consumers' committed symlinks and updates `templates/zola-site/README.md` accordingly (also fixes several pre-existing stale `workloads/blog/src` references left over from ADR-0132's rename).
+- **ADR-0140**: merges `.github/workflows/noisypigeon-com-deploy.yml` and `.github/workflows/pigeon-dev-pages.yml` (near-identical per-site deploy workflows) into one `.github/workflows/zola-sites-deploy.yml`, using a `strategy.matrix` deploy job parameterized per site (bucket, secret pair, build command, optional pre-build step) plus a `detect` job (mirroring `terragrunt-plan.yml`'s pattern, ADR-0129) that preserves today's per-site change gating. Adds a `workflow_dispatch.inputs.site` selector and updates the two existing automated dispatchers (`blog-changelog.yml`, `template-release.yml`) to target their site explicitly, so a blog-only edit or a module/zola-site release doesn't start redeploying both sites.
+
+Neither change touches `templates/zola-site/templates/`, `static/`, `theme.toml`, or any `templates/terraform/<provider>/<module>/` directory, so no `release:*` label applies and `template-release.yml` won't tag/release anything from this PR.
+
+## Test plan
+
+- [x] Ran `resolve-theme.sh` locally against both `workloads/noisypigeon.com/src` and `workloads/pigeon.dev/src` with `theme_version = "main"` — confirmed `themes/zola-site` resolves to a live symlink straight at `templates/zola-site`, with no `.theme-resolved/` directory created and no dirty tracked path in `git status`.
+- [x] Temporarily pinned `pigeon.dev`'s `theme_version` to an existing tag (`1.1.1`) and re-ran `resolve-theme.sh` — confirmed `git archive` materialization into `themes/zola-site` still works; restored `config.toml` afterward with a clean diff.
+- [x] Linted all touched/added workflow YAML with `actionlint` — clean (two pre-existing, unrelated shellcheck warnings remain elsewhere in the repo, not touched by this PR).
+- [ ] Exercise `zola-sites-deploy.yml` live via `workflow_dispatch` (or a follow-up content push) to confirm both matrix legs resolve the right secrets/bucket and the `detect` job correctly gates a single-site change.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+[#230](https://github.com/noisypigeon/noisypigeon/pull/230)
+
 ## 2026-10-05 — Make workloads/noisypigeon.com Terraform-self-sufficient
 
 ## Summary

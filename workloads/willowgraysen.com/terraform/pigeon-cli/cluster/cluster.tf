@@ -14,20 +14,22 @@
 #   }
 
 
-#   jobs = {
-#     deduplicate-segment-1 = {
+#   jobs = [
+#     {
+#       job_name = "deduplicate-segment-1"
 #       job_commands = local.job_commands
 #       instance_type = "COMPUTE3-X8C-16G"
 #       block_volume_size = 1600
 #       extra_permission_sets = []
 #       keyring = local.keyring
 #     },
-#     # deduplicate-segment-2 = {
+#     # {
+#     #   job_name = "deduplicate-segment-2"
 #     #   job_commands = local.job_commands
 #     #   # instance_type = "COMPUTE3-X8C-16G"
 #     #   # block_volume_size = 3000
 #     #   extra_permission_sets = []
 #     #   keyring = local.secondary_keyring
 #     # }
-#   }
+#   ]
 # }

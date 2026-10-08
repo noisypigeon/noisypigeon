@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-08
 
+- [scaleway/pigeon-cluster] Wire pigeon-cluster to compute-instance's new enable_private_network flag ([#247](https://github.com/noisypigeon/noisypigeon/pull/247))
+
 - [scaleway/compute-instance] Fix compute-instance: private NIC count must not depend on private_network_id's nullness ([#246](https://github.com/noisypigeon/noisypigeon/pull/246))
 
 - [scaleway/pigeon-cluster] Fix pigeon-cluster's stale internal compute-instance pin ([#245](https://github.com/noisypigeon/noisypigeon/pull/245))

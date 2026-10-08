@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-07
 
+- [scaleway/pigeon-cluster] Fix pigeon-cluster job_policy name colliding with compute-instance's internal policy ([#242](https://github.com/noisypigeon/noisypigeon/pull/242))
+
 - [scaleway/pigeon-cluster] Give pigeon-cluster jobs their own IAM policy/key and a dictionary keyring ([#241](https://github.com/noisypigeon/noisypigeon/pull/241))
 
 - [scaleway/pigeon-cluster] Add self-deletion to compute-instance and new pigeon-cluster module ([#237](https://github.com/noisypigeon/noisypigeon/pull/237))

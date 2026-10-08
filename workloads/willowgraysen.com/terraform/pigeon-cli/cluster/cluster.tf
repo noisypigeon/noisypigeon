@@ -1,9 +1,10 @@
 module "cluster" {
-  source = "https://pigeon.dev/modules/scaleway/pigeon-cluster/v0.3.2"
+  source = "https://pigeon.dev/modules/scaleway/pigeon-cluster/v1.0.0"
 
   cluster_config = {
     name_prefix = "pigeon-cli"
     project_id  = local.scaleway_project_id
+    enable_bastion = local.enable_bastion
     cockpit = {
       metrics_push_url = local.cockpit_metrics_url
       logs_push_url    = local.cockpit_logs_url
@@ -11,7 +12,7 @@ module "cluster" {
     }
     shared_keyring = {
       reports = {
-        kind = "bucket"
+        kind     = "bucket"
         endpoint = "https://s3.fr-par.scw.cloud"
         bucket   = "pigeon-cli-vmqjtz-reports"
         provider = "Scaleway"

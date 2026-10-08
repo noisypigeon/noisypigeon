@@ -15,6 +15,12 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-08
+
+- [scaleway/pigeon-cluster] Add Private Network support to compute-instance and pigeon-cluster ([#244](https://github.com/noisypigeon/noisypigeon/pull/244))
+
+- [scaleway/compute-instance] Add Private Network support to compute-instance and pigeon-cluster ([#244](https://github.com/noisypigeon/noisypigeon/pull/244))
+
 ## 2026-10-07
 
 - [scaleway/pigeon-cluster] Fix pigeon-cluster job_policy name colliding with compute-instance's internal policy ([#242](https://github.com/noisypigeon/noisypigeon/pull/242))

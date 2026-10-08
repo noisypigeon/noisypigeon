@@ -36,4 +36,23 @@ locals {
       provider = "Scaleway"
     }
   }
+
+
+
+
+  ##### SECOND JOB
+  secondary_keyring = {
+    source = {
+      kind     = "bucket"
+      endpoint = "https://s3.fr-par.scw.cloud"
+      bucket   = "consolidate-o1rzfz-segment-2"
+      provider = "Scaleway"
+    }
+    destination = {
+      kind     = "bucket"
+      endpoint = "https://s3.fr-par.scw.cloud"
+      bucket   = "deduplicate-2q8al4-segment-2"
+      provider = "Scaleway"
+    }
+  }
 }

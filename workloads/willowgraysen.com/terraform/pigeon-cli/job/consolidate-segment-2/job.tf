@@ -15,7 +15,7 @@
 
 
 #   jobs = {
-#     consolidate-segment-1 = {
+#     consolidate-segment-2 = {
 #       job_commands = local.job_commands
 #       instance_type = "COMPUTE3-X8C-16G"
 #       block_volume_size = 50

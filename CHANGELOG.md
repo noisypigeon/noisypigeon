@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-08
 
+- [scaleway/pigeon-cluster] Fold debug-SSH bastion into pigeon-cluster, drop per-job enable_ipv4 ([#250](https://github.com/noisypigeon/noisypigeon/pull/250))
+
 - [scaleway/compute-instance] Fix compute-instance's private_ips output to read from the private NIC ([#249](https://github.com/noisypigeon/noisypigeon/pull/249))
 
 - [scaleway/pigeon-cluster] Wire pigeon-cluster to compute-instance's new enable_private_network flag ([#247](https://github.com/noisypigeon/noisypigeon/pull/247))

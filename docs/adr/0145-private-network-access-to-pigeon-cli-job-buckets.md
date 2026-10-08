@@ -50,6 +50,8 @@ resource "scaleway_instance_private_nic" "private_nic" {
 }
 ```
 
+**This `count` expression turned out to be broken on first real apply — see the amendment in section 4 below**, which replaces `var.private_network_id != null` with a dedicated `var.enable_private_network` boolean. Kept here unedited as the original design text; section 4 is where the fix is recorded.
+
 No cloud-init change needed — a `kind = "bucket"` keyring entry's `endpoint` stays entirely caller-supplied, exactly as today; a caller that wants private routing simply passes a `s3-vpc.<region>.scw.eu` endpoint string, the same mechanism as every other endpoint value. `object-bucket` is untouched by this ADR.
 
 This is a second "bring-your-own ID" network-attachment input, consistent with the module's existing `additional_volume_ids` pattern — no new internal module composition, so this doesn't stretch the ADR-0081/0122 "modules compose modules" exception any further.
@@ -95,9 +97,12 @@ No new `cluster_config` field for naming/tags on any of these — fixed derived 
 Wired into every `module "job"` (compute-instance) call:
 
 ```hcl
-private_network_id = scaleway_vpc_private_network.jobs.id
-enable_ipv4        = each.value.enable_ipv4
+private_network_id     = scaleway_vpc_private_network.jobs.id
+enable_private_network = true
+enable_ipv4             = each.value.enable_ipv4
 ```
+
+(`enable_private_network` was added by the amendment in section 4 below, after this ADR's original text shipped — kept here reflecting the real, final shape rather than the since-superseded first draft.)
 
 `jobs` gains a new per-job field, defaulting to `false` — unlike `compute-instance`'s own `enable_ipv4` default of `true`, which stays unchanged for any other direct caller:
 
@@ -144,7 +149,50 @@ validation {
 
 Still part of the same v0.2.0 → v0.3.0 `release:minor` bump above.
 
-### 4. Object Storage private-access enablement — manual, not automated by this ADR
+### 4. Amendment (2026-10-08) — fix `Invalid count argument` on first apply
+
+Testing this feature live, against a real `test-private-connectivity` job, immediately failed `tofu plan`:
+
+```
+Error: Invalid count argument
+  on instance.tf line 23, in resource "scaleway_instance_private_nic" "private_nic":
+  23:   count = var.enabled && var.private_network_id != null ? 1 : 0
+The "count" value depends on resource attributes that cannot be determined
+until apply, so OpenTofu cannot predict how many instances will be created.
+```
+
+**Root cause**: this is a well-known Terraform/OpenTofu limitation, not a typo in section 1's design above. `count`/`for_each` must be fully determinable at plan time, but `pigeon-cluster` passes `private_network_id = scaleway_vpc_private_network.jobs.id`, and that Private Network is created in the *same* apply as the job instances that reference it — on a brand-new cluster's first apply, a new resource's `.id` is unknown until apply. Because `private_network_id`'s declared type is a plain, nullable `string`, OpenTofu cannot statically prove an unknown value of that type is non-null, so `var.private_network_id != null` is itself unknown, and the `count` expression depending on it can't be evaluated at plan time. Every other `count`/`for_each` in both modules was checked for the same hazard and is unaffected (`block_volume`'s count depends on a literal caller-supplied number; `iam_policy`/`iam_api_key`'s count depends on whether `iam_config` — the whole object, always passed as a non-null literal by `pigeon-cluster` — is null, never on an unknown nested field).
+
+The fix: stop gating `count` on the ID's nullness, and gate it instead on an explicit, always-statically-known boolean. `compute-instance` gains:
+
+```hcl
+variable "enable_private_network" {
+  type        = bool
+  description = "Whether to attach a scaleway_instance_private_nic using private_network_id. Kept separate from private_network_id (rather than gating on private_network_id != null) because that ID's value is frequently only known after apply -- e.g. a Private Network created in the same apply, as pigeon-cluster does -- and count/for_each can never depend on such a value without OpenTofu failing to plan with \"Invalid count argument\". default false."
+  default     = false
+
+  validation {
+    condition     = !var.enable_private_network || var.private_network_id != null
+    error_message = "private_network_id must be set when enable_private_network is true."
+  }
+}
+```
+
+(The validation block itself is safe even though `private_network_id` may be apply-time-unknown — unlike `count`, a `validation` condition is simply deferred until the value is known, not required to resolve at plan time.)
+
+```hcl
+resource "scaleway_instance_private_nic" "private_nic" {
+  count              = var.enabled && var.enable_private_network ? 1 : 0
+  server_id          = scaleway_instance_server.server[0].id
+  private_network_id = var.private_network_id
+}
+```
+
+`pigeon-cluster` sets `enable_private_network = true` unconditionally in its `module "job"` call (every job always attaches to the cluster's shared PN). Verified by reproducing the exact error in a scratch config (a real, not-yet-applied `scaleway_vpc_private_network` composed with `compute-instance`) and confirming the fix produces a clean plan instead.
+
+Shipped as two sequential PRs, for the same reason as the earlier v5.4.0→v5.5.0 pin incident (#244/#245): `enable_private_network` didn't exist as a real tag until `compute-instance`'s fix merged. PR #246 (`compute-instance`, `release:minor`, v5.5.0 → v5.6.0) first; PR #247 (`pigeon-cluster`, `release:patch`, v0.3.1 → v0.3.2 — internal-only fix, no interface change to `pigeon-cluster` itself) bumped the internal pin and set the new flag once v5.6.0 was real.
+
+### 5. Object Storage private-access enablement — manual, not automated by this ADR
 
 Once `scaleway_vpc_private_network.jobs` exists for a given cluster, authorizing it for Object Storage private access is a direct call against the Scaleway VPC API (private beta enrollment, then the authorization call itself naming that Private Network's ID) — performed by the user, out of band. No confirmed Terraform resource exists for this today, and this repo has no established pattern for driving an ad hoc external API call from Terraform. Job buckets are **not** reachable over `s3-vpc.<region>.scw.eu` from an attached instance until this step has actually been run for that specific Private Network.
 
@@ -156,6 +204,7 @@ Once `scaleway_vpc_private_network.jobs` exists for a given cluster, authorizing
 - Bucket endpoint selection (public vs. private hostname) stays entirely caller-supplied per keyring entry — nothing stops a caller from forgetting to flip it, the same convention-only risk ADR-0144 already flagged for alias/keyring linking.
 - The self-delete drift pattern ADR-0138 already documented (Terraform's state believes a self-deleted server still exists until the next `apply`) now extends to its private NIC too — same category of gap, not a new one.
 - `jobs` as a list is a breaking caller-facing change on its own (independent of private networking) — every existing `jobs = { <name> = {...} }` caller must become `jobs = [{ job_name = "<name>", ... }]`. Per-job resource addressing/stability is unaffected, since the module still keys internally by `job_name`.
+- Any caller that adopted `private_network_id` before the section-4 amendment must add `enable_private_network = true` to keep the same behavior — the implicit null-check gate is gone. No real external caller existed yet (`pigeon-cluster` was the only consumer, fixed in the same two-PR sequence), so this cost nobody but this repo's own in-flight testing.
 
 ## Out of scope
 

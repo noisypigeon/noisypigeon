@@ -17,7 +17,10 @@ module "iam_policy" {
     "BlockStorageFullAccess",
     "SSHKeysReadOnly",
     "SSHKeysFullAccess",
-    "ObservabilityFullAccess"
+    "ObservabilityFullAccess",
+    "PrivateNetworksFullAccess",
+    "VPCGatewayFullAccess",
+    "IPAMFullAccess"
   ]
 
   organization_id = local.scaleway_organization_id

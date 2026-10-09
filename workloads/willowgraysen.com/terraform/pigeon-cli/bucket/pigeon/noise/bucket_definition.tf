@@ -1,4 +1,4 @@
 locals {
   name_prefix = "pigeon"
-  name_suffix = "consolidate"
+  name_suffix = "noise"
 }

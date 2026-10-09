@@ -5,7 +5,7 @@ module "cluster" {
     name_prefix = "pigeon-cli"
     project_id  = local.scaleway_project_id
     enable_bastion = local.enable_bastion
-    public_gateway_type = "VPC-GW-L"
+    public_gateway_type = local.public_gateway_type
     cockpit = {
       metrics_push_url = local.cockpit_metrics_url
       logs_push_url    = local.cockpit_logs_url
@@ -23,4 +23,9 @@ module "cluster" {
   }
 
   jobs = local.jobs
+}
+
+output "bastion_connect_command" {
+  description = "bastion_connect_command"
+  value       = module.cluster.bastion_connect_command
 }

@@ -1,10 +1,11 @@
 module "cluster" {
-  source = "https://pigeon.dev/modules/scaleway/pigeon-cluster/v1.0.0"
+  source = "https://pigeon.dev/modules/scaleway/pigeon-cluster/v1.1.0"
 
   cluster_config = {
     name_prefix = "pigeon-cli"
     project_id  = local.scaleway_project_id
     enable_bastion = local.enable_bastion
+    public_gateway_type = "VPC-GW-L"
     cockpit = {
       metrics_push_url = local.cockpit_metrics_url
       logs_push_url    = local.cockpit_logs_url

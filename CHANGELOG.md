@@ -15,6 +15,12 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-09
+
+- [backblaze/bucket] Add backblaze/bucket and backblaze/api-key modules ([#253](https://github.com/noisypigeon/noisypigeon/pull/253))
+
+- [backblaze/api-key] Add backblaze/bucket and backblaze/api-key modules ([#253](https://github.com/noisypigeon/noisypigeon/pull/253))
+
 ## 2026-10-08
 
 - [scaleway/pigeon-cluster] Expose pigeon-cluster's Public Gateway offer type as a variable ([#251](https://github.com/noisypigeon/noisypigeon/pull/251))

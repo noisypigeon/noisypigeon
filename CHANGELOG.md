@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-09
 
+- [scaleway/pigeon-cluster] Add per-job network opt-out and independent Private Network/Public Gateway toggles to pigeon-cluster ([#254](https://github.com/noisypigeon/noisypigeon/pull/254))
+
 - [backblaze/bucket] Add backblaze/bucket and backblaze/api-key modules ([#253](https://github.com/noisypigeon/noisypigeon/pull/253))
 
 - [backblaze/api-key] Add backblaze/bucket and backblaze/api-key modules ([#253](https://github.com/noisypigeon/noisypigeon/pull/253))

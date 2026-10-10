@@ -65,7 +65,7 @@ locals {
   # below, not declared again in its own terraform{} block.
   backblaze_required_providers_entry = <<EOF
     b2 = {
-      source  = "Backblaze/b2"
+      source  = "registry.terraform.io/Backblaze/b2"
       version = "~> 0.14"
     }
 EOF

@@ -72,6 +72,9 @@ jobs:
 
       - uses: jdx/mise-action@v2
 
+      - name: Debug resolved terraform binary
+        run: terraform version
+
       - name: Mask decrypted secret values
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
@@ -89,6 +92,7 @@ jobs:
         working-directory: workloads
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          TG_TF_PATH: terraform
         run: |
           set +e
 

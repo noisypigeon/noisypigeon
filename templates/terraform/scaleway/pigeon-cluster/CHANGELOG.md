@@ -4,6 +4,47 @@ All notable changes to this module are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0] - 2026-10-09
+
+### Add per-job network opt-out and independent Private Network/Public Gateway toggles to pigeon-cluster
+
+Every job in a `pigeon-cluster` fleet was forced onto the cluster's shared Private Network with no public IP (ADR-0145/0146), and that shared Private Network/Public Gateway had no lifecycle independent of the cluster as a whole — it was all-or-nothing.
+
+`jobs` gains two new optional fields:
+
+- `enable_private_network` (default `true`, unchanged behavior). `false` makes this job a plain, undecorated `compute-instance` call — no private NIC, no dependency on the cluster's shared Private Network/Gateway at all, with its own public IPv4 as its only network path.
+- `enable_ipv4` (default `false`) — reinstates the per-job public-IP override removed in `v1.0.0`. A job that keeps its Private Network attachment can now also request its own public IP; note this still doesn't help with *inbound* SSH reachability while the cluster's gateway is pushing a default route (the ADR-0146 finding), so it's primarily useful once `enable_public_gateway = false` or for outbound-only use. A job with `enable_private_network = false` always gets a public IP regardless of this field, since it would otherwise have no network path at all.
+
+`cluster_config` gains two new optional fields, both defaulting `true`:
+
+- `enable_private_network` — tear down the cluster's shared Private Network (and its Gateway-Network attachment) once no job needs it anymore, independent of the Public Gateway.
+- `enable_public_gateway` — tear down the metered Public Gateway independent of the Private Network, e.g. once nothing needs internet/private-Object-Storage egress.
+
+A new `validation` block requires both of the above to be `true` whenever `enable_bastion` is `true`, since the bastion is only reachable through the Gateway's PAT rule onto the shared Private Network.
+
+The four previously-unconditional shared resources (`scaleway_vpc_private_network.jobs`, `scaleway_vpc_public_gateway_ip.jobs`, `scaleway_vpc_public_gateway.jobs`, `scaleway_vpc_gateway_network.jobs`) move to `count`-gated, each protected by a `moved` block (same precedent as `compute-instance`'s own `enabled` kill switch, ADR-0126), so no existing caller's state breaks.
+
+Purely additive — every new field defaults to reproducing today's exact resource graph for any caller that sets nothing new. The one real consumer, `workloads/willowgraysen.com/terraform/pigeon-cli/cluster/`, needs no required change.
+
+See [ADR-0149](https://github.com/noisypigeon/noisypigeon/blob/main/docs/adr/0149-pigeon-cluster-private-network-public-gateway-toggles.md) for the full design discussion and rationale.
+
+
+[#254](https://github.com/noisypigeon/noisypigeon/pull/254)
+
+## [1.1.0] - 2026-10-08
+
+### Expose pigeon-cluster's Public Gateway offer type as a variable
+
+The cluster's shared Public Gateway (ADR-0145) has been hardcoded to Scaleway's smallest offer type, `VPC-GW-S` (up to 100 Mbps), shared by every concurrently-running job instance in the cluster. `cluster_config` gains a new optional `public_gateway_type` field, defaulting to `"VPC-GW-S"` so existing callers see no behavior change, letting a caller size the gateway up (`VPC-GW-M`/`VPC-GW-L`/`VPC-GW-XL`) if that shared bandwidth cap turns out to be a bottleneck for a given cluster's job traffic.
+
+Confirmed against the Scaleway Terraform provider's own source (`internal/services/vpcgw/public_gateway.go`) that `scaleway_vpc_public_gateway`'s `type` argument has no `ForceNew` -- changing it goes through a dedicated `UpgradeGateway` API call, upgrading the existing gateway in place (same gateway ID/IP) rather than recreating it. No job or bastion instance needs to restart or reconnect to pick up the new bandwidth. Upgrades are one-directional -- Scaleway doesn't support downgrading a gateway back to a smaller tier afterward.
+
+A `validation` block restricts the value to Scaleway's four known offer types (`VPC-GW-S`/`M`/`L`/`XL`), so a typo fails at `plan` time rather than as an opaque API error at `apply`.
+
+Purely additive -- no interface or behavior change for any existing caller.
+
+[#251](https://github.com/noisypigeon/noisypigeon/pull/251)
+
 ## [1.0.0] - 2026-10-08
 
 ### Fold debug-SSH bastion into pigeon-cluster, drop per-job enable_ipv4

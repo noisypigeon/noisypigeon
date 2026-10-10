@@ -1,5 +1,5 @@
 module "bucket" {
-  source      = "https://pigeon.dev/modules/backblaze/bucket/v0.1.0"
+  source      = "https://pigeon.dev/modules/backblaze/bucket/v0.1.1"
   name_prefix = local.name_prefix
   name_suffix = local.name_suffix
   description = local.description

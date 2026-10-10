@@ -1,5 +1,5 @@
 module "key" {
-  source       = "https://pigeon.dev/modules/backblaze/api-key/v0.1.0"
+  source       = "https://pigeon.dev/modules/backblaze/api-key/v0.1.1"
   key_name     = "${module.bucket.bucket_name}-key"
   bucket_ids   = [module.bucket.bucket_id]
   capabilities = local.key_capabilities

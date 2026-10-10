@@ -15,6 +15,10 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-10
+
+- [scaleway/compute-instance] Add libheif-enabled ffmpeg support to compute-instance ([#257](https://github.com/noisypigeon/noisypigeon/pull/257))
+
 ## 2026-10-09
 
 - [backblaze/bucket] Qualify backblaze/b2 provider source with an explicit registry host ([#255](https://github.com/noisypigeon/noisypigeon/pull/255))

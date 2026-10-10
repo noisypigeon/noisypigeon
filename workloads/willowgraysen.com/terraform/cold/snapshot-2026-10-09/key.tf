@@ -13,5 +13,5 @@
 # output "application_key" {
 #   value       = module.key.application_key
 #   description = "application_key"
-#   sensitive   = true
+#   sensitive    = true
 # }

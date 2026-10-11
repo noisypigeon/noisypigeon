@@ -2,7 +2,7 @@
 
 - **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-04.
-- **Status**: Accepted.
+- **Status**: Superseded by [ADR-0153](0153-decompose-compute-instance.md).
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 - **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-10.
-- **Status**: Accepted.
+- **Status**: Superseded by [ADR-0152](0152-pinned-static-ffmpeg-for-tiled-heif.md).
 
 ## Context
 

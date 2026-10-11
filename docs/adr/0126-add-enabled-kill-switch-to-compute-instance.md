@@ -2,7 +2,7 @@
 
 - **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-04.
-- **Status**: Accepted.
+- **Status**: Accepted; superseded in part by [ADR-0153](0153-decompose-compute-instance.md) (the kill switch now tears down only the server).
 
 ## Context
 

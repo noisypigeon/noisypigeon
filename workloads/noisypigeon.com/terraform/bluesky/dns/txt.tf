@@ -1,3 +1,4 @@
+# ADR-0155 verification: comment-only edit, no resource argument changed.
 resource "cloudflare_dns_record" "did" {
   zone_id = local.zone_id_noisypigeon_com
   name    = "_atproto"

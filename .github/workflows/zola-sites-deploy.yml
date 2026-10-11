@@ -17,19 +17,16 @@ on:
 permissions:
   contents: read
 
-env:
-  ZOLA_VERSION: "0.23.6"
-
 jobs:
-  # on.push.paths above gates the whole workflow, not individual matrix legs
-  # -- this job tells `deploy` which site(s) actually need redeploying, so a
-  # pigeon.dev-only push doesn't also redeploy noisypigeon.com and vice
-  # versa. Mirrors the `detect` job pattern in terragrunt-plan.yml
-  # (docs/adr/0129). A workflow_dispatch with an explicit `site` input targets
-  # just that site; "all" redeploys both. Since ADR-0154 the theme lives in
-  # noisypigeon/pigeon.dev, so a theme release arrives here as that repo's
-  # template-release.yml dispatching `site=all` rather than as a push path --
-  # both sites track the theme's main, so both need rebuilding.
+  # Tells the two deploy jobs below which site(s) actually need redeploying,
+  # so a pigeon.dev-only push doesn't also redeploy noisypigeon.com and vice
+  # versa. Mirrors the `detect` job pattern in terragrunt-detect.yml
+  # (docs/adr/0129). A workflow_dispatch with an explicit `site` input
+  # (used by blog-changelog's and template-release's automated post-merge
+  # dispatches) targets just that site; the default "all" (a genuinely
+  # manual dispatch) redeploys both. Since ADR-0154 a theme change no longer
+  # arrives as a push path here -- it arrives as pigeon.dev's own
+  # template-release.yml dispatching this workflow with site=all.
   detect:
     runs-on: ubuntu-latest
     outputs:
@@ -63,84 +60,42 @@ jobs:
           echo "noisypigeon=$NOISYPIGEON" >> "$GITHUB_OUTPUT"
           echo "pigeondev=$PIGEONDEV" >> "$GITHUB_OUTPUT"
 
-  deploy:
+  # Job body lives in noisypigeon/pigeon.dev (ADR-0155), deployed one site at
+  # a time -- a job that `uses:` a reusable workflow can't also run its own
+  # steps, so the per-site skip has to be a job-level `if:` rather than the
+  # single step the old matrixed job used; two explicit jobs (instead of one
+  # matrixed job indexing needs.detect.outputs by a matrix-provided key)
+  # avoids depending on dynamic object-key evaluation inside a job `if:`.
+  # Which sites exist, and which secrets belong to which, stays here: that
+  # dynamic secrets[matrix.*] lookup is exactly what can't be expressed
+  # inside a called workflow's statically-declared `secrets:` block.
+  deploy-noisypigeon-com:
     needs: detect
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - site: noisypigeon.com
-            changed_key: noisypigeon
-            src_dir: workloads/noisypigeon.com/src
-            bucket: noisypigeon.com
-            access_key_secret: NOISYPIGEON_COM_SCW_ACCESS_KEY
-            secret_key_secret: NOISYPIGEON_COM_SCW_SECRET_KEY
-            build_cmd: "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build"
-            extra_step: ""
-          - site: pigeon.dev
-            changed_key: pigeondev
-            src_dir: workloads/pigeon.dev/src
-            bucket: pigeon.dev
-            access_key_secret: PIGEON_DEV_SCW_ACCESS_KEY
-            secret_key_secret: PIGEON_DEV_SCW_SECRET_KEY
-            build_cmd: "zola build"
-            extra_step: "workloads/pigeon.dev/generate-module-redirects.sh"
-    runs-on: ubuntu-latest
+    if: needs.detect.outputs.noisypigeon == 'true'
     concurrency:
-      group: "zola-deploy-${{ matrix.site }}"
+      group: "zola-deploy-noisypigeon.com"
       cancel-in-progress: false
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+    uses: noisypigeon/pigeon.dev/.github/workflows/zola-site-deploy.yml@main
+    with:
+      src_dir: workloads/noisypigeon.com/src
+      bucket: noisypigeon.com
+      build_cmd: "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build"
+    secrets:
+      scw_access_key: ${{ secrets.NOISYPIGEON_COM_SCW_ACCESS_KEY }}
+      scw_secret_key: ${{ secrets.NOISYPIGEON_COM_SCW_SECRET_KEY }}
 
-      # Job-level `if:` has no access to the matrix context (only step-level
-      # does), so per-site gating happens here instead: every step below
-      # checks this output rather than the job as a whole being skipped.
-      - name: Determine whether this site needs deploying
-        id: gate
-        run: echo "run=${{ needs.detect.outputs[matrix.changed_key] }}" >> "$GITHUB_OUTPUT"
-
-      # templates/ lives in noisypigeon/pigeon.dev since ADR-0154; one clone
-      # feeds both the theme and (for pigeon.dev) the module metadata the
-      # generator reads. The checkout above stays fetch-depth: 0 /
-      # fetch-tags: true -- the frozen legacy modules/* tags are still read
-      # from this repo.
-      - name: Fetch templates
-        if: steps.gate.outputs.run == 'true'
-        run: workloads/pigeon.dev/fetch-templates.sh
-
-      - name: Resolve zola-site theme
-        if: steps.gate.outputs.run == 'true'
-        working-directory: ${{ matrix.src_dir }}
-        run: "$(git rev-parse --show-toplevel)/.templates-src/templates/zola-site/resolve-theme.sh"
-
-      - name: Run site-specific pre-build step
-        if: steps.gate.outputs.run == 'true' && matrix.extra_step != ''
-        run: ${{ matrix.extra_step }}
-
-      - name: Install Zola
-        if: steps.gate.outputs.run == 'true'
-        run: |
-          curl -sSL "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
-            | tar -xz -C /usr/local/bin zola
-
-      - name: Build with Zola
-        if: steps.gate.outputs.run == 'true'
-        working-directory: ${{ matrix.src_dir }}
-        run: ${{ matrix.build_cmd }}
-
-      - name: Sync to Scaleway Object Storage
-        if: steps.gate.outputs.run == 'true'
-        working-directory: ${{ matrix.src_dir }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets[matrix.access_key_secret] }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets[matrix.secret_key_secret] }}
-          AWS_DEFAULT_REGION: fr-par
-        run: |
-          aws s3 sync public s3://${{ matrix.bucket }} \
-            --endpoint-url https://s3.fr-par.scw.cloud \
-            --acl public-read \
-            --delete
+  deploy-pigeon-dev:
+    needs: detect
+    if: needs.detect.outputs.pigeondev == 'true'
+    concurrency:
+      group: "zola-deploy-pigeon.dev"
+      cancel-in-progress: false
+    uses: noisypigeon/pigeon.dev/.github/workflows/zola-site-deploy.yml@main
+    with:
+      src_dir: workloads/pigeon.dev/src
+      bucket: pigeon.dev
+      build_cmd: "zola build"
+      extra_step: "workloads/pigeon.dev/generate-module-redirects.sh"
+    secrets:
+      scw_access_key: ${{ secrets.PIGEON_DEV_SCW_ACCESS_KEY }}
+      scw_secret_key: ${{ secrets.PIGEON_DEV_SCW_SECRET_KEY }}

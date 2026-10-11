@@ -3,7 +3,7 @@ locals {
   public_gateway_type = "VPC-GW-M"
   enable_private_network = true
   enable_public_gateway = true
-  jobs = [/*
+  jobs = [/* 
     {
       job_name              = "transform-heic-to-jpg"
       instance_type         = "COMPUTE3-X8C-16G"

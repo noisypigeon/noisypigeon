@@ -172,10 +172,10 @@ module release PR.
 ## Out of scope
 
 - Refreshing the pin as it ages. Genuinely deferred: nothing watches BtbN for new 9.0.x builds,
-  and bumping it is a manual module release.
+  and bumping it is a manual module release. ([#266](https://github.com/noisypigeon/noisypigeon/issues/266))
 - Guarding `enable_transcoding` against an arm64 `instance_config.type`. Deferred: BtbN publishes
   a matching `linuxarm64-gpl` asset, so a second pin selected by architecture is possible, but no
-  caller needs arm64 today and it would double the pins to maintain.
+  caller needs arm64 today and it would double the pins to maintain. ([#267](https://github.com/noisypigeon/noisypigeon/issues/267))
 - Verifying that `pigeon-cli`'s own `transform` invokes ffmpeg in a way that benefits from
   automatic grid assembly — i.e. without an explicit `-map 0:v:0`, which re-selects a single tile
   even on 8.1+. That binary lives in `noisypigeon/pigeon-cli`, not verifiable from here, and is

@@ -2,12 +2,13 @@
 
 One line per PR across this whole repo, sectioned by date, newest first.
 Not versioned — for versioned, package-scoped changelogs see
-`templates/terraform/*/*/CHANGELOG.md` (each Terraform module),
-[`templates/zola-site/CHANGELOG.md`](templates/zola-site/CHANGELOG.md) (the
-theme, versioned since ADR-0113), and
 [`workloads/noisypigeon.com/CHANGELOG.md`](workloads/noisypigeon.com/CHANGELOG.md) (the blog,
-unversioned). The `pigeon-cli` crate's own changelog now lives in its own
-repo, `noisypigeon/pigeon-cli`, since ADR-0084's split. Entry format:
+unversioned). The Terraform modules' and Zola theme's changelogs moved with
+them to `noisypigeon/pigeon.dev` in ADR-0154, as did the `[<provider>/<module>]`
+and `[zola-site]` rollup lines this file used to collect; the ones already here
+stay, untangling them being exactly the low-value busywork ADR-0084 declined.
+The `pigeon-cli` crate's own changelog likewise lives in
+`noisypigeon/pigeon-cli` since ADR-0084's split. Entry format:
 `- [<scope>] <summary> ([#N](PR URL))`, where `<scope>` is `pigeon-cli`,
 `blog`, `zola-site`, `<provider>/<module>`, or `repo` for cross-cutting/
 structural changes. Starts fresh at ADR-0050 — no backfill of prior history, with one

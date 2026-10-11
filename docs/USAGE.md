@@ -12,8 +12,6 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
 
 ## Structure
 
-- [`templates/terraform/`](templates/terraform/) — versioned Scaleway Terraform modules. See
-  [`templates/terraform/README.md`](templates/terraform/README.md) for the module index.
 - [`workloads/`](workloads/) — each workload gets its own
   `workloads/<name>/` (terraform colocated with the resource it's part
   of, not provider-rooted). See [`workloads/README.md`](workloads/README.md).
@@ -53,8 +51,11 @@ mise run blog-build            # zola build (workloads/blog/src)
 mise run blog-serve            # zola serve (workloads/blog/src)
 ```
 
-Terraform module changes follow their own PR discipline — see the
-`release-pr` Claude Code skill and `templates/terraform/README.md`.
+Terraform modules and the Zola theme live in their own repo,
+[`noisypigeon/pigeon.dev`](https://github.com/noisypigeon/pigeon.dev), since
+ADR-0154 — along with their release automation and PR discipline. Changing a
+module is a PR there; bumping the version a leaf here pins is a separate PR
+here.
 
 ## License
 

@@ -62,7 +62,8 @@ willowgraysen.com/
         cockpit/               # shared Cockpit metrics/logs source + push token for every pigeon-cli compute instance (ADR-0103)
         grafana/               # Grafana dashboards-as-code against Cockpit, via a dedicated IAM-proxied credential (ADR-0135)
         iam-application/       # shared IAM application every pigeon-cli job policy attaches to (ADR-0119)
-        reports/               # shared job-report bucket
+        reports/
+          phase-deduplicate/     # shared job-report bucket
       job/
         import-backblaze/     # compute instance + block volume + scoped IAM key (ADR-0097, ADR-0118/0120/0122)
         import-macbook/       # empty placeholder -- its job content was retired before this move

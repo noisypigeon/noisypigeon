@@ -24,7 +24,15 @@ Current released versions: `compute-instance` `v5.7.0` and `pigeon-cluster` `v1.
 
 That leaves the two `pigeon-cli` reports buckets — `workloads/willowgraysen.com/terraform/pigeon-cli/shared/reports/phase-deduplicate/` and its `phase-transform/` sibling — accumulating job reports indefinitely. These are short-lived diagnostic artifacts; the wanted retention is 72 hours.
 
-**Scaleway lifecycle expiration is day-granular.** Checked against the provider binaries actually in use — `v2.83.1` and `v2.86.0`, the latter being what the leaves' `.terraform.lock.hcl` resolves to under the module's `~> 2.0` constraint — the `expiration` block exposes `days`, documented as "number of days after object creation when the specific rule action takes effect". Enumerating every `*hour*` and `*expiration*` identifier in the binary surfaces nothing hour-based anywhere in the object-storage surface (only unrelated RDB-snapshot and pricing fields). This is a property of the S3 lifecycle API the provider wraps, not a provider gap, so no provider upgrade changes it.
+**Scaleway lifecycle expiration is day-granular.** Confirmed from the provider's own schema (`tofu providers schema -json`, scaleway v2.86.0 — what the leaves' `.terraform.lock.hcl` resolves to under the module's `~> 2.0`). `lifecycle_rule.expiration` exposes exactly three fields:
+
+| Field | Type | Note |
+|---|---|---|
+| `days` | number | "number of days after object creation when the specific rule action takes effect" |
+| `date` | string | an absolute timestamp, which S3 requires be midnight UTC — not a relative duration |
+| `expired_object_delete_marker` | bool | versioning cleanup, unrelated to retention |
+
+There is no hour-based field anywhere in the rule, in any of its four nested blocks. This is a property of the S3 lifecycle API the provider wraps, not a provider gap, so no provider upgrade changes it.
 
 Consequently the input is named in **days**, not hours. An `expiration_hours` input would have to either silently round (making `1` and `24` behave identically) or reject everything that isn't a multiple of 24, which is days with extra steps. 72 hours is expressed as `expiration_days = 3`.
 
@@ -128,7 +136,7 @@ Only the name chosen by ADR-0150 changes here. Its actual decision — install a
 
 ## Out of scope
 
-- Hour-granular expiration. Not deferred — a permanent boundary: the S3 lifecycle API has no sub-day unit, so no provider version or module change can express it.
+- Hour-granular expiration. Not deferred — a permanent boundary: the S3 lifecycle API has no sub-day unit (`expiration.date` exists but is an absolute midnight-UTC timestamp, not a finer-grained duration), so no provider version or module change can express it. Anything needing true 72-hour precision would have to delete objects out-of-band rather than through a lifecycle rule.
 - Other lifecycle rule types — `abort_incomplete_multipart_upload_days`, noncurrent-version expiration, and `prefix`/`tags`-scoped rules are all available on the resource and none are exposed.
 - Whether `ppa:savoury1/ffmpeg4` covers every codec a future non-HEIC `transform` might need. The rename broadens the input's name, not its package set; ADR-0150's own "verify the PPA live" caveat still stands unverified.
 - The consumer leaf's rename and `v2.0.0` re-pin, left to the in-flight cluster branch (§5).

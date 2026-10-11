@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-10
 
+- [scaleway/pigeon-cluster] Compose cloud-init, volumes, IPs, NICs and self-delete IAM at the cluster level ([#270](https://github.com/noisypigeon/noisypigeon/pull/270))
+
 - [scaleway/compute-instance-config] Split cloud-init into compute-instance-config; stop composing modules inside compute-instance ([#269](https://github.com/noisypigeon/noisypigeon/pull/269))
 
 - [scaleway/compute-instance] Split cloud-init into compute-instance-config; stop composing modules inside compute-instance ([#269](https://github.com/noisypigeon/noisypigeon/pull/269))

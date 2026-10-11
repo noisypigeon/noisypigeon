@@ -17,6 +17,10 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-10
 
+- [scaleway/compute-instance-config] Split cloud-init into compute-instance-config; stop composing modules inside compute-instance ([#269](https://github.com/noisypigeon/noisypigeon/pull/269))
+
+- [scaleway/compute-instance] Split cloud-init into compute-instance-config; stop composing modules inside compute-instance ([#269](https://github.com/noisypigeon/noisypigeon/pull/269))
+
 - [scaleway/pigeon-cluster] Re-pin compute-instance to v6.1.0 ([#265](https://github.com/noisypigeon/noisypigeon/pull/265))
 
 - [scaleway/compute-instance] Install a pinned static ffmpeg for tiled HEIF transcoding ([#264](https://github.com/noisypigeon/noisypigeon/pull/264))

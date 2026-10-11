@@ -3,11 +3,11 @@ locals {
   public_gateway_type = "VPC-GW-M"
   enable_private_network = true
   enable_public_gateway = true
-  jobs = [/* 
+  jobs = [
     {
-      job_name              = "transform-heic-to-jpg"
+      job_name              = "transform-mov-to-mp4"
       instance_type         = "COMPUTE3-X8C-16G"
-      block_volume_size     = 300
+      block_volume_size     = 500
       block_volume_iops     = 15000
       enable_private_network = true
       enable_transcoding = true
@@ -15,7 +15,7 @@ locals {
       extra_permission_sets = []
       job_commands = [
         "cd pigeon-cli/",
-        "mise run pigeon-release job run transform --input-file-type=heic --source-path 'source:heic/' --destination-path 'destination:jpg/' --report-bucket reports --local-output /mnt/data/a --non-interactive --concurrency 14 --transfers 16 --checkers 32",
+        "mise run pigeon-release job run transform --input-file-type=mov --source-path 'source:mov/' --destination-path 'destination:mp4/' --report-bucket reports --local-output /mnt/data/a --non-interactive --concurrency 14 --transfers 16 --checkers 32",
       ]
       keyring = {
         source = {
@@ -31,7 +31,7 @@ locals {
           provider      = "Scaleway"
         }
       }
-    }*/
+    }
   ]
 }
 

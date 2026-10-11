@@ -1,5 +1,8 @@
 name: Renew interaction limits
 
+# Job body lives in noisypigeon/pigeon.dev (ADR-0155) -- this file keeps only
+# the trigger, permissions and concurrency. A cron trigger can't live in
+# another repo.
 on:
   schedule:
     - cron: "0 0 1 * *"
@@ -9,11 +12,5 @@ permissions: {}
 
 jobs:
   renew:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Re-apply contributors_only interaction limit
-        env:
-          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
-        run: |
-          gh api -X PUT "repos/${{ github.repository }}/interaction-limits" \
-            -f limit=contributors_only -f expiry=six_months
+    uses: noisypigeon/pigeon.dev/.github/workflows/interaction-limits-renew.yml@main
+    secrets: inherit

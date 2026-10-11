@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-10
 
+- [scaleway/compute-instance] Install a pinned static ffmpeg for tiled HEIF transcoding ([#264](https://github.com/noisypigeon/noisypigeon/pull/264))
+
 - [scaleway/object-bucket] Add optional expiration_days lifecycle rule to object-bucket ([#262](https://github.com/noisypigeon/noisypigeon/pull/262))
 
 - [scaleway/pigeon-cluster] Rename pigeon-cluster's jobs[*].enable_heic_transcoding to enable_transcoding, re-pin compute-instance v6.0.0 ([#261](https://github.com/noisypigeon/noisypigeon/pull/261))

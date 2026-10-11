@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-10
 
+- [scaleway/pigeon-cluster] Re-pin compute-instance to v6.1.0 ([#265](https://github.com/noisypigeon/noisypigeon/pull/265))
+
 - [scaleway/compute-instance] Install a pinned static ffmpeg for tiled HEIF transcoding ([#264](https://github.com/noisypigeon/noisypigeon/pull/264))
 
 - [scaleway/object-bucket] Add optional expiration_days lifecycle rule to object-bucket ([#262](https://github.com/noisypigeon/noisypigeon/pull/262))

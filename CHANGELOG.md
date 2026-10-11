@@ -17,6 +17,8 @@ blog's existence in this repo and its changelog automation landing.
 
 ## 2026-10-10
 
+- [scaleway/compute-instance] Rename compute-instance's enable_heic_transcoding to enable_transcoding ([#260](https://github.com/noisypigeon/noisypigeon/pull/260))
+
 - [scaleway/pigeon-cluster] Re-pin pigeon-cluster to compute-instance v5.7.0, add per-job HEIC transcoding opt-in ([#258](https://github.com/noisypigeon/noisypigeon/pull/258))
 
 - [scaleway/compute-instance] Add libheif-enabled ffmpeg support to compute-instance ([#257](https://github.com/noisypigeon/noisypigeon/pull/257))

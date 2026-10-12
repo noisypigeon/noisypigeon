@@ -2,7 +2,7 @@
 
 ## Project layout
 
-This repo holds `workloads/`, its only live Terragrunt/Terraform tree. Each workload gets `workloads/<name>/`: `src/` for its content, `terraform/` for the infrastructure it's part of, colocated rather than provider-rooted. `workloads/root.hcl` enforces that convention and resolves each leaf's Scaleway region/zone (default `fr-par`; override via a leaf's own `workload_definition.hcl` — currently only `willowgraysen.com/terraform/custodial-storage/duck-jellyfish`, in `nl-ams`).
+This repo holds `workloads/`, its only live Terragrunt/Terraform tree. Each workload gets `workloads/<name>/`: `src/` for its content, `terraform/` for the infrastructure it's part of, colocated rather than provider-rooted. `workloads/root.hcl` enforces that convention and resolves each leaf's Scaleway region/zone (default `fr-par`/`fr-par-1`; a leaf overrides it by dropping a `scaleway_config.hcl` beside its `terragrunt.hcl` — a mechanism that currently has no users).
 
 Three domains are fully Terraform-self-sufficient (own Scaleway project, state bucket, deployer IAM, `root.hcl`/`secrets.enc`): `pigeon.dev`, `noisypigeon.com`, and `willowgraysen.com`. `willowgraysen.com` additionally hosts this repo's original shared bootstrap (`project` resource) and every `pigeon-cli` job/bucket/shared leaf, under `workloads/willowgraysen.com/terraform/pigeon-cli/{bucket,shared,job}/`. The pre-ADR-0133 shared state bucket and deployer IAM stay alive, deliberately unmanaged — `pigeon.dev`'s and `noisypigeon.com`'s own `state/iam` leaves (and `pigeon.dev`'s `state/bucket`) still depend on it.
 
@@ -16,14 +16,27 @@ Both Zola sites (`workloads/noisypigeon.com/src`, `workloads/pigeon.dev/src`) tr
 
 - **Legacy `modules/*` tags still live here, not in `pigeon.dev`.** 20 tags predate `templates/` existing in this repo and couldn't be carried over when `templates/` was hoisted out; the redirect generator maps `modules` → this repo and `templates/terraform`/`templates/zola-site` → `pigeon.dev` (frozen, won't grow). (ADR-0154)
 - **Terraform module/theme development happens in `noisypigeon/pigeon.dev`, not here.** A module or theme change is a PR there; bumping the version a leaf here pins is a separate PR here, landable only once that release's deploy has finished. (ADR-0154)
-- **`pigeon-cli` (the Rust CLI) lives in `noisypigeon/pigeon-cli`.** This repo only has its job/bucket/shared Terraform leaves, not its source. (ADR-0084)
+- **`pigeon-cli` (the Rust CLI) lives in `noisypigeon/pigeon-cli`.** This repo only has its job/bucket/shared Terraform leaves, not its source. (`pigeon-cli`'s own ADR-0084 — *not* this corpus's ADR-0084, which is an unrelated record about `compute-instance` cloud-init; the number was reused after the split ADR was deleted here.)
 - **CI job bodies live in `noisypigeon/pigeon.dev`, not here.** `terragrunt-plan`/`apply`, `blog-changelog`, `interaction-limits-renew`, and the single-site half of `zola-sites-deploy` are thin wrappers calling reusable workflows there — debugging CI behavior usually means reading that repo. (ADR-0155)
 - **`workloads/` is the only live Terragrunt tree.** There is no `terraform/infrastructure/` or top-level `modules/`/`templates/` anymore.
-- ADRs are numbered continuously and never renumbered or archived across repo splits — only the pigeon-cli-specific ADRs (0001-0030) were ever removed from this repo, because that code moved out entirely. (ADR-0084)
+- ADRs are numbered continuously and never renumbered or archived across repo splits — only the pigeon-cli-specific ADRs (0001-0030) were ever removed, because that code moved out entirely. Numbers are not globally unique: 0084 was reused after a deletion, and 0136/0138 are each used twice from parallel branches.
 
-## ADRs govern this project
+## Design docs
 
-Before making architectural or interface changes, read `docs/adr/` — numbered chronologically, one file per decision, and the source of truth for how this repo reached its current shape. If a change would contradict an existing ADR, flag it rather than silently diverging: write a new ADR, or update an existing one's `Status` to `Superseded by ADR-NNNN` if it fully replaces it.
+**`docs/ARCHITECTURE.md`** is the longform companion to this file: current-state
+design rationale for the layout, state/secrets model, module-consumption
+contract, Zola/theme pipeline, CI gates, and `pigeon-cluster`. Read it when you
+need the *why* behind something summarized here, or before changing any of it.
+Like this file, it documents the present and is edited in place when the tree
+changes — it is not a history.
+
+Before making architectural or interface changes, read `docs/adr/` — numbered
+chronologically, one file per decision, and the record of how this repo reached
+its current shape. (ADR-0157 moves this corpus to `noisypigeon/pigeon.dev` under
+`adr/infrastructure/`; author new ones with `mise run adr-new`.) If a change
+would contradict an existing ADR, flag it rather than silently diverging: write
+a new ADR, or update the old one's `Status` to `Superseded by ADR-NNNN` — or
+`superseded in part by`, where only one section is overturned.
 
 ## Dev cycle
 

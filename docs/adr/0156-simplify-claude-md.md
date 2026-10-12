@@ -2,7 +2,7 @@
 
 - **Author**: Willow Finch/Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-12.
-- **Status**: Accepted.
+- **Status**: Accepted; superseded in part by [ADR-0157](0157-hoist-adrs-to-pigeon-dev.md) (the in-repo longform role passes to `docs/ARCHITECTURE.md`).
 
 ## Context
 

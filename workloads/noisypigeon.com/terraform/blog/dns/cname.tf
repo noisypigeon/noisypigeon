@@ -1,31 +1,38 @@
-# DNS record to point noisypigeon.com's apex at the Scaleway object-bucket
-# website endpoint. Cloudflare-proxied (the bucket's website endpoint has
-# no valid TLS cert for this custom hostname -- Cloudflare terminates TLS
-# and proxies through), replacing the former DNS-only CNAME to
-# noisypigeon.github.io (GitHub Pages) -- see ADR-0132.
-#
-# www is handled by a redirect rule (redirect.tf), not a second direct
-# CNAME: Scaleway's bucket-website gateway resolves the bucket from the
-# incoming Host header, not the CNAME target -- a direct www CNAME to the
-# same target 404s with NoSuchBucket, since no bucket by that name exists
-# (confirmed live on pigeon.dev's identical leaf, ADR-0130).
+# DNS records to point noisypigeon.com (apex + www) at GitHub Pages
+# (noisypigeon.github.io) -- ADR-0158 cuts the site back over from the
+# Scaleway bucket this leaf used to front. Both DNS-only (proxied = false),
+# restoring the pre-ADR-0132 shape exactly: GitHub Pages issues its own
+# Let's Encrypt certificate for the custom domain, which it cannot do while
+# Cloudflare is proxying (and terminating TLS for) the apex, and it
+# redirects www -> apex natively, so no separate redirect rule is needed
+# here (mirrors pigeon.dev/terraform/wiki/dns/cname.tf, ADR-0156).
 
 resource "cloudflare_dns_record" "root_cname" {
   zone_id = local.zone_id_noisypigeon_com
   name    = "@"
   type    = "CNAME"
-  content = "noisypigeon.com.s3-website.fr-par.scw.cloud"
-  proxied = true
+  content = "noisypigeon.github.io"
+  proxied = false
   ttl     = 1
-  comment = "scaleway object-bucket website endpoint (apex, cloudflare-proxied for TLS)"
+  comment = "github pages root cname (apex, cloudflare-flattened)"
 }
 
-resource "cloudflare_dns_record" "placeholder_www" {
+resource "cloudflare_dns_record" "www_cname" {
   zone_id = local.zone_id_noisypigeon_com
   name    = "www"
   type    = "CNAME"
-  content = "noisypigeon.com"
-  proxied = true
+  content = "noisypigeon.github.io"
+  proxied = false
   ttl     = 1
-  comment = "placeholder so Cloudflare intercepts www traffic for the redirect in redirect.tf"
+  comment = "github pages www cname"
+}
+
+# Was placeholder_www (a Cloudflare-proxied CNAME to the apex, backing
+# redirect.tf's ruleset) -- renaming in place via `moved` so this becomes an
+# in-place attribute update, not a destroy+recreate (same resource ID
+# throughout, mirroring ADR-0132's own `terraform state mv` for the reverse
+# direction).
+moved {
+  from = cloudflare_dns_record.placeholder_www
+  to   = cloudflare_dns_record.www_cname
 }

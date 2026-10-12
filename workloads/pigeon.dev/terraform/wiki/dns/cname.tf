@@ -5,7 +5,7 @@
 # own Let's Encrypt certificate for the custom domain, which it cannot do
 # while Cloudflare is proxying (and terminating TLS for) the apex, and it
 # redirects www -> apex natively, so no separate redirect rule is needed
-# here (ADR-0105's old blog/cname.tf is the last precedent for this shape).
+# here (ADR-0105's old blog/cname.tf is the last precedent for this shape)
 
 resource "cloudflare_dns_record" "root_cname" {
   zone_id = local.zone_id_pigeon_dev

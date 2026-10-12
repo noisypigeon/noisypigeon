@@ -26,14 +26,16 @@ run = "terragrunt run --all -- plan"
 [tasks.apply]
 run = "terragrunt run --all -- apply"
 
-# templates/ lives in noisypigeon/pigeon.dev since ADR-0154, so every Zola
-# task below fetches that clone first and resolves the theme out of it. Set
+# templates/ lives in noisypigeon/pigeon.dev since ADR-0154, so the blog
+# build fetches that clone first and resolves the theme out of it. Set
 # TEMPLATES_SRC to your own checkout of that repo to build against local
-# template changes instead.
+# template changes instead. pigeon.dev/src itself moved into that same repo
+# by ADR-0156, so it no longer needs this fetch step at all -- its own build
+# tasks now live there.
 [tasks.blog-build]
 dir = "workloads/noisypigeon.com/src"
 run = [
-  "../../pigeon.dev/fetch-templates.sh",
+  "../fetch-templates.sh",
   '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',
   "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola build",
 ]
@@ -41,25 +43,7 @@ run = [
 [tasks.blog-serve]
 dir = "workloads/noisypigeon.com/src"
 run = [
-  "../../pigeon.dev/fetch-templates.sh",
+  "../fetch-templates.sh",
   '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',
   "SITE_COMMIT_SHA=$(git rev-parse --short HEAD) zola serve",
-]
-
-[tasks.pigeon-dev-build]
-dir = "workloads/pigeon.dev/src"
-run = [
-  "../fetch-templates.sh",
-  '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',
-  "../generate-module-redirects.sh",
-  "zola build",
-]
-
-[tasks.pigeon-dev-serve]
-dir = "workloads/pigeon.dev/src"
-run = [
-  "../fetch-templates.sh",
-  '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',
-  "../generate-module-redirects.sh",
-  "zola serve",
 ]

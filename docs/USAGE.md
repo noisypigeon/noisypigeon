@@ -4,11 +4,14 @@ Personal infrastructure: a set of versioned, reusable Terraform modules,
 the live Terragrunt/Terraform configuration that consumes them, and the
 Zola-based static site for [noisypigeon.com](https://noisypigeon.com).
 
-`service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into
-its own, `noisypigeon/pigeon-cli`, via ADR-0084 — its pre-split, pigeon-cli-
-only ADR and report history was deleted from this repo once no longer
-needed here (surviving terraform/blog ADRs live flat in `docs/adr/`; the
-full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
+`service/pigeon-cli` (the `pigeon` Rust CLI) split out of this repo into its
+own, [`noisypigeon/pigeon-cli`](https://github.com/noisypigeon/pigeon-cli) —
+see that repo's ADR-0084 (this corpus's ADR-0084 is an unrelated record; the
+number was reused after the split ADR was deleted here). Its pre-split,
+pigeon-cli-only ADR and report history went with it. The surviving
+infrastructure ADRs now live in
+[`noisypigeon/pigeon.dev`](https://github.com/noisypigeon/pigeon.dev/tree/main/adr/infrastructure)
+under `adr/infrastructure/` (ADR-0157).
 
 ## Structure
 
@@ -33,9 +36,10 @@ full pigeon-cli history survives in `noisypigeon/pigeon-cli`).
     `pigeon` CLI's (`noisypigeon/pigeon-cli`) storage buckets, shared
     Cockpit/IAM-application resources, and compute-instance job leaves
     (`pigeon-cli/{bucket,shared,job}/`).
-- [`docs/adr/`](docs/adr/) — architecture decision records governing
-  terraform/blog changes in this repo, including every surviving pre-split
-  ADR (renumbered inline, not archived separately).
+- [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — longform current-state design
+  rationale: layout, Terragrunt roots/state/providers, secrets, the module
+  consumption contract, the Zola/theme pipeline, CI, and `pigeon-cluster`.
+  Start here for the *why* behind anything below.
 
 ## Getting started
 
@@ -47,8 +51,13 @@ mise run fmt-terraform         # terragrunt hcl format + terraform fmt
 mise run fmt-check-terraform   # check formatting
 mise run plan                  # terragrunt run --all -- plan
 mise run apply                 # terragrunt run --all -- apply
-mise run blog-build            # zola build (workloads/blog/src)
-mise run blog-serve            # zola serve (workloads/blog/src)
+mise run blog-build            # zola build (workloads/noisypigeon.com/src)
+mise run blog-serve            # zola serve (workloads/noisypigeon.com/src)
+mise run pigeon-dev-build      # zola build (workloads/pigeon.dev/src)
+mise run pigeon-dev-serve      # zola serve (workloads/pigeon.dev/src)
+mise run secrets-edit          # edit the root .env.enc via sops
+mise run adr-fetch             # clone/refresh pigeon.dev's ADRs at .adr-src
+mise run adr-new -- --title …  # scaffold a new ADR in pigeon.dev
 ```
 
 Terraform modules and the Zola theme live in their own repo,

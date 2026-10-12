@@ -7,7 +7,7 @@
 # tagged git:: source. The public URL always uses "modules/..." regardless of
 # which prefix the tag actually lives under, so the public namespace stays
 # stable even as the repo's internal layout moves.
-# See docs/adr/0109, docs/adr/0110.
+# See ADR-0109, ADR-0110 (noisypigeon/pigeon.dev, adr/infrastructure/).
 #
 # Since ADR-0154 the two prefixes live in *different repos*, so a tag's prefix
 # also decides which repo its git:: source names:

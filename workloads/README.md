@@ -7,7 +7,7 @@ Terraform here lives *with* the resource it manages, not grouped by cloud
 provider. This is this repo's only live Terraform/Terragrunt tree — the
 former provider-rooted `terraform/infrastructure/` was fully decommissioned
 once its last leaves moved here, see
-[ADR-0098](../docs/adr/0098-decommission-terraform-infrastructure.md).
+[ADR-0098](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0098-decommission-terraform-infrastructure.md).
 
 ```
 noisypigeon.com/
@@ -86,7 +86,7 @@ locals {
 }
 ```
 
-`workloads/root.hcl` reads this file (if present) via Terragrunt's `read_terragrunt_config`, which returns a given default untouched when the file doesn't exist — every other leaf is entirely unaffected. See [ADR-0098](../docs/adr/0098-decommission-terraform-infrastructure.md) for the full mechanism and why it's built on `find_in_parent_folders`/`path_relative_to_include` rather than `get_terragrunt_dir()`. The pattern isn't specific to region/zone — a future leaf needing some other per-leaf override can extend the same file and have `workloads/root.hcl` read additional keys from it the same way.
+`workloads/root.hcl` reads this file (if present) via Terragrunt's `read_terragrunt_config`, which returns a given default untouched when the file doesn't exist — every other leaf is entirely unaffected. See [ADR-0098](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0098-decommission-terraform-infrastructure.md) for the full mechanism and why it's built on `find_in_parent_folders`/`path_relative_to_include` rather than `get_terragrunt_dir()`. The pattern isn't specific to region/zone — a future leaf needing some other per-leaf override can extend the same file and have `workloads/root.hcl` read additional keys from it the same way.
 
 ## Terraform convention: `workloads/<name>/terraform/`
 
@@ -112,7 +112,7 @@ plan/apply, even if a `terragrunt.hcl` is mistakenly added there. A leaf
 can nest arbitrarily deep under `<name>/terraform/` (e.g.
 `noisypigeon.com/terraform/proton/dns/`) — widened from "exactly
 `<name>/terraform`" by
-[ADR-0096](../docs/adr/0096-move-fastmail-leaves-to-workloads-email-terraform.md)
+[ADR-0096](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0096-move-fastmail-leaves-to-workloads-email-terraform.md)
 to let a workload split into multiple leaves (one per domain or
 sub-service) without colliding on resource addresses.
 
@@ -121,12 +121,12 @@ plaintext) at the true repo root, decrypted in-memory via
 `find_in_parent_folders(".env.enc", "")` — a real shell environment
 variable always overrides the decrypted file's value for the same key.
 Run `mise run secrets-edit` to edit it. See
-[ADR-0123](../docs/adr/0123-sops-encrypted-root-env.md). A self-sufficient
+[ADR-0123](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0123-sops-encrypted-root-env.md). A self-sufficient
 workload (see above) instead reads its own `secrets.enc`, same mechanism,
 never falling back to the shared file
-([ADR-0131](../docs/adr/0131-workload-specific-secrets.md)).
+([ADR-0131](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0131-workload-specific-secrets.md)).
 `workloads/root.hcl` wires Cloudflare and Scaleway (Scaleway added by
-[ADR-0094](../docs/adr/0094-move-scaleway-bootstrap-leaf-to-workloads.md))
+[ADR-0094](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0094-move-scaleway-bootstrap-leaf-to-workloads.md))
 even though no leaf still resolves to it directly now that every workload
 is self-sufficient (ADR-0133) — each workload's own `state/iam` leaf (and,
 for `pigeon.dev`, its still-unfixed `state/bucket`) keeps the explicit
@@ -141,5 +141,5 @@ preemptively.
    shape above — `workloads/root.hcl` will pick it up automatically.
 3. If the leaf needs a provider `workloads/root.hcl` doesn't wire yet,
    extend `workloads/root.hcl` at that point — see
-   [ADR-0092](../docs/adr/0092-move-github-pages-leaf-to-workloads-blog-terraform.md)
+   [ADR-0092](https://github.com/noisypigeon/pigeon.dev/blob/main/adr/infrastructure/0092-move-github-pages-leaf-to-workloads-blog-terraform.md)
    for the rationale behind keeping it minimal until then.

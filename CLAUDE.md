@@ -30,19 +30,21 @@ need the *why* behind something summarized here, or before changing any of it.
 Like this file, it documents the present and is edited in place when the tree
 changes — it is not a history.
 
-Before making architectural or interface changes, read `docs/adr/` — numbered
-chronologically, one file per decision, and the record of how this repo reached
-its current shape. (ADR-0157 moves this corpus to `noisypigeon/pigeon.dev` under
-`adr/infrastructure/`; author new ones with `mise run adr-new`.) If a change
-would contradict an existing ADR, flag it rather than silently diverging: write
-a new ADR, or update the old one's `Status` to `Superseded by ADR-NNNN` — or
-`superseded in part by`, where only one section is overturned.
+The ADRs themselves are **not in this repo** — they live in
+[`noisypigeon/pigeon.dev`](https://github.com/noisypigeon/pigeon.dev/tree/main/adr/infrastructure)
+under `adr/infrastructure/`, numbered chronologically from 0031, one file per
+decision (ADR-0157). Before making architectural or interface changes, read
+them; `mise run adr-fetch` puts a clone at `.adr-src` so you can grep them
+locally. If a change would contradict an existing ADR, flag it rather than
+silently diverging: write a new one with `mise run adr-new`, or update the old
+one's `Status` to `Superseded by ADR-NNNN` — or `superseded in part by`, where
+only one section is overturned.
 
 ## Dev cycle
 
 Terraform modules and the `zola-site` theme live in `noisypigeon/pigeon.dev` (ADR-0154), with their own PR discipline, `release:*` label vocabulary, release automation, and the `release-pr` skill. Changing a module is a PR there; bumping the version a `workloads/**/*.tf` leaf here pins is a separate PR here, landable only once that release's deploy has finished (the short URL has to resolve before `terragrunt init` can fetch it). There is no crate-style `mise run ci` gate in this repo — that was `service/pigeon-cli`-specific and now lives with it in `noisypigeon/pigeon-cli`.
 
-When an ADR's `## Out of scope` section has a genuinely-deferred item (not a permanent design boundary), file it via `mise run adr-issue` while landing that ADR — reuse an existing `out-of-scope`-labeled issue with `--issue N` if the same gap was already raised elsewhere. See `docs/adr/0031-out-of-scope-issue-tracking.md`.
+When an ADR's `## Out of scope` section has a genuinely-deferred item (not a permanent design boundary), file it via `mise run adr-issue` while landing that ADR — reuse an existing `out-of-scope`-labeled issue with `--issue N` if the same gap was already raised elsewhere. Issues are filed against this repo even though the ADR text is not here. See `adr/infrastructure/0031-out-of-scope-issue-tracking.md` in `pigeon.dev`.
 
 ## Commands
 

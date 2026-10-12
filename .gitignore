@@ -3,6 +3,7 @@
 /workloads/noisypigeon.com/src/public
 /workloads/*/src/themes/zola-site
 /.templates-src/
+/.adr-src/
 .claude/worktrees
 .terraform.lock.hcl
 .terragrunt-cache/

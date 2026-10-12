@@ -4,6 +4,15 @@ terragrunt = "1.1.6"
 zola = "0.23.6"
 sops = "3.13.3"
 
+# ADRs live in noisypigeon/pigeon.dev under adr/infrastructure/ since
+# ADR-0157. These tasks operate on a local clone of that repo at .adr-src
+# (gitignored); set ADR_SRC to point at your own checkout instead.
+[tasks.adr-fetch]
+run = ".github/scripts/fetch-adrs.sh"
+
+[tasks.adr-new]
+run = ".github/scripts/adr-new.sh \"$@\""
+
 [tasks.adr-issue]
 run = ".github/scripts/adr-issue.sh \"$@\""
 

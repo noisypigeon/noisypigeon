@@ -2,7 +2,7 @@
 
 - **Author**: Willow Graysen ([@noisypigeon](https://github.com/noisypigeon)).
 - **Date**: 2026-10-11.
-- **Status**: Accepted.
+- **Status**: Accepted; superseded in part by [ADR-0157](0157-hoist-adrs-to-pigeon-dev.md) (§8's no-move boundary for ADRs is reversed; nothing is renumbered or split).
 
 ## Context
 

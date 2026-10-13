@@ -1,7 +1,7 @@
 .DS_Store
 *.env
-/workloads/noisypigeon.com/src/public
-/workloads/*/src/themes/zola-site
+/noisypigeon.com/src/public
+/*/src/themes/zola-site
 /.templates-src/
 /.adr-src/
 .claude/worktrees

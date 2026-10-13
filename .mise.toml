@@ -42,7 +42,7 @@ run = "terragrunt run --all -- apply"
 # by ADR-0156, so it no longer needs this fetch step at all -- its own build
 # tasks now live there.
 [tasks.blog-build]
-dir = "workloads/noisypigeon.com/src"
+dir = "noisypigeon.com/src"
 run = [
   "../fetch-templates.sh",
   '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',
@@ -50,7 +50,7 @@ run = [
 ]
 
 [tasks.blog-serve]
-dir = "workloads/noisypigeon.com/src"
+dir = "noisypigeon.com/src"
 run = [
   "../fetch-templates.sh",
   '"${TEMPLATES_SRC:-$(git rev-parse --show-toplevel)/.templates-src}/templates/zola-site/resolve-theme.sh"',

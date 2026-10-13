@@ -8,7 +8,7 @@ Three domains are fully Terraform-self-sufficient (own Scaleway project, state b
 
 Versioned, reusable Terraform modules and the Zola `zola-site` theme no longer live in this repo — they moved to `noisypigeon/pigeon.dev` (ADR-0154). This repo only pins versions in `**/*.tf` `source =` lines; the modules/theme themselves, their release tooling, and the `release-pr` skill live and get edited in that repo. Import URLs are unaffected by the move and still resolve from `pigeon.dev`: `pigeon.dev/modules/<provider>/<module>/vX.Y.Z` and `pigeon.dev/templates/zola-site/vX.Y.Z`.
 
-The Zola site at `noisypigeon.com/src` tracks the theme on live `"main"` by default, pinnable via `[extra].theme_version`; `resolve-theme.sh` materializes `themes/<name>` directly (nothing committed). `pigeon.dev`'s own site moved into the `noisypigeon/pigeon.dev` repo itself (ADR-0156) — this repo no longer builds or serves it.
+Both Zola sites — `noisypigeon.com` and `pigeon.dev` — have moved to their own repos: `noisypigeon/noisypigeon.com` (ADR-0159) and `noisypigeon/pigeon.dev` respectively. This repo no longer builds or serves them. Their content tracks the theme on live `"main"` by default, pinnable via `[extra].theme_version`; `resolve-theme.sh` materializes `themes/<name>` directly from the remote clone (nothing committed locally).
 
 `.github/workflows/` here are thin callers: each keeps its trigger (`on:`), permissions, and any authorization gate (e.g. `terragrunt-apply`'s comment-author check), but the job body is a `workflow_call` into a reusable workflow hosted in `noisypigeon/pigeon.dev`, pinned `@main`.
 
@@ -17,7 +17,7 @@ The Zola site at `noisypigeon.com/src` tracks the theme on live `"main"` by defa
 - **Legacy `modules/*` tags still live here, not in `pigeon.dev`.** 20 tags predate `templates/` existing in this repo and couldn't be carried over when `templates/` was hoisted out; the redirect generator maps `modules` → this repo and `templates/terraform`/`templates/zola-site` → `pigeon.dev` (frozen, won't grow). (ADR-0154)
 - **Terraform module/theme development happens in `noisypigeon/pigeon.dev`, not here.** A module or theme change is a PR there; bumping the version a leaf here pins is a separate PR here, landable only once that release's deploy has finished. (ADR-0154)
 - **`pigeon-cli` (the Rust CLI) lives in `noisypigeon/pigeon-cli`.** This repo only has its job/bucket/shared Terraform leaves, not its source. (`pigeon-cli`'s own ADR-0084 — *not* this corpus's ADR-0084, which is an unrelated record about `compute-instance` cloud-init; the number was reused after the split ADR was deleted here.)
-- **CI job bodies live in `noisypigeon/pigeon.dev`, not here.** `terragrunt-plan`/`apply`, `blog-changelog`, `interaction-limits-renew`, and the single-site half of `zola-sites-deploy` are thin wrappers calling reusable workflows there — debugging CI behavior usually means reading that repo. (ADR-0155)
+- **CI job bodies live in `noisypigeon/pigeon.dev`, not here.** `terragrunt-plan`/`apply` and `interaction-limits-renew` are thin wrappers calling reusable workflows there; their content-publishing counterparts (`blog-changelog`, `zola-site-deploy`) live with the content in their own repos — debugging CI behavior usually means reading the relevant repo. (ADR-0155, ADR-0159)
 - **This repo is the only live Terragrunt tree.** Each workload is its own top-level directory (`noisypigeon.com/`, `pigeon.dev/`, `willowgraysen.com/`) rather than nested under a `workloads/` wrapper; there is no `terraform/infrastructure/` or separate top-level `modules/`/`templates/` anymore.
 - ADRs are numbered continuously and never renumbered or archived across repo splits — only the pigeon-cli-specific ADRs (0001-0030) were ever removed, because that code moved out entirely. Numbers are not globally unique: 0084 was reused after a deletion, and 0136/0138 are each used twice from parallel branches.
 
@@ -50,6 +50,5 @@ When an ADR's `## Out of scope` section has a genuinely-deferred item (not a per
 
 - `mise run fmt-terraform` / `mise run fmt-check-terraform` — format / check formatting for Terraform and Terragrunt files.
 - `mise run plan` / `mise run apply` — `terragrunt run --all -- plan`/`apply` across the whole repo.
-- `mise run blog-build` / `mise run blog-serve` — build / serve `noisypigeon.com/src` with Zola.
 - `mise run secrets-edit` — edit the root `.env.enc` via `sops`.
 - `mise run adr-issue -- <args>` — file (or reuse) a GitHub issue for an ADR's Out of scope bullet and link it back into the ADR.

@@ -339,8 +339,10 @@ mise run adr-new -- --title "do a thing"  # next number, skeleton, new branch
 `adr-new` scaffolds and branches but does not commit; write the ADR, then push
 and open a PR against `pigeon.dev`. Numbering is `max + 1` read from
 `origin/HEAD`, so two unmerged ADRs can claim the same number — which is how the
-existing duplicate `0136` and `0138` numbers arose. Set `ADR_SRC` to use your own
-checkout instead of `.adr-src`.
+existing duplicate `0136` and `0138` numbers arose, and also `0156`: one landed
+on an unmerged branch here before ADR-0157's hoist ran, and an unrelated
+`0156-simplify-claude-md` claimed the number independently in the meantime. Set
+`ADR_SRC` to use your own checkout instead of `.adr-src`.
 
 Unlike `.templates-src`, `.adr-src` is never reset: `fetch-adrs.sh` refuses to
 run against a dirty clone rather than discarding an ADR in progress.

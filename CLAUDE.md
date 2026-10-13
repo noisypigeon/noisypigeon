@@ -19,7 +19,7 @@ Both Zola sites (`workloads/noisypigeon.com/src`, `workloads/pigeon.dev/src`) tr
 - **`pigeon-cli` (the Rust CLI) lives in `noisypigeon/pigeon-cli`.** This repo only has its job/bucket/shared Terraform leaves, not its source. (`pigeon-cli`'s own ADR-0084 — *not* this corpus's ADR-0084, which is an unrelated record about `compute-instance` cloud-init; the number was reused after the split ADR was deleted here.)
 - **CI job bodies live in `noisypigeon/pigeon.dev`, not here.** `terragrunt-plan`/`apply`, `blog-changelog`, `interaction-limits-renew`, and the single-site half of `zola-sites-deploy` are thin wrappers calling reusable workflows there — debugging CI behavior usually means reading that repo. (ADR-0155)
 - **`workloads/` is the only live Terragrunt tree.** There is no `terraform/infrastructure/` or top-level `modules/`/`templates/` anymore.
-- ADRs are numbered continuously and never renumbered or archived across repo splits — only the pigeon-cli-specific ADRs (0001-0030) were ever removed, because that code moved out entirely. Numbers are not globally unique: 0084 was reused after a deletion, and 0136/0138 are each used twice from parallel branches.
+- ADRs are numbered continuously and never renumbered or archived across repo splits — only the pigeon-cli-specific ADRs (0001-0030) were ever removed, because that code moved out entirely. Numbers are not globally unique: 0084 was reused after a deletion, and 0136/0138/0156 are each used twice from parallel branches.
 
 ## Design docs
 

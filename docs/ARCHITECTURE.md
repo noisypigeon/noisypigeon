@@ -12,10 +12,10 @@ text is edited in place rather than appended to, the same rule ADR-0156 set for
 
 ## 1. Scope and layout
 
-This repo holds `workloads/` and nothing else operational. `workloads/` is its
-only live Terragrunt/Terraform tree.
+This repo holds its workloads at the top level and nothing else operational.
+Each one is its own live Terragrunt/Terraform tree.
 
-Each workload is `workloads/<name>/`, with `src/` for content and `terraform/`
+Each workload is its own top-level `<name>/` directory, with `src/` for content and `terraform/`
 for the infrastructure it is part of. Terraform is colocated with the thing it
 serves rather than grouped by provider — the convention ADR-0092 introduced and
 ADR-0096 widened to any depth under `<name>/terraform/`. A provider-rooted tree
@@ -25,8 +25,8 @@ Three workloads exist, one per domain:
 
 | Workload | `src/` | What its `terraform/` owns |
 |---|---|---|
-| `noisypigeon.com` | Zola blog | `blog/{bucket,iam,dns}`, `bluesky/dns`, `proton/dns`, `google-search/dns`, `project`, `state/{bucket,iam}` |
-| `pigeon.dev` | Zola wiki + generated redirect pages | `wiki/{bucket,iam,dns}`, `fastmail/dns`, `project`, `state/{bucket,iam}` |
+| `noisypigeon.com` | Zola blog | `blog/dns`, `bluesky/dns`, `proton/dns`, `google-search/dns`, `project`, `state/{bucket,iam}` |
+| `pigeon.dev` | — (its site moved to `noisypigeon/pigeon.dev`, ADR-0156) | `wiki/dns`, `fastmail/dns`, `project`, `state/{bucket,iam}` |
 | `willowgraysen.com` | — (infrastructure only) | `redirect/dns`, `cold/*`, `pigeon-cli/*`, `project`, `state/{bucket,iam}` |
 
 `willowgraysen.com` is the catch-all: it holds what no more specific domain
@@ -44,19 +44,19 @@ domain's `terragrunt` invocations authenticate as an identity scoped to it.
 
 One deliberate loose end: the pre-ADR-0133 shared state bucket and deployer IAM
 are **still alive on Scaleway and deliberately unmanaged**. `pigeon.dev`'s and
-`noisypigeon.com`'s own `state/iam` leaves — and `pigeon.dev`'s `state/bucket` —
-still depend on them. Do not delete them on the assumption that ADR-0133
-replaced them; it replaced only `willowgraysen.com`'s use of them.
+`noisypigeon.com`'s own `state/iam` leaves still depend on them. Do not delete
+them on the assumption that ADR-0133 replaced them; it replaced only
+`willowgraysen.com`'s use of them.
 
 ## 2. Terragrunt roots, state, and provider generation
 
-There are four `root.hcl` files: one shared at `workloads/root.hcl`, and one per
-domain at `workloads/<domain>/root.hcl`. A leaf's `terragrunt.hcl` includes the
+There are four `root.hcl` files: one shared at the repo root, and one per
+domain at `<domain>/root.hcl`. A leaf's `terragrunt.hcl` includes the
 nearest one.
 
 ### The leaf-validity guard
 
-`workloads/root.hcl` enforces the directory convention through Terragrunt's
+The shared `root.hcl` enforces the directory convention through Terragrunt's
 `exclude` block rather than documentation:
 
 ```hcl
@@ -116,7 +116,7 @@ so a leaf that omits the file is unaffected and no error is raised:
 
 ### A wart worth knowing
 
-`workloads/root.hcl` computes `is_pigeon_dev_leaf` and branches Cloudflare
+The shared `root.hcl` computes `is_pigeon_dev_leaf` and branches Cloudflare
 credentials on it — but **both branches of the ternary are now identical**, so
 the branch is dead code. It dates from when `pigeon.dev`'s zone sat on a
 separate Cloudflare account with a separately-scoped token (ADR-0064, ADR-0096).
@@ -131,12 +131,12 @@ Secrets are SOPS/age-encrypted and committed. Nothing is decrypted to disk:
 result into a `locals` map (ADR-0123).
 
 - **`.env.enc`** at the repo root — shared values, read by the shared root.
-- **`workloads/<domain>/secrets.enc`** — per-workload, no leading dot, decrypted
+- **`<domain>/secrets.enc`** — per-workload, no leading dot, decrypted
   independently and never merged with the root file (ADR-0131). All three
   domains have one.
 
 `.sops.yaml` covers per-workload files with a generic creation rule
-(`workloads/[^/]+/secrets\.enc$`), so a new workload needs no `.sops.yaml`
+(`^[^/]+/secrets\.enc$`), so a new workload needs no `.sops.yaml`
 change. Edit the root file with `mise run secrets-edit`; a workload file with
 `sops` directly.
 
@@ -152,7 +152,7 @@ possible during a migration without editing any file.
 
 The modules themselves are **not in this repo** — they live in
 `noisypigeon/pigeon.dev` under `templates/terraform/` (ADR-0154). This repo only
-pins versions. There are 42 `source =` lines across `workloads/**/*.tf`,
+pins versions. There are 42 `source =` lines across `**/*.tf`,
 resolving to 12 distinct module versions, every one of the form:
 
 ```hcl
@@ -170,8 +170,11 @@ These are not registry URLs. They rely on Terraform/go-getter's HTTP
 module-source discovery protocol: `terraform init` requests the URL with
 `?terraform-get=1` and reads a `<meta name="terraform-get">` tag out of the
 response, which names the real `git::…?ref=…` source (ADR-0109). The pages are
-static, generated by `workloads/pigeon.dev/generate-module-redirects.sh`, one per
-module-version git tag, and served from the `pigeon.dev` site this repo deploys.
+static, generated by `generate-module-redirects.sh` — which now lives and runs
+in `noisypigeon/pigeon.dev` itself, relocated there by ADR-0156 along with the
+site it generates pages for — one per module-version git tag. This repo's own
+`pigeon.dev/generate-module-redirects.sh` is a leftover copy nothing invokes
+any more; cleaning it up is tracked separately from this doc pass.
 
 The part that reliably confuses: **the public URL path is always
 `modules/...`, but the git tag behind it may carry either of two prefixes, and
@@ -205,45 +208,44 @@ has finished — the short URL has to resolve before `terragrunt init` can fetch
 it. A module's source path is part of its public interface, so moving a module
 is a breaking change regardless of content (ADR-0093, ADR-0110).
 
-## 5. Zola sites and the shared theme
+## 5. The noisypigeon.com Zola site
 
-Two sites, both Zola, both built from a `src/` here and deployed to a Scaleway
-Object Storage bucket fronted by Cloudflare:
-
-- `workloads/noisypigeon.com/src` — the blog, with its own `CHANGELOG.md` and an
-  on-site `/changelog/` section fed by automation (ADR-0107, ADR-0108).
-- `workloads/pigeon.dev/src` — the wiki, plus every generated page: module
-  redirects, theme-version redirects, and one release post per module release,
-  derived from the modules' own `CHANGELOG.md` files (ADR-0141, ADR-0154).
+One site built from a `src/` here: `noisypigeon.com/src` — the blog, with its
+own `CHANGELOG.md` and an on-site `/changelog/` section fed by automation
+(ADR-0107, ADR-0108). `pigeon.dev`'s site (the wiki, plus every generated
+redirect/release page) moved into the `noisypigeon/pigeon.dev` repo itself
+(ADR-0156) — this repo no longer builds, serves, or hosts a `src/` for it.
 
 ### Theme resolution
 
-The `zola-site` theme also lives in `pigeon.dev`. Resolution is two scripts and
-nothing committed:
+The `zola-site` theme lives in `pigeon.dev`, which `noisypigeon.com` doesn't
+vendor locally, so resolution is two scripts and nothing committed:
 
-1. `workloads/pigeon.dev/fetch-templates.sh` maintains a gitignored blobless
+1. `noisypigeon.com/fetch-templates.sh` maintains a gitignored blobless
    clone at `.templates-src`. Set `TEMPLATES_SRC` to use your own checkout.
 2. `resolve-theme.sh` (which ships with the theme) materializes
    `src/themes/<name>` directly from that clone (ADR-0139).
 
-A site picks its version with `[extra].theme_version` in `config.toml`: `"main"`
-to track live, or a `vX.Y.Z` tag, materialized via `git archive` (ADR-0114).
-Both sites currently track `"main"`.
+The site picks its version with `[extra].theme_version` in `config.toml`:
+`"main"` to track live, or a `vX.Y.Z` tag, materialized via `git archive`
+(ADR-0114). It currently tracks `"main"`.
 
 **`.templates-src` is a disposable build input, not a working copy.**
 `fetch-templates.sh` runs `git reset --hard origin/HEAD` on every build, so
-anything uncommitted there is destroyed by the next `mise run pigeon-dev-build`.
-Do not author changes in it. The ADR clone (`.adr-src`, §8) deliberately does
+anything uncommitted there is destroyed by the next `mise run blog-build`. Do
+not author changes in it. The ADR clone (`.adr-src`, §8) deliberately does
 not share these semantics.
 
-### Why the `www` redirect is a ruleset
+### Both sites now serve via GitHub Pages, DNS-only
 
-Both sites redirect `www` → apex with a `cloudflare_ruleset` on the
-`http_request_dynamic_redirect` phase, plus a placeholder proxied DNS record for
-the edge to intercept. This is not stylistic: Scaleway's bucket-website gateway
-resolves sites by `Host` header, not by CNAME target, so a plain `www` CNAME
-reaches the gateway and gets the wrong bucket. Cloudflare v5 also removed
-`cloudflare_page_rule`, leaving rulesets as the mechanism (ADR-0105, ADR-0132).
+`noisypigeon.com` (ADR-0158) and `pigeon.dev` (ADR-0156, in its own repo) both
+moved off Scaleway-bucket-behind-Cloudflare onto GitHub Pages: apex and `www`
+are DNS-only (`proxied = false`) CNAMEs to `noisypigeon.github.io`, and GitHub
+Pages redirects `www` → apex natively. Neither site's DNS leaf carries a
+`cloudflare_ruleset` any more — the Scaleway bucket-website gateway's
+Host-header routing quirk that required one no longer applies to either site.
+The tradeoff taken knowingly: no Cloudflare CDN/WAF in front of either site,
+and TLS comes from GitHub's own certificate instead of Cloudflare's.
 
 ## 6. CI, as this repo consumes it
 
@@ -258,24 +260,27 @@ but delegates its job body to a `workflow_call` reusable workflow in
 | `terragrunt-apply.yml` | `terragrunt-run.yml` (`command: apply`) |
 | `blog-changelog.yml` | `blog-changelog.yml` |
 | `interaction-limits-renew.yml` | `interaction-limits-renew.yml` |
-| `zola-sites-deploy.yml` | `zola-site-deploy.yml` (per-site) |
+| `noisypigeon-com-pages.yml` | `zola-site-pages.yml` |
 
 Debugging CI behavior therefore usually means reading the other repo.
+`zola-sites-deploy.yml` (the old bucket-sync caller, `detect` job plus a
+per-site matrix since `secrets[matrix.key]` is a dynamic lookup and
+`workflow_call.secrets` must be statically declared) no longer exists —
+both sites it used to deploy now ship via GitHub Pages instead (ADR-0156,
+ADR-0158), and `noisypigeon-com-pages.yml` needs neither a `detect` job nor
+any secrets at all, since Pages deploys authenticate via OIDC.
 
-Two things deliberately stay here. First, `terragrunt-apply.yml`'s authorization
+One thing deliberately stays here: `terragrunt-apply.yml`'s authorization
 gate — the comment body plus an `OWNER`/`MEMBER`/`COLLABORATOR` author-association
 check — because it is the boundary for applying real infrastructure and belongs
-in the repo whose infrastructure is at stake. Second, `zola-sites-deploy.yml`
-keeps its own `detect` job and site matrix, because `secrets[matrix.key]` is a
-dynamic lookup and `workflow_call.secrets` must be statically declared; the
-caller resolves the secret and passes it down (ADR-0140, ADR-0155).
+in the repo whose infrastructure is at stake.
 
 ### The merge gate
 
 `terragrunt/apply` is this repo's one required status check (ADR-0129). The
 `detect` job runs on every PR with no path filter and sets that status directly:
 
-- no `workloads/<name>/terraform/` leaf touched → `success` immediately, and the
+- no `<name>/terraform/` leaf touched → `success` immediately, and the
   real `plan` job is skipped. Docs-only PRs merge without a Terraform run.
 - a leaf touched → `pending`, the `plan` job runs, and the status only flips to
   `success` after a human comments `terragrunt apply` and it succeeds.
@@ -297,7 +302,7 @@ and every PR here blocks on an unresolvable required check, including the fix.
 The `pigeon` CLI itself is a Rust program in a third repo,
 [`noisypigeon/pigeon-cli`](https://github.com/noisypigeon/pigeon-cli). This repo
 has only the infrastructure its jobs run on, under
-`workloads/willowgraysen.com/terraform/pigeon-cli/`:
+`willowgraysen.com/terraform/pigeon-cli/`:
 
 - `cluster/` — the job fleet. One `pigeon-cluster` module call configured by a
   `jobs` list of objects in `cluster_definition.tf`: per job an instance type,
@@ -368,10 +373,15 @@ Context for references you may hit in old commits, comments, or changelogs:
   ADR-0098. Also `terraform/modules/` → `modules/` → `templates/terraform/`
   (ADR-0093, ADR-0110), now in `pigeon.dev`.
 - **`workloads/blog/`** — became `workloads/noisypigeon.com/` when the site cut
-  over from GitHub Pages to a Scaleway bucket (ADR-0132).
+  over from GitHub Pages to a Scaleway bucket (ADR-0132), then just
+  `noisypigeon.com/` when `workloads/` itself was flattened away.
 - **Intermediate workload groupings** — `workloads/{dns,email,bluesky,scaleway,bucket,management,custodial-storage,pigeon-cli}/`
   all existed and were all consolidated away into the three domain workloads.
   A path in an old commit message probably no longer exists.
+- **`workloads/`** — every workload (`noisypigeon.com/`, `pigeon.dev/`,
+  `willowgraysen.com/`), `root.hcl`, and `README.md` moved to the repo root;
+  `README.md`'s content merged into `docs/USAGE.md`. Nothing nests under a
+  `workloads/` directory any more.
 - **`service/pigeon-cli`** — split out to `noisypigeon/pigeon-cli`. Note its
   split ADR was **ADR-0084 in that repo**; this repo's `ADR-0084` is an unrelated
   record about `compute-instance` cloud-init replacement, because the number was

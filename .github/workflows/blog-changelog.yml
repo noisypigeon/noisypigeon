@@ -8,7 +8,7 @@ on:
     types: [closed]
     branches: [main]
     paths:
-      - "workloads/noisypigeon.com/src/**"
+      - "noisypigeon.com/src/**"
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ jobs:
     if: github.event.pull_request.merged == true
     uses: noisypigeon/pigeon.dev/.github/workflows/blog-changelog.yml@main
     with:
-      site_dir: workloads/noisypigeon.com
-      site_key: noisypigeon.com
+      site_dir: noisypigeon.com
+      deploy_workflow: noisypigeon-com-pages.yml
       root_changelog_tag: blog
     secrets: inherit

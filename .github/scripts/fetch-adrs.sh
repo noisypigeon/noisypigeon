@@ -3,7 +3,7 @@
 # project's ADRs at adr/infrastructure/ since ADR-0157. Prints the clone's
 # path on stdout so callers can locate it.
 #
-# Deliberately NOT modeled on workloads/pigeon.dev/fetch-templates.sh, which
+# Deliberately NOT modeled on noisypigeon.com/fetch-templates.sh, which
 # does `git reset --hard origin/HEAD` on every run. That is correct there (the
 # clone is a disposable read-only build input) and wrong here: an ADR is
 # authored in this clone over multiple commands, so a reset would silently

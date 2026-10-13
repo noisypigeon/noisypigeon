@@ -16,6 +16,10 @@ deliberate exception: ADR-0108 backfilled `[blog]` entries for
 2026-09-27 through 2026-10-03, the small, concrete window between the
 blog's existence in this repo and its changelog automation landing.
 
+## 2026-10-12
+
+- [blog] refactor: flatten workloads/ to the repo root ([#289](https://github.com/noisypigeon/noisypigeon/pull/289))
+
 ## 2026-10-10
 
 - [scaleway/pigeon-cluster] Compose cloud-init, volumes, IPs, NICs and self-delete IAM at the cluster level ([#270](https://github.com/noisypigeon/noisypigeon/pull/270))

@@ -24,6 +24,6 @@ jobs:
     uses: noisypigeon/pigeon.dev/.github/workflows/blog-changelog.yml@main
     with:
       site_dir: noisypigeon.com
-      site_key: noisypigeon.com
+      deploy_workflow: noisypigeon-com-pages.yml
       root_changelog_tag: blog
     secrets: inherit

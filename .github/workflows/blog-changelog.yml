@@ -1,0 +1,29 @@
+name: blog-changelog
+
+# Job body lives in noisypigeon/pigeon.dev (ADR-0155) -- this file keeps only
+# the trigger, permissions and concurrency, plus the path filter and the
+# merged-only gate, neither of which can live in another repo.
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - "noisypigeon.com/src/**"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: main-writer
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    if: github.event.pull_request.merged == true
+    uses: noisypigeon/pigeon.dev/.github/workflows/blog-changelog.yml@main
+    with:
+      site_dir: noisypigeon.com
+      deploy_workflow: noisypigeon-com-pages.yml
+      root_changelog_tag: blog
+    secrets: inherit

@@ -4,6 +4,34 @@ All notable changes to the blog are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-10-12 — refactor: flatten workloads/ to the repo root
+
+## Summary
+- `noisypigeon.com/`, `pigeon.dev/`, `willowgraysen.com/`, `root.hcl`, and `README.md` move from `workloads/` to the repo root; `workloads/` no longer exists.
+- Functional fixes required by the move: `.sops.yaml`'s secrets.enc regex, `.gitignore`, `.mise.toml`'s blog-build/serve `dir`, `blog-changelog.yml`'s and `noisypigeon-com-pages.yml`'s path filters/inputs, and the three domains' `state/iam/terragrunt.hcl` explicit include path.
+- `root.hcl`'s state-key prefix (`key = "workloads/${path_relative_to_include()}/terraform.tfstate"`) is **deliberately left as a literal string** — it's a key name, not a filesystem path, and changing it would migrate every leaf still resolving through the shared root to a new state key for no reason. Verified: `path_relative_to_include()`'s own value is unchanged by the move since `root.hcl` and every domain shift up one level together.
+- `workloads/README.md`'s content merges into `docs/USAGE.md` (new "Workload layout"/"Workload conventions" sections) rather than becoming a new top-level `README.md` — this repo already has one of those.
+- `CLAUDE.md`/`docs/ARCHITECTURE.md`/`docs/USAGE.md` updated throughout.
+
+## Pre-existing bug fixed in passing
+`noisypigeon-com-pages.yml`'s `fetch_templates_script` pointed at `workloads/pigeon.dev/fetch-templates.sh`, but that script was relocated to `workloads/noisypigeon.com/fetch-templates.sh` by the already-merged ADR-0156 site-hoist PR — wrong before this change too, not something this PR introduced.
+
+## Docs corrected beyond pure path rewrites
+While rewriting CLAUDE.md/ARCHITECTURE.md/USAGE.md for the flatten, found and fixed several things that had already gone stale from merged work (ADR-0156, ADR-0158), independent of this move — leaving them with just an updated path would have preserved false statements:
+- Both sites now serve via GitHub Pages, DNS-only, no Cloudflare ruleset — rewrote ARCHITECTURE.md §5 and the CI table (`zola-sites-deploy.yml` doesn't exist any more).
+- `blog/{bucket,iam}` and `wiki/{bucket,iam}` are decommissioned — updated the §1 workload table.
+- `pigeon.dev`'s `state/bucket` already resolves via `find_in_parent_folders`, not the explicit shared-root pin both docs still claimed — confirmed by reading the file directly.
+- `workloads/README.md`'s own directory tree was already wrong (`custodial-storage/duck-jellyfish/` doesn't match the actual `willowgraysen.com/terraform/cold/custodial-duck-jellyfish/`, and its `pigeon-cli/job/` leaves predate ADR-0153's restructure) — used the real, current tree in the merged doc instead of copying it verbatim.
+
+**Flagged, not fixed here**: `pigeon.dev/generate-module-redirects.sh` is an orphaned script nothing invokes any more (its generator moved to the `pigeon.dev` repo with the site). Noted in `ARCHITECTURE.md`; tracked as separate cleanup.
+
+## Test plan
+- [ ] `terragrunt plan` shows **zero diff** across the entire tree — pure rename plus key-preserving edits. Any diff means the state-key preservation reasoning was wrong somewhere.
+- [ ] `mise run fmt-check-terraform` — passes modulo the three pre-existing unrelated formatting issues already on `main` (`willowgraysen.com/terraform/pigeon-cli/cluster/cluster_definition.tf`, `shared/reports/phase-{deduplicate,transform}/bucket.tf`), confirmed unrelated to this change.
+- [ ] `mise run blog-build` still works from the new path.
+
+[#289](https://github.com/noisypigeon/noisypigeon/pull/289)
+
 ## 2026-10-06 — Remove zola-site symlink requirement; merge Zola deploy workflows
 
 ## Summary

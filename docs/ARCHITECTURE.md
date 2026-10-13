@@ -25,8 +25,8 @@ Three workloads exist, one per domain:
 
 | Workload | `src/` | What its `terraform/` owns |
 |---|---|---|
-| `noisypigeon.com` | Zola blog | `blog/dns`, `bluesky/dns`, `proton/dns`, `google-search/dns`, `project`, `state/{bucket,iam}` |
-| `pigeon.dev` | — (its site moved to `noisypigeon/pigeon.dev`, ADR-0156) | `wiki/dns`, `fastmail/dns`, `project`, `state/{bucket,iam}` |
+| `noisypigeon.com` | — (its site moved to `noisypigeon/noisypigeon.com`, ADR-0159) | `blog/dns`, `bluesky/dns`, `proton/dns`, `google-search/dns`, `project`, `state/{bucket,iam}` |
+| `pigeon.dev` | — (its site moved to `noisypigeon/pigeon.dev`) | `wiki/dns`, `fastmail/dns`, `project`, `state/{bucket,iam}` |
 | `willowgraysen.com` | — (infrastructure only) | `redirect/dns`, `cold/*`, `pigeon-cli/*`, `project`, `state/{bucket,iam}` |
 
 `willowgraysen.com` is the catch-all: it holds what no more specific domain

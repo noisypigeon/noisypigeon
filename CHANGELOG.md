@@ -2,8 +2,8 @@
 
 One line per PR across this whole repo, sectioned by date, newest first.
 Not versioned — for versioned, package-scoped changelogs see
-[`workloads/noisypigeon.com/CHANGELOG.md`](workloads/noisypigeon.com/CHANGELOG.md) (the blog,
-unversioned). The Terraform modules' and Zola theme's changelogs moved with
+[noisypigeon.com's changelog](https://github.com/noisypigeon/noisypigeon.com) (the blog,
+unversioned, moved to its own repo in ADR-0159). The Terraform modules' and Zola theme's changelogs moved with
 them to `noisypigeon/pigeon.dev` in ADR-0154, as did the `[<provider>/<module>]`
 and `[zola-site]` rollup lines this file used to collect; the ones already here
 stay, untangling them being exactly the low-value busywork ADR-0084 declined.

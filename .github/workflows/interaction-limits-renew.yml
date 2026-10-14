@@ -4,7 +4,7 @@ name: Renew interaction limits
 # -- this file keeps only the trigger, permissions and concurrency. A cron
 # trigger can't live in another repo.
 #
-# Pinned to a version rather than @main: LIB-0001 invariant 2. PD-0155 deferred
+# Pinned to a version rather than @main: LIB-0001 invariant 2. DEV-0155 deferred
 # this track deliberately, accepting live @main as cheaper than paying for it
 # upfront; with three spokes consuming the hub, LIB-0002 built it.
 on:

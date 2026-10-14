@@ -1,6 +1,6 @@
 name: Terragrunt apply
 
-# Job body lives in noisypigeon/pigeon.dev (ADR-0155) -- this file keeps
+# Job body lives in noisypigeon/pigeon-lib (ADR-0155, moved by LIB-0002) -- this file keeps
 # only the trigger, permissions, concurrency, and the authorization gate
 # below. That gate -- a fixed comment body plus an OWNER/MEMBER/COLLABORATOR
 # author-association check -- is what stands between an arbitrary PR comment
@@ -25,7 +25,7 @@ jobs:
       github.event.issue.pull_request != null &&
       github.event.comment.body == 'terragrunt apply' &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    uses: noisypigeon/pigeon.dev/.github/workflows/terragrunt-run.yml@main
+    uses: noisypigeon/pigeon-lib/.github/workflows/terragrunt-run.yml@workflows/v1.0.2
     with:
       command: apply
       checkout_ref: refs/pull/${{ github.event.issue.number }}/head

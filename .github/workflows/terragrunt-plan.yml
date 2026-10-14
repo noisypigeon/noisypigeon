@@ -1,6 +1,6 @@
 name: Terragrunt plan
 
-# Job bodies live in noisypigeon/pigeon.dev (ADR-0155) -- this file keeps
+# Job bodies live in noisypigeon/pigeon-lib (ADR-0155, moved by LIB-0002) -- this file keeps
 # only the trigger, permissions and concurrency. terragrunt/apply is this
 # repo's one required status check (docs/adr/0129); it's a commit status
 # with an explicit `context` string, so the detect/plan job rename to
@@ -21,12 +21,12 @@ concurrency:
 
 jobs:
   detect:
-    uses: noisypigeon/pigeon.dev/.github/workflows/terragrunt-detect.yml@main
+    uses: noisypigeon/pigeon-lib/.github/workflows/terragrunt-detect.yml@workflows/v1.0.2
 
   plan:
     needs: detect
     if: needs.detect.outputs.affects-leaves == 'true'
-    uses: noisypigeon/pigeon.dev/.github/workflows/terragrunt-run.yml@main
+    uses: noisypigeon/pigeon-lib/.github/workflows/terragrunt-run.yml@workflows/v1.0.2
     with:
       command: plan
     secrets: inherit

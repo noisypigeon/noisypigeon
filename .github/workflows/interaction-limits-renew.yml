@@ -1,8 +1,12 @@
 name: Renew interaction limits
 
-# Job body lives in noisypigeon/pigeon.dev (ADR-0155) -- this file keeps only
-# the trigger, permissions and concurrency. A cron trigger can't live in
-# another repo.
+# Job body lives in noisypigeon/pigeon-lib (ADR-0155, moved there by LIB-0002)
+# -- this file keeps only the trigger, permissions and concurrency. A cron
+# trigger can't live in another repo.
+#
+# Pinned to a version rather than @main: LIB-0001 invariant 2. PD-0155 deferred
+# this track deliberately, accepting live @main as cheaper than paying for it
+# upfront; with three spokes consuming the hub, LIB-0002 built it.
 on:
   schedule:
     - cron: "0 0 1 * *"
@@ -12,5 +16,5 @@ permissions: {}
 
 jobs:
   renew:
-    uses: noisypigeon/pigeon.dev/.github/workflows/interaction-limits-renew.yml@main
+    uses: noisypigeon/pigeon-lib/.github/workflows/interaction-limits-renew.yml@workflows/v1.0.2
     secrets: inherit

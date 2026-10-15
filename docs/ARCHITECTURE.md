@@ -27,10 +27,12 @@ Three workloads exist, one per domain:
 |---|---|---|
 | `noisypigeon.com` | — (its site and Terraform moved to `noisypigeon/noisypigeon.com`, ADR-0159/COM-0003) | `state/iam` only |
 | `pigeon.dev` | — (its site and Terraform moved to `noisypigeon/pigeon.dev`, DEV-0162/0163) | `state/iam` only |
-| `willowgraysen.com` | — (infrastructure only) | `redirect/dns`, `cold/*`, `pigeon-cli/*`, `project`, `state/{bucket,iam}` |
+| `willowgraysen.com` | — (infrastructure only; its Terraform moved to `noisypigeon/willowgraysen.com`, RUN-0001) | `state/iam` only |
 
 `willowgraysen.com` is the catch-all: it holds what no more specific domain
-claims. That includes this repo's original shared bootstrap (ADR-0133 relocated
+claims. (Since RUN-0001 everything below except `state/iam` lives in
+`noisypigeon/willowgraysen.com`; the description stays here as the history of
+how it got that shape.) That includes this repo's original shared bootstrap (ADR-0133 relocated
 the `project` resource there unchanged), the `cold/` archival buckets, and all
 `pigeon-cli` infrastructure.
 
@@ -111,8 +113,9 @@ so a leaf that omits the file is unaffected and no error is raised:
   currently has zero users.** It was added for an `nl-ams` backup bucket; no
   `nl-ams` leaf exists today. It is live, working code with no consumer.
 - **`backblaze_config.hcl`** — sets `enabled = true` to materialize the
-  otherwise-latent `b2` provider in `willowgraysen.com/root.hcl` (ADR-0148).
-  Three users, all under `willowgraysen.com/terraform/cold/`.
+  otherwise-latent `b2` provider (ADR-0148). Three users, all under
+  `terraform/cold/` in `noisypigeon/willowgraysen.com`, where pigeon-lib's
+  root template now provides the mechanism (`backblaze = true`, LIB-0003).
 
 ### A wart worth knowing
 
@@ -301,8 +304,9 @@ and every PR here blocks on an unresolvable required check, including the fix.
 
 The `pigeon` CLI itself is a Rust program in a third repo,
 [`noisypigeon/pigeon-cli`](https://github.com/noisypigeon/pigeon-cli). This repo
-has only the infrastructure its jobs run on, under
-`willowgraysen.com/terraform/pigeon-cli/`:
+used to hold only the infrastructure its jobs run on, under
+`willowgraysen.com/terraform/pigeon-cli/`; since RUN-0001 that tree is
+`terraform/pigeon-cli/` in `noisypigeon/willowgraysen.com`:
 
 - `cluster/` — the job fleet. One `pigeon-cluster` module call configured by a
   `jobs` list of objects in `cluster_definition.tf`: per job an instance type,

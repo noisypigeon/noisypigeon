@@ -1,3 +1,0 @@
-locals {
-  name = "pigeon-dev"
-}

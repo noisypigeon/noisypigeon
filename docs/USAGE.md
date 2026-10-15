@@ -24,10 +24,11 @@ moved here (ADR-0098).
 - [`noisypigeon.com/`](noisypigeon.com/) — the Zola blog (`src/`), served
   via GitHub Pages (ADR-0158), plus its own dedicated Scaleway project,
   state bucket, deployer IAM, and Cloudflare DNS leaves (ADR-0132).
-- [`pigeon.dev/`](pigeon.dev/) — infrastructure only; its Zola wiki moved
-  into the `noisypigeon/pigeon.dev` repo itself and now serves via GitHub
-  Pages from there (ADR-0156). Same dedicated self-sufficiency pattern as
-  the other two domains (ADR-0130/0131).
+- [`pigeon.dev/`](pigeon.dev/) — just `terraform/state/iam`, the leaf that
+  mints `pigeon.dev`'s deploy key. Everything else for the domain — its Zola
+  site and its other Terraform leaves, root and secrets — runs from the
+  `noisypigeon/pigeon.dev` repo (ADR-0156, DEV-0162, DEV-0163). `state/iam`
+  stays here because it must not depend on the key it mints (LIB-0001 §8).
 - [`willowgraysen.com/`](willowgraysen.com/) — the third self-sufficient
   workload (ADR-0133); infrastructure-only, and the home for everything
   not claimed by a more specific workload: the repo's own Terraform state
@@ -63,18 +64,10 @@ noisypigeon.com/
       dns/                   # Proton Mail SPF/DKIM/MX/DMARC records
     google-search/
       dns/                   # Google site-verification TXT record
-pigeon.dev/
-  root.hcl                 # per-workload Terragrunt root (ADR-0130)
-  secrets.enc              # per-workload sops/age-encrypted secrets (ADR-0131)
+pigeon.dev/                # the rest moved to noisypigeon/pigeon.dev (DEV-0163)
   terraform/
-    project/               # dedicated Scaleway project
     state/
-      bucket/                # dedicated Terraform state bucket (self-governing)
       iam/                   # dedicated deployer IAM application/policy/API key (resolves to the shared root)
-    wiki/
-      dns/                   # GitHub Pages apex/www CNAMEs, DNS-only (ADR-0156)
-    fastmail/
-      dns/                   # Fastmail SPF/DKIM/MX records
 willowgraysen.com/
   root.hcl                 # per-workload Terragrunt root (ADR-0133)
   secrets.enc              # per-workload sops/age-encrypted secrets (ADR-0131)
@@ -110,8 +103,9 @@ Not every workload has a `src/` sibling — `willowgraysen.com/` is
 infrastructure-only, and not just the former shared bootstrap's own
 `project`/`state` leaves: it's also where every other Scaleway/Cloudflare
 leaf that was never claimed by a more specific self-sufficient workload
-ended up, by ADR-0133. `pigeon.dev/` and `noisypigeon.com/` are the other
-two self-sufficient workloads: each has its own dedicated Terraform state
+ended up, by ADR-0133. `noisypigeon.com/` is the other self-sufficient workload
+here (`pigeon.dev/`'s self-sufficient leaves now live in their own repo,
+DEV-0163, leaving only `state/iam` behind): each has its own dedicated Terraform state
 bucket, deployer IAM, Scaleway project, `root.hcl`, and `secrets.enc` (see
 below) — the convention doesn't require any particular sibling, a workload
 just has whichever ones it actually needs. With all three self-sufficient,

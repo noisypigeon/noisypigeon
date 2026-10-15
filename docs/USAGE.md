@@ -30,15 +30,11 @@ moved here (ADR-0098).
   site and its other Terraform leaves, root and secrets — runs from the
   `noisypigeon/pigeon.dev` repo (ADR-0156, DEV-0162, DEV-0163). `state/iam`
   stays here because it must not depend on the key it mints (LIB-0001 §8).
-- [`willowgraysen.com/`](willowgraysen.com/) — the third self-sufficient
-  workload (ADR-0133); infrastructure-only, and the home for everything
-  not claimed by a more specific workload: the repo's own Terraform state
-  bucket, deployer IAM, and Scaleway project (`state/`, `project/`), a
-  Cloudflare redirect from `willowgraysen.com` to `noisypigeon.com`
-  (`redirect/`), three `nl-ams` cold-storage buckets (`cold/*`), and the
-  external `pigeon` CLI's (`noisypigeon/pigeon-cli`) storage buckets,
-  shared Cockpit/Grafana/IAM-application resources, and job fleet
-  (`pigeon-cli/{bucket,shared,cluster}/`).
+- [`willowgraysen.com/`](willowgraysen.com/) — just `terraform/state/iam`,
+  the leaf that mints `willowgraysen.com`'s deploy key. The domain's other
+  fourteen leaves (cold storage, `pigeon-cli`'s infrastructure, the redirect,
+  the project and the state bucket), its root and its secrets run from the
+  `noisypigeon/willowgraysen.com` repo (RUN-0001).
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) — longform current-state design
   rationale: layout, Terragrunt roots/state/providers, secrets, the module
   consumption contract, the Zola/theme pipeline, CI, and `pigeon-cluster`.
@@ -55,44 +51,19 @@ pigeon.dev/                # the rest moved to noisypigeon/pigeon.dev (DEV-0163)
   terraform/
     state/
       iam/                   # dedicated deployer IAM application/policy/API key (resolves to the shared root)
-willowgraysen.com/
-  root.hcl                 # per-workload Terragrunt root (ADR-0133)
-  secrets.enc              # per-workload sops/age-encrypted secrets (ADR-0131)
+willowgraysen.com/         # the rest moved to noisypigeon/willowgraysen.com (RUN-0001)
   terraform/
-    project/               # Scaleway project (relocated from the former shared bootstrap, ADR-0133)
     state/
-      bucket/                # dedicated Terraform state bucket (self-governing, ADR-0133)
       iam/                   # dedicated deployer IAM application/policy/API key (resolves to the shared root)
-    redirect/
-      dns/                   # Cloudflare ruleset redirecting willowgraysen.com (apex + www) to noisypigeon.com
-    cold/
-      custodial-duck-jellyfish/  # nl-ams backup bucket + IAM -- see scaleway_config.hcl below
-      deduplicated-misc/         # nl-ams archival bucket
-      snapshot-2026-10-09/       # nl-ams archival bucket
-    pigeon-cli/
-      bucket/
-        pigeon/
-          deduplicate/           # per-dataset import/deduplication bucket
-          transform/             # per-dataset transform bucket
-      cluster/                 # the job fleet: one pigeon-cluster module call, configured
-                                # by a `jobs` list in cluster_definition.tf -- adding a job is
-                                # a list entry, not a new leaf (ADR-0144, ADR-0153)
-      shared/
-        cockpit/                 # shared Cockpit metrics/logs source + push token (ADR-0103)
-        grafana/                 # Grafana dashboards-as-code against Cockpit (ADR-0135)
-        iam-application/         # shared IAM application every job policy attaches to (ADR-0119)
-        reports/
-          phase-deduplicate/       # shared job-report bucket
-          phase-transform/         # shared job-report bucket
 ```
 
 Not every workload has a `src/` sibling — `willowgraysen.com/` is
 infrastructure-only, and not just the former shared bootstrap's own
 `project`/`state` leaves: it's also where every other Scaleway/Cloudflare
 leaf that was never claimed by a more specific self-sufficient workload
-ended up, by ADR-0133. It is now the only self-sufficient workload left here:
-`pigeon.dev/`'s and `noisypigeon.com/`'s self-sufficient leaves live in their
-own repos (DEV-0163, COM-0003), leaving only each one's `state/iam` behind. A
+ended up, by ADR-0133. None of the three is here any more: their
+self-sufficient leaves live in their own repos (DEV-0163, COM-0003, RUN-0001),
+leaving only each one's `state/iam` behind. A
 self-sufficient workload has its own dedicated Terraform state
 bucket, deployer IAM, Scaleway project, `root.hcl`, and `secrets.enc` (see
 below) — the convention doesn't require any particular sibling, a workload

@@ -25,7 +25,7 @@ Three workloads exist, one per domain:
 
 | Workload | `src/` | What its `terraform/` owns |
 |---|---|---|
-| `noisypigeon.com` | — (its site moved to `noisypigeon/noisypigeon.com`, ADR-0159) | `blog/dns`, `bluesky/dns`, `proton/dns`, `google-search/dns`, `project`, `state/{bucket,iam}` |
+| `noisypigeon.com` | — (its site and Terraform moved to `noisypigeon/noisypigeon.com`, ADR-0159/COM-0003) | `state/iam` only |
 | `pigeon.dev` | — (its site and Terraform moved to `noisypigeon/pigeon.dev`, DEV-0162/0163) | `state/iam` only |
 | `willowgraysen.com` | — (infrastructure only) | `redirect/dns`, `cold/*`, `pigeon-cli/*`, `project`, `state/{bucket,iam}` |
 

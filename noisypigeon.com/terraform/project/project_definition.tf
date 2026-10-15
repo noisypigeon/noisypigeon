@@ -1,3 +1,0 @@
-locals {
-  name = "noisypigeon-com"
-}

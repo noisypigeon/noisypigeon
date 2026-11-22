@@ -6,7 +6,7 @@ aliases = ["changelog/hello-jekyll-re-introduction"]
 +++
 
 
-I created [this blog in September 2024](/posts/hihi-pika-lets-consolidate-re-introduction/) with the intention of [consolidating all of my lost writing](/posts/reconnecting-fragments-the-evolution-of-my-names-through-email-accounts/) from over the years into one place. 
+I created [this blog in September 2024](/posts/hihi-pika-lets-consolidate-re-introduction/) with the intention of [consolidating all of my lost writing](/posts/reconnecting-fragments-the-evolution-of-my-names-through-email-accounts/) from over the years into one place.
 
 While I sometimes contribute new posts, this blog is primarily: my digital shoebox—equal parts time capsule, portfolio, and proof I was here.
 

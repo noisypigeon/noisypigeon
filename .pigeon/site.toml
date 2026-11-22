@@ -1,0 +1,42 @@
+template = "blog@1"
+features = ["math"]
+
+[site]
+title = "Willow Graysen"
+description = "Infra dev, data hoarder, mechanic-ish, photographer."
+short_name = "noisypigeon"
+intro = "Hi, I’m Willow Graysen. This is my digital shoebox — equal parts time capsule, portfolio, and proof I was here."
+avatar = "/assets/images/site/avatar.png"
+social_preview = "/assets/images/site/social_preview.png"
+author_page = "/pages/about"
+alternate_names = ["Willow Finch", "Kara Finch", "Kara Graysen", "Luna Graysen"]
+
+[[site.nav]]
+title = "About"
+link = "/pages/about"
+
+[[site.nav]]
+title = "GitHub"
+link = "https://github.com/noisypigeon"
+
+[[site.nav]]
+title = "Bluesky"
+link = "https://bsky.app/profile/noisypigeon.com"
+
+[[site.nav]]
+title = "LinkedIn"
+link = "https://www.linkedin.com/in/noisypigeon"
+
+[[site.nav]]
+title = "Unsplash"
+link = "https://unsplash.com/@noisypigeon"
+
+[[site.icons]]
+src = "/assets/images/site/icon-192.png"
+sizes = "192x192"
+type = "image/png"
+
+[[site.icons]]
+src = "/assets/images/site/icon-512.png"
+sizes = "512x512"
+type = "image/png"
